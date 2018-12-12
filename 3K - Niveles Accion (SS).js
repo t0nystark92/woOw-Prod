@@ -26,7 +26,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
      * @Since 2015.2
      */
     function beforeSubmit(scriptContext) {
-      if (scriptContext.type == context.UserEventType.EDIT) {
+      if (scriptContext.type == 'edit') {
         var respuesta = {};
         respuesta.error = false;
         respuesta.detalle = [];

@@ -197,7 +197,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             var obj = new Object({});
 
             obj.idInternoOV = searchResult.iOV;
-            obj.idOrden = searchResult.iOrden;
+            obj.idArt = searchResult.iArt;
             obj.nivelAccion = searchResult.nAccion;
 
             var clave = obj.idInternoOV;
@@ -242,37 +242,45 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         });
         for (var i = 0; !isEmpty(context.values) && context.values.length > 0 && i < context.values.length; i++) {
           registro = JSON.parse(context.values[i]);
-          log.audit('idOV, idOrden, NivelAccion', registro);
+          log.audit('idOV, idArt, NivelAccion', registro);
           if (!isEmpty(registro)) {
-            var idOrden = registro.idOrden;
+            var idArt = registro.idArt;
             var nivelAccion = registro.nivelAccion;
 
             var linea = objRecord.findSublistLineWithValue({
               sublistId: 'item',
-              fieldId: 'custcol_3k_id_orden',
-              value: idOrden
+              fieldId: 'item',
+              value: idArt
             });
+
+            log.debug('linea a cambiar nivel de accion',linea);
             objRecord.selectLine({
               sublistId: 'item',
               line: linea
             });
+            log.debug('Linea seleccionada', linea);
+
             var nivelesAplicados = objRecord.getCurrentSublistValue({
               sublistId: 'item',
               fieldId: 'custcol_3k_niveles_accion_aplicados'
             }) || 0;
+            log.debug('nivelesAplicados', nivelesAplicados);
 
             objRecord.setCurrentSublistValue({
               sublistId: 'item',
               fieldId: 'custcol_3k_niveles_accion_aplicados',
               value: parseInt(nivelesAplicados, 10) + 1
             });
+            log.debug('Niveles de Accion Aplicados', (parseInt(nivelesAplicados, 10) + 1).toString());
+
             objRecord.setCurrentSublistValue({
               sublistId: 'item',
               fieldId: 'custcol_3k_nivel_accion_vigente',
               value: nivelAccion
             });
+            log.debug('nivelesAplicados', nivelesAplicados);
             objRecord.commitLine({
-              sublistId: 'apply'
+              sublistId: 'item'
             });
           }
         }

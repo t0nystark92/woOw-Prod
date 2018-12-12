@@ -140,8 +140,8 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           displayType: serverWidget.FieldDisplayType.DISABLED
         });
         sublist.addField({
-          id: 'idorden',
-          label: 'ID Orden',
+          id: 'idlinea',
+          label: 'ID Linea',
           type: serverWidget.FieldType.TEXT
         }).updateDisplayType({
           displayType: serverWidget.FieldDisplayType.HIDDEN
@@ -371,19 +371,19 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                   if (!utilities.isEmpty(newNivelAccion)) { //solo si est� marcado para enviar
                     existenOVsAplicar = true;
 
-                    var idOrdenAplicar = columnas[2];
+                    var idArtAplicar = columnas[4];
                     var idInternoOV = columnas[8];
 
                     log.debug('Aplicar Niveles Accion SUITELET', 'Tamano Array columna : ' + columnas.length);
 
-                    log.debug('Aplicar Niveles Accion SUITELET', 'Contador : ' + (i + 1) + ' - IdOrdenAplicar: ' + idOrdenAplicar);
+                    log.debug('Aplicar Niveles Accion SUITELET', 'Contador : ' + (i + 1) + ' - idArtAplicar: ' + idArtAplicar);
                     log.debug('Aplicar Niveles Accion SUITELET', 'Contador : ' + (i + 1) + ' - idInternoOV: ' + idInternoOV);
                     log.debug('Aplicar Niveles Accion SUITELET', 'Contador : ' + (i + 1) + ' - newNivelAccion: ' + newNivelAccion);
 
-                    if (!utilities.isEmpty(idOrdenAplicar)) {
+                    if (!utilities.isEmpty(idArtAplicar)) {
 
                       objAplicar.iOV = idInternoOV;
-                      objAplicar.iOrden = idOrdenAplicar;
+                      objAplicar.iArt = idArtAplicar;
                       objAplicar.nAccion = newNivelAccion;
                       log.debug('objAplicar', objAplicar);
                       idOVsProcesar.push(objAplicar);
@@ -594,7 +594,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
               name: ssOV.columns[0]
             });
 
-            var idOrden = ssOV.result[j].getValue({
+            var idLinea = ssOV.result[j].getValue({
               name: ssOV.columns[1]
             });
             var idArticulo = ssOV.result[j].getValue({
@@ -642,11 +642,11 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
               });
             }
 
-            if (!utilities.isEmpty(idOrden)) {
+            if (!utilities.isEmpty(idLinea)) {
               sublist.setSublistValue({
-                id: 'idorden',
+                id: 'idlinea',
                 line: j,
-                value: idOrden
+                value: idLinea
               });
             }
 
