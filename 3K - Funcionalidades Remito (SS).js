@@ -304,7 +304,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                       }
                       log.audit('Todos los datos completados', 'Guardando Factura para el remito con ID Interno: ' + idRemito);
                       var idFactGenerada = factRecord.save();
-                      log.audit('Factura Guardada','Generada Factura con ID Interno: '+ idFactGenerada + '. Para el Remito con ID Interno: '+)
+                      log.audit('Factura Guardada','Generada Factura con ID Interno: '+ idFactGenerada + '. Para el Remito con ID Interno: '+ idRemito);
                     }
                   }
                 }
