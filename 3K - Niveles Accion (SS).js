@@ -137,7 +137,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                       fieldId: 'custcol_3k_fecha_disponibiliad',
                       line: lineasAplicar[i].linea
                     });
-                    if (new Date(fechaClienteLínea) > new Date(fechaClienteCabecera)) {
+                    if (new Date(fechaClienteLínea) > new Date(fechaClienteCabecera) || utilities.isEmpty(fechaClienteCabecera)) {
                       log.debug('FechaCliente Mayor', 'La fecha cliente de esta línea es mayor que la de cabecera, por lo tanto se sustituirá');
                       var newFechaClienteCabecera = format.parse({
                         value: fechaClienteLínea,
@@ -252,12 +252,13 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
     }
 
     function calcularFechaCondiasNoLab(arrayDiasNoLaborables, diasImpacto, newRecFecha) {
-      var diasTotales = 0;
+      var diasTotales = 1;
       var fechaCalculada = format.parse({
         value: newRecFecha,
         type: format.Type.DATE
         //timezone : format.Timezone.AMERICA_MONTEVIDEO // Montevideo - Uruguay
       });
+      log.debug('arrayDiasNoLaborables[219]', arrayDiasNoLaborables[219]);
       for (var i = 1; i <= diasImpacto; i++) {
         var fechaRecorrida = new Date(fechaCalculada.getTime());
 
@@ -268,12 +269,13 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
         log.debug('NIVELES', 'fechaRecorrida: ' + fechaRecorrida);
         //log.debug('NIVELES', 'fechaParse: ' + fechaParse);
         log.debug('NIVELES', 'i: ' + i);
-
+        
         var resultFilter = arrayDiasNoLaborables.filter(function (obj) {
           return (obj.fecha.getTime() == fechaRecorrida.getTime());
         });
 
         if (!utilities.isEmpty(resultFilter) && resultFilter.length > 0) {
+          log.debug('Día Feriado', fechaRecorrida);
           i--;
         }
         diasTotales++;
