@@ -252,14 +252,14 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
     }
 
     function calcularFechaCondiasNoLab(arrayDiasNoLaborables, diasImpacto, newRecFecha) {
-      var diasTotales = 1;
+      var diasTotales = 0;
       var fechaCalculada = format.parse({
         value: newRecFecha,
         type: format.Type.DATE
         //timezone : format.Timezone.AMERICA_MONTEVIDEO // Montevideo - Uruguay
-      });
-      log.debug('arrayDiasNoLaborables[219]', arrayDiasNoLaborables[219]);
+      })
       for (var i = 1; i <= diasImpacto; i++) {
+        diasTotales++;
         var fechaRecorrida = new Date(fechaCalculada.getTime());
 
         fechaRecorrida.setDate(fechaCalculada.getDate() + diasTotales);
@@ -268,7 +268,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
         log.debug('NIVELES', 'fechaCalculada: ' + fechaCalculada);
         log.debug('NIVELES', 'fechaRecorrida: ' + fechaRecorrida);
         //log.debug('NIVELES', 'fechaParse: ' + fechaParse);
-        log.debug('NIVELES', 'i: ' + i);
+        //log.debug('NIVELES', 'i: ' + i);
         
         var resultFilter = arrayDiasNoLaborables.filter(function (obj) {
           return (obj.fecha.getTime() == fechaRecorrida.getTime());
@@ -278,7 +278,6 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
           log.debug('Día Feriado', fechaRecorrida);
           i--;
         }
-        diasTotales++;
       }
       fechaCalculada.setDate(fechaCalculada.getDate() + parseInt(diasTotales, 10));
       var fechaString = format.format({
