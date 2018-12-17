@@ -137,7 +137,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                       fieldId: 'custcol_3k_fecha_disponibiliad',
                       line: lineasAplicar[i].linea
                     });
-                    if (new Date(fechaClienteLínea) > new Date(fechaClienteCabecera)) {
+                    if (new Date(fechaClienteLínea) > new Date(fechaClienteCabecera) || utilities.isEmpty(fechaClienteCabecera)) {
                       log.debug('FechaCliente Mayor', 'La fecha cliente de esta línea es mayor que la de cabecera, por lo tanto se sustituirá');
                       var newFechaClienteCabecera = format.parse({
                         value: fechaClienteLínea,
@@ -257,8 +257,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
         value: newRecFecha,
         type: format.Type.DATE
         //timezone : format.Timezone.AMERICA_MONTEVIDEO // Montevideo - Uruguay
-      });
+      })
       for (var i = 1; i <= diasImpacto; i++) {
+        diasTotales++;
         var fechaRecorrida = new Date(fechaCalculada.getTime());
 
         fechaRecorrida.setDate(fechaCalculada.getDate() + diasTotales);
@@ -267,16 +268,16 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
         log.debug('NIVELES', 'fechaCalculada: ' + fechaCalculada);
         log.debug('NIVELES', 'fechaRecorrida: ' + fechaRecorrida);
         //log.debug('NIVELES', 'fechaParse: ' + fechaParse);
-        log.debug('NIVELES', 'i: ' + i);
-
+        //log.debug('NIVELES', 'i: ' + i);
+        
         var resultFilter = arrayDiasNoLaborables.filter(function (obj) {
           return (obj.fecha.getTime() == fechaRecorrida.getTime());
         });
 
         if (!utilities.isEmpty(resultFilter) && resultFilter.length > 0) {
+          log.debug('Día Feriado', fechaRecorrida);
           i--;
         }
-        diasTotales++;
       }
       fechaCalculada.setDate(fechaCalculada.getDate() + parseInt(diasTotales, 10));
       var fechaString = format.format({
