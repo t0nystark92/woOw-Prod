@@ -17,7 +17,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
      * @param {search} search
      */
 
-    function(error, record, search, runtime, utilities, format) {
+    function (error, record, search, runtime, utilities, format) {
 
         /**
          * Function definition to be triggered before record is loaded.
@@ -37,12 +37,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
             objRespuesta.error = false;
             objRespuesta.message = "";
             objRespuesta.detalle = new Array();
-            
-            if ((scriptContext.type == 'create') || (scriptContext.type == 'edit')){
+
+            if ((scriptContext.type == 'create') || (scriptContext.type == 'edit')) {
 
                 try {
-                    log.audit('Creación OV (SS) - LINE 44', 'INICIO - BeforeSubmit');
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 45', ' Tipo : Servidor - Evento : ' + scriptContext.type);
+                    log.audit('Creación OV (SS)', 'INICIO - beforeSubmit');
+                    log.debug('Creación OV (SS) - beforeSubmit', ' Tipo : Servidor - Evento : ' + scriptContext.type);
 
 
                     /******************************* INICIO  DE TRANSFORMAR FECHA EN FORMATO DE URU Y FORMATO NETSUITE****************************************************/
@@ -58,7 +58,6 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     });
                     /******************************* FIN DE TRANSFORMAR FECHA EN FORMATO DE URU Y FORMATO NETSUITE****************************************************/
 
-                    /************************************INICIO SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
                     var objRecord = scriptContext.newRecord;
                     var arrayArticulos = [];
                     var arrayItems = [];
@@ -73,15 +72,21 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         fieldId: 'custbody_cseg_3k_sitio_web_o'
                     });
 
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 76', ' id: ' + id + ', ubicacion: ' + ubicacion + ', sitio: ' + sitio);
+                    var logNS = objRecord.getValue({
+                        fieldId: 'custbody_3k_netsuite_ov'
+                    });
+
+                    log.debug('Creación OV (SS) - beforeSubmit', ' id: ' + id + ', ubicacion: ' + ubicacion + ', sitio: ' + sitio + ', logNS: ' + logNS);
+
+                    /************************************INICIO SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
 
                     var numLines = objRecord.getLineCount({
                         sublistId: 'item'
                     });
 
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 82', 'numLines: ' + numLines);
+                    log.debug('Creación OV (SS) - beforeSubmit', 'numLines: ' + numLines);
 
-                    for (var i=0; !utilities.isEmpty(numLines) && i < numLines; i++){                        
+                    for (var i = 0; !utilities.isEmpty(numLines) && i < numLines; i++) {
                         var objJSON = new Object({});
 
                         objJSON.articulo = objRecord.getSublistValue({
@@ -109,14 +114,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             line: i
                         });
 
-                        log.debug('Creación OV (SS) - BeforeSubmit - LINE 112', 'objJSON.articulo: ' +JSON.stringify(objJSON.articulo));
-
-                        arrayArticulos.push(objJSON.articulo);     
-                        arrayItems.push(objJSON);                
+                        arrayArticulos.push(objJSON.articulo);
+                        arrayItems.push(objJSON);
                     }
 
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 118', 'arrayArticulos: ' +JSON.stringify(arrayArticulos));
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 119', 'arrayItems: ' +JSON.stringify(arrayItems));
+                    log.debug('Creación OV (SS) - beforeSubmit', 'arrayArticulos: ' + JSON.stringify(arrayArticulos));
+                    log.debug('Creación OV (SS) - beforeSubmit', 'arrayItems: ' + JSON.stringify(arrayItems));
 
                     var arraySearchParams = new Array();
                     var objParam = new Object();
@@ -131,9 +134,9 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     }
 
                     var articulo = objResultSet.objRsponseFunction.array; //array que contiene los articulos que vienen en la orden de venta
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 134', 'articulo array: ' + JSON.stringify(articulo));
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 135', 'articulo.length: ' + articulo.length);
-               
+                    log.debug('Creación OV (SS) - beforeSubmit', 'articulo array: ' + JSON.stringify(articulo));
+                    log.debug('Creación OV (SS) - beforeSubmit', 'articulo.length: ' + articulo.length);
+
                     /************************************FIN SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
 
                     /***************************INICIO SE CREA ARREGLO DE COMPONENTES PARA LUEGO PASARLO A SS DE BUSQUEDA DE STOCK TERCEROS Y STOCK PROPIO************************************************************/
@@ -144,7 +147,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         arrayComponentes.push(articulo[j]["ID Articulo Componente"]);
                     }
 
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 147', 'arrayComponentes: ' + JSON.stringify(arrayComponentes));
+                    log.debug('Creación OV (SS) - beforeSubmit', 'arrayComponentes: ' + JSON.stringify(arrayComponentes));
 
                     var arraySearchParams = new Array();
                     var objParam = new Object();
@@ -162,12 +165,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     var objResultSet = utilities.searchSavedPro('customsearch_3k_stock_terceros', arraySearchParams);
 
                     if (objResultSet.error) {
-                        mensajeError = objResultSet.descripcion.toString();
+                        mensajeError = mensajeError + ' ' + objResultSet.descripcion.toString();
                     }
 
                     var stockTerceros = objResultSet.objRsponseFunction.array;
 
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 170', 'stockTerceros: ' +JSON.stringify(stockTerceros));
+                    log.debug('Creación OV (SS) - beforeSubmit', 'stockTerceros: ' + JSON.stringify(stockTerceros));
 
                     var arraySearchParams = new Array();
                     var objParam = new Object();
@@ -185,18 +188,18 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     var objResultSet = utilities.searchSavedPro('customsearch_3k_articulo_disponible', arraySearchParams);
 
                     if (objResultSet.error) {
-                        mensajeError = objResultSet.descripcion.toString();
+                        mensajeError = mensajeError + ' ' + objResultSet.descripcion.toString();
                     }
 
                     var stockComponentes = objResultSet.objRsponseFunction.array;
 
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 193', 'stockComponentes: ' +JSON.stringify(stockComponentes));                
+                    log.debug('Creación OV (SS) - beforeSubmit', 'stockComponentes: ' + JSON.stringify(stockComponentes));
 
                     var arrayLineaPila = new Array();
                     var arrayOV = new Array();
-                    
+
                     for (var i = 0; i < arrayItems.length; i++) {
-                        if (!utilities.isEmpty(arrayItems[i].articulo)){
+                        if (!utilities.isEmpty(arrayItems[i].articulo)) {
                             var arrayLinea = new Array();
                             var articuloFilter = articulo.filter(function (obj) {
                                 return (obj.internalid == arrayItems[i].articulo);
@@ -218,14 +221,18 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             objLinea.isChange = false;
                             objLinea.sitio = sitio;
 
-                            log.debug('Creación OV (SS) - BeforeSubmit - LINE 221', 'articuloFilter cantidad: ' + articuloFilter.length);
+                            log.debug('Creación OV (SS) - beforeSubmit', 'articuloFilter cantidad: ' + articuloFilter.length);
                             if (articuloFilter.length > 0 && !utilities.isEmpty(articuloFilter)) {
-                                log.debug('Creación OV (SS) - BeforeSubmit - LINE 223', 'articuloFilter[0]["Articulo Principal Tipo Servicio"]: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"]);
+                                log.debug('Creación OV (SS) - beforeSubmit', 'articuloFilter[0]["Articulo Principal Tipo Servicio"]: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"]);
 
                                 if (articuloFilter[0]["Articulo Principal Tipo Servicio"] == "N") {
+                                    if (i == 0) {
+                                        var servicioOV = false;
+                                        log.debug('Creación OV (SS) - beforeSubmit', 'OV TIPO PRODUCTO');
+                                    }
                                     //informacion.orden[j].articulo = articuloFilter;
                                     var mainCategory = articuloFilter[0]["Main Category"];
-                                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 228', 'mainCategory: ' + mainCategory + ' articuloFilter array: ' + JSON.stringify(articuloFilter));
+                                    log.debug('Creación OV (SS) - beforeSubmit', 'mainCategory: ' + mainCategory + ' articuloFilter array: ' + JSON.stringify(articuloFilter));
                                     objLinea.mainCategory = mainCategory;
                                     for (var j = 0; j < articuloFilter.length; j++) {
                                         var cantidadStock = 0;
@@ -237,10 +244,10 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                             var componenteFilter = stockComponentes.filter(function (obj) {
                                                 return (obj.internalid == articuloFilter[j]["ID Articulo Componente"]);
                                             });
-                                            log.debug('Creación OV (SS) - BeforeSubmit - LINE 240', 'idComponente: ' + articuloFilter[j]["ID Articulo Componente"]);
-                                            log.debug('Creación OV (SS) - BeforeSubmit - LINE 241', 'componenteFilter array: ' + JSON.stringify(componenteFilter));
+                                            log.debug('Creación OV (SS) - beforeSubmit', 'idComponente: ' + articuloFilter[j]["ID Articulo Componente"]);
+                                            log.debug('Creación OV (SS) - beforeSubmit', 'componenteFilter array: ' + JSON.stringify(componenteFilter));
 
-                                            log.debug('Creación OV (SS) - BeforeSubmit - LINE 243', 'componenteFilter[0].quantityavailable: ' + componenteFilter[0].locationquantityavailable);
+                                            log.debug('Creación OV (SS) - beforeSubmit', 'componenteFilter[0].quantityavailable: ' + componenteFilter[0].locationquantityavailable);
                                             if (componenteFilter[0].locationquantityavailable >= arrayItems[i].cantidad * articuloFilter[j]["Cantidad Componente"]) {
                                                 //NO PILA
                                                 objLinea.isStockPropio = true;
@@ -249,31 +256,26 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                 });
 
                                                 if (utilities.isEmpty(lineaFilter) || lineaFilter.length <= 0) {
-                                                    //objLinea.pilas = pilas;
                                                     arrayLinea.push(JSON.parse(JSON.stringify(objLinea)));
                                                     arrayOV.push(JSON.parse(JSON.stringify(objLinea)));
-                                                }             
+                                                }
                                                 objLinea.cantidad = (arrayItems[i].cantidad * articuloFilter[j]["Cantidad Componente"]).toString();
                                                 objLinea.cantidadComponente = articuloFilter[j]["Cantidad Componente"];
-                                                //arrayLineaPila.push(JSON.parse(JSON.stringify(objLinea)));
                                                 cantidadStock = stockComponentes[componenteFilter[0].indice].locationquantityavailable - (arrayItems[i].cantidad * articuloFilter[j]["Cantidad Componente"]);
-                                                stockComponentes[componenteFilter[0].indice].locationquantityavailable = cantidadStock;                                   
-                                                log.debug('Creación OV (SS) - BeforeSubmit - LINE 261', 'STOCK PROPIO - NO GENERA REQUISICION');
-                                                //mensajeError = 'Item ' + arrayItems[i].articulo + ' con Stock Propio. No genera requisición';
+                                                stockComponentes[componenteFilter[0].indice].locationquantityavailable = cantidadStock;
+                                                log.debug('Creación OV (SS) - beforeSubmit', 'STOCK PROPIO - NO GENERA REQUISICION');
                                             } else {
                                                 //PILA
                                                 if (componenteFilter[0].locationquantityavailable > 0) {
-                                                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 266', 'STOCK PROPIO - NO GENERA REQUISICION');
-                                                    //log.error('Creación OV (SS) - BeforeSubmit - LINE 244', 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid);
-                                                    //mensajeError = 'Item ' + arrayItems[i].articulo + ' con Stock Propio. No genera requisición';
+                                                    log.debug('Creación OV (SS) - beforeSubmit', 'STOCK PROPIO - NO GENERA REQUISICION');
                                                 } else {
-                                                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 270', 'STOCK TERCERO - SI GENERA REQUISICION');
+                                                    log.debug('Creación OV (SS) - beforeSubmit - LINE 270', 'STOCK TERCERO - SI GENERA REQUISICION');
                                                     diferenciaStock = (arrayItems[i].cantidad * articuloFilter[j]["Cantidad Componente"]) - componenteFilter[0].locationquantityavailable;
                                                     var indice = 0;
                                                     var stockFilter = stockTerceros.filter(function (obj) {
                                                         return (obj["ID interno"] == articuloFilter[j]["ID Articulo Componente"]);
                                                     });
-                                                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 276', 'stockFilter: ' + JSON.stringify(stockFilter));
+                                                    log.debug('Creación OV (SS) - beforeSubmit', 'stockFilter: ' + JSON.stringify(stockFilter));
                                                     do {
                                                         if (!utilities.isEmpty(stockFilter) && stockFilter.length > 0) {
                                                             var insertarPila = true;
@@ -284,13 +286,13 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                                 diferenciaStock = 0;
                                                             } else {
                                                                 if (stockFilter[indice]["Stock Disponible"] > 0) {
-                                                                    log.error('Creación OV (SS) - BeforeSubmit - LINE 287', 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid);
+                                                                    log.error('Creación OV (SS) - beforeSubmit', 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid);
                                                                 } else {
                                                                     insertarPila = false;
                                                                 }
                                                             }
                                                             if (insertarPila) {
-                                                                log.debug('Creación OV (SS) - BeforeSubmit - LINE 293', 'insertarPila');
+                                                                log.debug('Creación OV (SS) - beforeSubmit', 'insertarPila');
                                                                 objLinea.isStockPropio = false;
                                                                 objLinea.pila = stockFilter[indice].internalid;
                                                                 var lineaFilter = arrayLinea.filter(function (obj) {
@@ -305,7 +307,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                                 objLinea.cantidad = arrayItems[i].cantidad * articuloFilter[j]["Cantidad Componente"];
                                                                 objLinea.cantidadComponente = articuloFilter[j]["Cantidad Componente"];
                                                                 arrayLineaPila.push(JSON.parse(JSON.stringify(objLinea)));
-                                                                log.debug('Creación OV (SS) - BeforeSubmit - LINE 308', 'Stock Propio insuficiente para el articulo: ' + articuloFilter[j].internalid + ', cantidadDisponible Stock Tercero: ' + stockFilter[indice]["Stock Disponible"]);
+                                                                log.debug('Creación OV (SS) - beforeSubmit', 'Stock Propio insuficiente para el articulo: ' + articuloFilter[j].internalid + ', cantidadDisponible Stock Tercero: ' + stockFilter[indice]["Stock Disponible"]);
                                                             }
                                                             indice++;
                                                         }
@@ -316,36 +318,36 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                         objRespuestaParcial = new Object();
                                                         objRespuestaParcial.codigo = 'UCOV001';
                                                         objRespuestaParcial.mensaje = 'Item ' + arrayItems[i].articuloDes + ' no posee Stock Propio ni Stock Tercero Vigente, por lo cual no genera Requisición de Compra.';
-                                                        mensajeError = objRespuestaParcial.mensaje.toString();
+                                                        mensajeError = mensajeError + ' ' +  objRespuestaParcial.mensaje.toString();
                                                         objRespuesta.detalle.push(objRespuestaParcial);
-                                                        log.error('Creación OV (SS) - BeforeSubmit - LINE 321', 'UCOV001 - Item ' + arrayItems[i].articuloDes + ' no posee Stock Propio ni Stock Tercero Vigente, por lo cual no genera Requisición de Compra.');
+                                                        log.error('Creación OV (SS) - beforeSubmit', 'UCOV001 - Item ' + arrayItems[i].articuloDes + ' no posee Stock Propio ni Stock Tercero Vigente, por lo cual no genera Requisición de Compra.');
                                                     }
                                                 } // end else pila
                                             } // end else cantidad stock propio < requerido -> posible pila 
-                                        } else {                                            
+                                        } else {
                                             if (articuloFilter[j]["Articulo Componente Tipo Servicio"] == "S") {
                                                 objLinea.isStockPropio = true;
                                                 objLinea.componente = articuloFilter[j]["ID Articulo Componente"];
-                                                //objLinea.cantidad = informacion.orden[i].cantidadTotalCupones.toString();
                                                 objLinea.cantidad = (arrayItems[i].cantidad * articuloFilter[j]["Cantidad Componente"]).toString();
                                                 objLinea.cantidadComponente = articuloFilter[j]["Cantidad Componente"];
-                                                //objLinea.isService = true;
-                                                //arrayLineaPila.push(JSON.parse(JSON.stringify(objLinea)));
                                             } else {
                                                 objRespuesta.error = true;
                                                 objRespuestaParcial = new Object();
                                                 objRespuestaParcial.codigo = 'UCOV002';
                                                 objRespuestaParcial.mensaje += 'Tipo de Articulo desconocido: ' + articuloFilter[j]["Articulo Componente Tipo Servicio"] + ' en el articulo: ' + articuloFilter[j].internalid + ' en el articulo componente: ' + articuloFilter[j]["ID Articulo Componente"];
                                                 objRespuesta.detalle.push(objRespuestaParcial);
-                                                //objRespuesta.tipoError = 'RORV011';
-                                                //objRespuesta.message += 'Tipo de Articulo desconocido: ' + articuloFilter[j]["Articulo Componente Tipo Servicio"] + ' en el articulo: ' + articuloFilter[j].internalid + ' en el articulol componente: ' + articuloFilter[j]["ID Articulo Componente"];
-                                                log.error('Creación OV (SS) - BeforeSubmit - LINE 342', 'UCOV002 - Tipo de Articulo desconocido: ' + articuloFilter[j]["Articulo Componente Tipo Servicio"] + ' en el articulo: ' + articuloFilter[j].internalid + ' en el articulo componente: ' + articuloFilter[j]["ID Articulo Componente"]);
-                                                //return objRespuesta;
+                                                log.error('Creación OV (SS) - beforeSubmit', 'UCOV002 - Tipo de Articulo desconocido: ' + articuloFilter[j]["Articulo Componente Tipo Servicio"] + ' en el articulo: ' + articuloFilter[j].internalid + ' en el articulo componente: ' + articuloFilter[j]["ID Articulo Componente"]);
                                             }
                                         }
                                     } //end for
                                 } else {
                                     if (articuloFilter[0]["Articulo Principal Tipo Servicio"] == "S") {
+
+                                        if (i == 0) {
+                                            var servicioOV = true;
+                                            log.debug('Creación OV (SS) - beforeSubmit', 'OV TIPO SERVICIO');
+                                        }
+
                                         objLinea.isStockPropio = true;
                                         objLinea.isService = true;
                                         objLinea.componente = articuloFilter[0]["ID Articulo Componente"];
@@ -355,25 +357,19 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                             return (obj.articulo == arrayItems[i].articulo);
                                         });
                                         if (utilities.isEmpty(lineaFilter) || lineaFilter.length <= 0) {
-                                            //objLinea.pilas = pilas;
                                             arrayLinea.push(JSON.parse(JSON.stringify(objLinea)));
                                             arrayOV.push(JSON.parse(JSON.stringify(objLinea)));
                                         }
 
                                         objLinea.cantidadComponente = articuloFilter[0]["Cantidad Componente"];
-                                        //arrayLineaPila.push(JSON.parse(JSON.stringify(objLinea)));
 
                                     } else {
                                         objRespuesta.error = true;
                                         objRespuestaParcial = new Object();
                                         objRespuestaParcial.codigo = 'UCOV002';
                                         objRespuestaParcial.mensaje = 'Tipo de Articulo desconocido: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"] + ' en el articulo: ' + articuloFilter[0].internalid;
-                                        //mensajeError = objRespuestaParcial.mensaje.toString();
                                         objRespuesta.detalle.push(objRespuestaParcial);
-                                        //objRespuesta.tipoError = 'RORV011';
-                                        //objRespuesta.message += 'Tipo de Articulo desconocido: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"] + ' en el articulo: ' + articuloFilter[0].internalid;
-                                        log.error('Creación OV (SS) - BeforeSubmit - LINE 375', 'UCOV002 - Tipo de Articulo desconocido: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"] + ' en el articulo: ' + articuloFilter[0].internalid);
-                                        //return objRespuesta;
+                                        log.error('Creación OV (SS) - beforeSubmit', 'UCOV002 - Tipo de Articulo desconocido: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"] + ' en el articulo: ' + articuloFilter[0].internalid);
                                     }
                                 }
 
@@ -384,11 +380,10 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
 
                         for (var m = 0; m < arrayLinea.length; m++) {
-
                             //NUEVA LINEA
                             var lineNum = i;
 
-                            //SE SETEAN LOS CAMPOS
+                            //SE SETEAN SI EL ITEM TENE O NO STOCK PROPIO
                             objRecord.setSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_stock_propio',
@@ -396,21 +391,20 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                 value: arrayLinea[m].isStockPropio
                             });
 
-                            objRecord.setSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_servicio',
-                                line: lineNum,
-                                value: arrayLinea[m].isService
-                            });                        
-
                         }
 
                     }
+                    log.debug('Creación OV (SS) - beforeSubmit', 'servicioOV: ' + servicioOV);
 
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 410', 'arrayLinea lineas OV: ' + JSON.stringify(arrayLinea));
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 411', 'arrayLineaPila lineas requi: ' + JSON.stringify(arrayLineaPila));
+                    objRecord.setValue({
+                        fieldId: 'custbody_3k_ov_servicio',
+                        value: servicioOV
+                    });
 
-                    var crearRequisiciones = creacionRequisiciones(objRecord,arrayLineaPila,fecha);
+                    log.debug('Creación OV (SS) - beforeSubmit', 'arrayLinea lineas OV: ' + JSON.stringify(arrayLinea));
+                    log.debug('Creación OV (SS) - beforeSubmit', 'arrayLineaPila lineas requi: ' + JSON.stringify(arrayLineaPila));
+
+                    var crearRequisiciones = creacionRequisiciones(objRecord, arrayLineaPila, fecha);
 
                 } catch (excepcion) {
                     error = true;
@@ -420,12 +414,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     objRespuestaParcial.mensaje = excepcion;
                     objRespuesta.detalle.push(objRespuestaParcial);
                     //codigoError = 'SBOV005';
-                    log.error('Creación OV (SS) - BeforeSubmit - LINE 423', 'UCOV003 - Excepcion Grabando Orden de Venta - Excepcion : ' + excepcion.message);
-               
+                    log.error('Creación OV (SS) - beforeSubmit', 'UCOV003 - Excepcion Grabando Orden de Venta - Excepcion : ' + excepcion.message);
+
                 }
-                    
-                log.debug('Creación OV (SS) - BeforeSubmit - LINE 427', 'error: ' + error);                
-                log.debug('Creación OV (SS) - BeforeSubmit - LINE 128', 'mensajeError: ' + mensajeError);                
+
+                log.debug('Creación OV (SS) - beforeSubmit', 'error: ' + error + ' - mensajeError: ' + mensajeError);
+
                 if (error == true) {
                     // SI HUBO ALGUN ERROR, GENERAR LA OV CON ESTADO "APROBACION PENDIENTE" Y SETEAR LOG 
                     objRecord.setValue({
@@ -438,8 +432,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         value: mensajeError
                     });
 
-                    log.debug('Creación OV (SS) - BeforeSubmit - LINE 441', 'objRespuesta: ' +JSON.stringify(objRespuesta));
-                    log.error('Creación OV (SS) - BeforeSubmit - LINE 442', 'OV PENDIENTE APROBACION - PENDING APPROVAL');
+                    log.debug('Creación OV (SS) - beforeSubmit', 'objRespuesta: ' + JSON.stringify(objRespuesta));
+                    log.error('Creación OV (SS) - beforeSubmit', 'OV Creada en Estado APROBACION PENDIENTE');
                 } else {
 
                     objRecord.setValue({
@@ -449,7 +443,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                 }
 
-                log.audit('Creación OV (SS) - LINE 452', 'FIN - BeforeSubmit');
+                log.audit('Creación OV (SS)', 'FIN - beforeSubmit');
 
             }
         }
@@ -478,212 +472,219 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
             var arrayInformacionOV = new Array();
             var arrayArticulos = new Array();
             var arrayFechasProv = new Array();
-                
+
             if ((scriptContext.type == 'create') || (scriptContext.type == 'edit')) {
 
                 try {
-                //INICIO - Consultar la configuración de información de facturación genérica y setearla en la orden de venta si los datos de facturación vienen vacíos
-                log.audit('Creación OV (SS) - LINE 486', 'INICIO - afterSubmit');                
-                log.audit('Creación OV (SS) - afterSubmit - LINE 487', 'Tipo : Servidor - Evento : ' + scriptContext.type);
-                /************************************INICIO SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
+                    //INICIO - Consultar la configuración de información de facturación genérica y setearla en la orden de venta si los datos de facturación vienen vacíos
+                    log.audit('Creación OV (SS)', 'INICIO - afterSubmit');
+                    log.audit('Creación OV (SS) - afterSubmit', 'Tipo : Servidor - Evento : ' + scriptContext.type);
+                    /************************************INICIO SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
 
-                var recId = scriptContext.newRecord.id;
-                var recType = scriptContext.newRecord.type;
+                    var recId = scriptContext.newRecord.id;
+                    var recType = scriptContext.newRecord.type;
 
-                var objRecord = record.load({
-                                type: recType, 
-                                id: recId,
-                                isDynamic: true,
-                        });
-
-                var idOV = objRecord.id;
-
-                var dirOV = objRecord.getValue({
-                    fieldId: 'billaddress'
-                });
-
-
-                log.debug('Creación OV (SS) - afterSubmit - LINE 506', 'idOV: ' + idOV + ', dirOV: ' + dirOV);
-
-                //Si la dirección de facturación viene vacía, consultar en el SS la configuración de dirección de facturación genérica
-                if (utilities.isEmpty(dirOV)){
-                    var searchConfDomicilio = utilities.searchSavedPro('customsearch_3k_conf_dom_fact');
-                    log.debug('Creación OV (SS) - afterSubmit - LINE 511', 'searchConfDomicilio: ' + JSON.stringify(searchConfDomicilio));
-
-                    if (!utilities.isEmpty(searchConfDomicilio) && searchConfDomicilio.error == false) {
-                        if (!utilities.isEmpty(searchConfDomicilio.objRsponseFunction.result) && searchConfDomicilio.objRsponseFunction.result.length > 0) {
-
-                            var resultSet = searchConfDomicilio.objRsponseFunction.result;
-                            var resultSearch = searchConfDomicilio.objRsponseFunction.search;
-
-                            var direccionGenerica = resultSet[0].getValue({
-                                name: resultSearch.columns[1]
-                            });
-
-                            var ciudadGenerica = resultSet[0].getValue({
-                                name: resultSearch.columns[2]
-                            });
-
-                            log.debug('Creación OV (SS) - afterSubmit - LINE 527', 'direccionGenerica: ' + direccionGenerica + ', ciudadGenerica: ' + ciudadGenerica);
-
-                            var subrecord = objRecord.getSubrecord({
-                                    fieldId: 'billingaddress'
-                            });
-
-                            log.debug('Creación OV (SS) - afterSubmit - LINE 533', 'subrecord: ' + JSON.stringify(subrecord));
-
-                            subrecord.setValue({
-                                fieldId: 'addr1',
-                                value: direccionGenerica
-                            });
-
-                            subrecord.setValue({
-                                fieldId: 'city',
-                                value: ciudadGenerica
-                            });
-                            var idTmp = objRecord.save();
-                        } else {
-                            error = true;
-                            respuesta.error = true;
-                            respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV004';
-                            respuestaParcial.mensaje = 'Error Consultando Domicilio Generico de Facturacion - Error : No se encontro la Configuracion Generica de Domicilio de Facturacion';
-                            mensajeError = respuestaParcial.mensaje.toString();
-                            respuesta.detalle.push(respuestaParcial);
-                            log.error('Creación OV (SS) - afterSubmit - LINE 553', 'UCOV004 - Error Consultando Domicilio Generico de Facturacion - Error : No se encontro la Configuracion Generica de Domicilio de Facturacion');                           
-                        }
-                    } else {
-                        if (utilities.isEmpty(searchConfDomicilio)) {
-                            error = true;
-                            respuesta.error = true;
-                            respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV005';
-                            respuestaParcial.mensaje = 'Error Consultando Domicilio Generico de Facturacion - Error : No se recibio Respuesta del Proceso de Busqueda del Domicilio Generico de Facturacion';
-                            mensajeError = respuestaParcial.mensaje.toString();
-                            respuesta.detalle.push(respuestaParcial);
-                            log.error('Creación OV (SS) - afterSubmit - LINE 564', 'UCOV005 - Error Consultando Domicilio Generico de Facturacion - Error : No se recibio Respuesta del Proceso de Busqueda del Domicilio Generico de Facturacion');                           
-                        } else {
-                            error = true;
-                            respuesta.error = true;
-                            respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV006';
-                            respuestaParcial.mensaje = 'Error Consultando Domicilio Generico de Facturacion - Error : ' + searchConfDomicilio.tipoError + ' - Descripcion : ' + searchConfDomicilio.descripcion;
-                            mensajeError = respuestaParcial.mensaje.toString();
-                            respuesta.detalle.push(respuestaParcial);
-                            log.error('Creación OV (SS) - afterSubmit - LINE 573', 'UCOV006 - Consultando Domicilio Generico de Facturacion - Error : ' + searchConfDomicilio.tipoError + ' - Descripcion : ' + searchConfDomicilio.descripcion);                           
-                        }
-                    }
-
-                }
-
-                //FIN - Consultar la configuración de información de facturación genérica y setearla en la orden de venta si los datos de facturación vienen vacíos
-
-                //INICIO - Cálculo y actualización de la fecha de entrega de proveedor.
-
-                var numLines = objRecord.getLineCount({
-                    sublistId: 'item'
-                });
-
-                log.debug('Creación OV (SS) - afterSubmit - LINE 587', 'numLines: ' + numLines);
-
-                for (var i=0; !utilities.isEmpty(numLines) && i < numLines; i++){                        
-                    var objJSON = new Object({});
-
-                    objJSON.articulo = objRecord.getSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'item',
-                        line: i
+                    var objRecord = record.load({
+                        type: recType,
+                        id: recId,
+                        isDynamic: true,
                     });
 
-                    arrayArticulos.push(objJSON);     
-                }
+                    var idOV = objRecord.id;
 
-                log.debug('Creación OV (SS) - afterSubmit - LINE 601', 'arrayArticulos: ' +JSON.stringify(arrayArticulos));
+                    var dirOV = objRecord.getValue({
+                        fieldId: 'billaddress'
+                    });
+
+                    var logNS = objRecord.getValue({
+                        fieldId: 'custbody_3k_netsuite_ov'
+                    });
+
+                    log.debug('Creación OV (SS) - afterSubmit', 'idOV: ' + idOV + ', dirOV: ' + dirOV);
+
+                    //Si la dirección de facturación viene vacía, consultar en el SS la configuración de dirección de facturación genérica
+                    if (utilities.isEmpty(dirOV)) {
+                        var searchConfDomicilio = utilities.searchSavedPro('customsearch_3k_conf_dom_fact');
+                        log.debug('Creación OV (SS) - afterSubmit', 'searchConfDomicilio: ' + JSON.stringify(searchConfDomicilio));
+
+                        if (!utilities.isEmpty(searchConfDomicilio) && searchConfDomicilio.error == false) {
+                            if (!utilities.isEmpty(searchConfDomicilio.objRsponseFunction.result) && searchConfDomicilio.objRsponseFunction.result.length > 0) {
+
+                                var resultSet = searchConfDomicilio.objRsponseFunction.result;
+                                var resultSearch = searchConfDomicilio.objRsponseFunction.search;
+
+                                var direccionGenerica = resultSet[0].getValue({
+                                    name: resultSearch.columns[1]
+                                });
+
+                                var ciudadGenerica = resultSet[0].getValue({
+                                    name: resultSearch.columns[2]
+                                });
+
+                                log.debug('Creación OV (SS) - afterSubmit', 'direccionGenerica: ' + direccionGenerica + ', ciudadGenerica: ' + ciudadGenerica);
+
+                                var subrecord = objRecord.getSubrecord({
+                                    fieldId: 'billingaddress'
+                                });
+
+                                subrecord.setValue({
+                                    fieldId: 'addr1',
+                                    value: direccionGenerica
+                                });
+
+                                subrecord.setValue({
+                                    fieldId: 'city',
+                                    value: ciudadGenerica
+                                });
+                                var idTmp = objRecord.save();
+                            } else {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV004';
+                                respuestaParcial.mensaje = 'Error Consultando Domicilio Generico de Facturacion - Error : No se encontro la Configuracion Generica de Domicilio de Facturacion';
+                                mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                                respuesta.detalle.push(respuestaParcial);
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV004 - Error Consultando Domicilio Generico de Facturacion - Error : No se encontro la Configuracion Generica de Domicilio de Facturacion');
+                            }
+                        } else {
+                            if (utilities.isEmpty(searchConfDomicilio)) {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV005';
+                                respuestaParcial.mensaje = 'Error Consultando Domicilio Generico de Facturacion - Error : No se recibio Respuesta del Proceso de Busqueda del Domicilio Generico de Facturacion';
+                                mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                                respuesta.detalle.push(respuestaParcial);
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV005 - Error Consultando Domicilio Generico de Facturacion - Error : No se recibio Respuesta del Proceso de Busqueda del Domicilio Generico de Facturacion');
+                            } else {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV006';
+                                respuestaParcial.mensaje = 'Error Consultando Domicilio Generico de Facturacion - Error : ' + searchConfDomicilio.tipoError + ' - Descripcion : ' + searchConfDomicilio.descripcion;
+                                mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                                respuesta.detalle.push(respuestaParcial);
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV006 - Consultando Domicilio Generico de Facturacion - Error : ' + searchConfDomicilio.tipoError + ' - Descripcion : ' + searchConfDomicilio.descripcion);
+                            }
+                        }
+
+                    }
+
+                    //FIN - Consultar la configuración de información de facturación genérica y setearla en la orden de venta si los datos de facturación vienen vacíos
+
+                    //INICIO - Cálculo y actualización de la fecha de entrega de proveedor.
+
+                    var numLines = objRecord.getLineCount({
+                        sublistId: 'item'
+                    });
+
+                    log.debug('Creación OV (SS) - afterSubmit', 'numLines: ' + numLines);
+
+                    for (var i = 0; !utilities.isEmpty(numLines) && i < numLines; i++) {
+                        var objJSON = new Object({});
+
+                        objJSON.articulo = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            line: i
+                        });
+
+                        arrayArticulos.push(objJSON);
+                    }
+
+                    log.debug('Creación OV (SS) - afterSubmit', 'arrayArticulos: ' + JSON.stringify(arrayArticulos));
 
 
-               // INICIO - Obtener Dias Pedidos Proveedores
-                var arrayDiasPedidoProveedor = new Array();
+                    // INICIO - Obtener Dias Pedidos Proveedores
+                    var arrayDiasPedidoProveedor = new Array();
 
-                var respDiasPedidosProv = obtenerInformacionProveedores();
+                    var respDiasPedidosProv = obtenerInformacionProveedores();
 
-                if (!utilities.isEmpty(respDiasPedidosProv) && respDiasPedidosProv.error == false && respDiasPedidosProv.arrayDiasPedidoProveedor.length > 0) {
-                    arrayDiasPedidoProveedor = respDiasPedidosProv.arrayDiasPedidoProveedor;
-                } else {
-                    if (utilities.isEmpty(respDiasPedidosProv)) {
-                        respuesta.error = true;
-                        respuestaParcial = new Object();
-                        respuestaParcial.codigo = 'UCOV007';
-                        respuestaParcial.mensaje = 'Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de la Consulta de Dias de Pedidos de Proveedores';
-                        log.error('Creación OV (SS) - afterSubmit - LINE 617', 'UCOV007 - Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de la Consulta de Dias de Pedidos de Proveedores');                                                   
-                        mensajeError = respuestaParcial.mensaje.toString();
-                        respuesta.detalle.push(respuestaParcial);
+                    if (!utilities.isEmpty(respDiasPedidosProv) && respDiasPedidosProv.error == false && respDiasPedidosProv.arrayDiasPedidoProveedor.length > 0) {
+                        arrayDiasPedidoProveedor = respDiasPedidosProv.arrayDiasPedidoProveedor;
                     } else {
-                        if (respDiasNoLab.error == true) {
+                        if (utilities.isEmpty(respDiasPedidosProv)) {
+                            error = true;
                             respuesta.error = true;
                             respuestaParcial = new Object();
                             respuestaParcial.codigo = 'UCOV007';
-                            respuestaParcial.mensaje = 'Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - Error : ' + respDiasPedidosProv.tipoError + ' - Descripcion : ' + respDiasPedidosProv.mensaje;
-                            log.error('Creación OV (SS) - afterSubmit - LINE 626', 'UCOV007 - Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - Error : ' + respDiasPedidosProv.tipoError + ' - Descripcion : ' + respDiasPedidosProv.mensaje);                                                                               
-                            mensajeError = respuestaParcial.mensaje.toString();
+                            respuestaParcial.mensaje = 'Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de la Consulta de Dias de Pedidos de Proveedores';
+                            log.error('Creación OV (SS) - afterSubmit', 'UCOV007 - Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de la Consulta de Dias de Pedidos de Proveedores');
+                            mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
                             respuesta.detalle.push(respuestaParcial);
                         } else {
-                            respuesta.error = true;
-                            respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV007';
-                            respuestaParcial.mensaje = 'Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de Array con Dias de Pedido de Proveedores';
-                            log.error('Creación OV (SS) - afterSubmit - LINE 634', 'UCOV007 - Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de Array con Dias de Pedido de Proveedores');                                                                               
-                            mensajeError = respuestaParcial.mensaje.toString();
-                            respuesta.detalle.push(respuestaParcial);
+                            if (respDiasNoLab.error == true) {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV007';
+                                respuestaParcial.mensaje = 'Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - Error : ' + respDiasPedidosProv.tipoError + ' - Descripcion : ' + respDiasPedidosProv.mensaje;
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV007 - Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - Error : ' + respDiasPedidosProv.tipoError + ' - Descripcion : ' + respDiasPedidosProv.mensaje);
+                                mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                                respuesta.detalle.push(respuestaParcial);
+                            } else {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV007';
+                                respuestaParcial.mensaje = 'Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de Array con Dias de Pedido de Proveedores';
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV007 - Error Obteniendo Dias de Pedidos de los Proveedores para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de Array con Dias de Pedido de Proveedores');
+                                mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                                respuesta.detalle.push(respuestaParcial);
+                            }
                         }
+                        //return respuesta;
                     }
-                    //return respuesta;
-                }
-                // FIN - Obtener Dias Pedidos Proveedores
-                //log.debug('Creación OV (SS) - LINE 362', 'AfterSubmit - arrayDiasPedidoProveedor: ' + JSON.stringify(arrayDiasPedidoProveedor));
-                log.debug('Creación OV (SS) - afterSubmit - LINE 643', 'arrayDiasPedidoProveedor.length: ' + JSON.stringify(arrayDiasPedidoProveedor.length));
+                    // FIN - Obtener Dias Pedidos Proveedores
+                    //log.debug('Creación OV (SS) - LINE 362', 'AfterSubmit - arrayDiasPedidoProveedor: ' + JSON.stringify(arrayDiasPedidoProveedor));
+                    log.debug('Creación OV (SS) - afterSubmit', 'arrayDiasPedidoProveedor.length: ' + JSON.stringify(arrayDiasPedidoProveedor.length));
 
-                // INICIO - Obtener Array de Dias No Laborables
-                var respDiasNoLab = consultarDiasNoLoborables();
+                    // INICIO - Obtener Array de Dias No Laborables
+                    var respDiasNoLab = consultarDiasNoLoborables();
 
 
-                if (!utilities.isEmpty(respDiasNoLab) && respDiasNoLab.error == false && respDiasNoLab.arrayDiasNoLaborables.length > 0) {
-                    arrayDiasNoLaborables = respDiasNoLab.arrayDiasNoLaborables;
-                } else {
-                    if (utilities.isEmpty(respDiasNoLab)) {
-                        respuesta.error = true;
-                        respuestaParcial = new Object();
-                        respuestaParcial.codigo = 'UCOV008';
-                        respuestaParcial.mensaje = 'Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de la Consulta de Dias No Laborables';
-                        log.error('Creación OV (SS) - afterSubmit - LINE 657', 'UCOV008 - Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de la Consulta de Dias No Laborables');                                                                               
-                        mensajeError = respuestaParcial.mensaje.toString();
-                        respuesta.detalle.push(respuestaParcial);
+                    if (!utilities.isEmpty(respDiasNoLab) && respDiasNoLab.error == false && respDiasNoLab.arrayDiasNoLaborables.length > 0) {
+                        arrayDiasNoLaborables = respDiasNoLab.arrayDiasNoLaborables;
                     } else {
-                        if (respDiasNoLab.error == true) {
+                        if (utilities.isEmpty(respDiasNoLab)) {
+                            error = true;
                             respuesta.error = true;
                             respuestaParcial = new Object();
                             respuestaParcial.codigo = 'UCOV008';
-                            respuestaParcial.mensaje = 'Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - Error : ' + respDiasNoLab.tipoError + ' - Descripcion : ' + respDiasNoLab.mensaje;
-                            log.error('Creación OV (SS) - afterSubmit - LINE 666', 'UCOV008 - Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - Error : ' + respDiasNoLab.tipoError + ' - Descripcion : ' + respDiasNoLab.mensaje);                                                                                                           
-                            mensajeError = respuestaParcial.mensaje.toString();
+                            respuestaParcial.mensaje = 'Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de la Consulta de Dias No Laborables';
+                            log.error('Creación OV (SS) - afterSubmit', 'UCOV008 - Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de la Consulta de Dias No Laborables');
+                            mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
                             respuesta.detalle.push(respuestaParcial);
                         } else {
-                            respuesta.error = true;
-                            respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV008';
-                            respuestaParcial.mensaje = 'Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de Array con Dias No Laborables';
-                            log.error('Creación OV (SS) - afterSubmit - LINE 674', 'UCOV008 - Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de Array con Dias No Laborables');                                                                                                           
-                            mensajeError = respuestaParcial.mensaje.toString();
-                            respuesta.detalle.push(respuestaParcial);
+                            if (respDiasNoLab.error == true) {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV008';
+                                respuestaParcial.mensaje = 'Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - Error : ' + respDiasNoLab.tipoError + ' - Descripcion : ' + respDiasNoLab.mensaje;
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV008 - Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - Error : ' + respDiasNoLab.tipoError + ' - Descripcion : ' + respDiasNoLab.mensaje);
+                                mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                                respuesta.detalle.push(respuestaParcial);
+                            } else {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV008';
+                                respuestaParcial.mensaje = 'Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de Array con Dias No Laborables';
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV008 - Error Obteniendo Calendario de Dias No Laborables para la Orden de Venta con ID Interno : ' + idOV + ' - No se Recibio Informacion de Array con Dias No Laborables');
+                                mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                                respuesta.detalle.push(respuestaParcial);
+                            }
                         }
+                        //return respuesta;
                     }
-                    //return respuesta;
-                }
 
-                //log.debug('Creación OV (SS) - LINE 396', 'AfterSubmit - arrayDiasNoLaborables: ' + JSON.stringify(arrayDiasNoLaborables));
-                log.debug('Creación OV (SS) - afterSubmit - LINE 683', 'arrayDiasNoLaborables.length: ' + JSON.stringify(arrayDiasNoLaborables.length));
-                //FIN - Cálculo y actualización de la fecha de entrega de proveedor.
-                log.debug('Creación OV (SS) - afterSubmit - LINE 685', 'idOV: ' + idOV)
-                if (!utilities.isEmpty(idOV)) {
+                    //log.debug('Creación OV (SS) - LINE 396', 'AfterSubmit - arrayDiasNoLaborables: ' + JSON.stringify(arrayDiasNoLaborables));
+                    log.debug('Creación OV (SS) - afterSubmit', 'arrayDiasNoLaborables.length: ' + JSON.stringify(arrayDiasNoLaborables.length));
+                    //FIN - Cálculo y actualización de la fecha de entrega de proveedor.
+                    log.debug('Creación OV (SS) - afterSubmit', 'idOV: ' + idOV)
+                    if (!utilities.isEmpty(idOV)) {
 
                         var objRecord = record.load({
                             type: record.Type.SALES_ORDER,
@@ -691,15 +692,19 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             isDynamic: true
                         });
 
-                    // INICIO GENERAR AJUSTE POR REDONDEO
+                        // INICIO GENERAR AJUSTE POR REDONDEO
 
-                    var respuestaAjusteRedondeo = generarAjusteRedondeo(idOV, objRecord);
+                        var respuestaAjusteRedondeo = generarAjusteRedondeo(null, objRecord);
 
-                    log.debug('Creación OV (SS) - afterSubmit - LINE 698', 'respuestaAjusteRedondeo: ' + JSON.stringify(respuestaAjusteRedondeo));
-                    // FIN GENERAR AJUSTE POR REDONDEO
-                    if (respuestaAjusteRedondeo.error != true) {
+                        log.debug('Creación OV (SS) - afterSubmit', 'respuestaAjusteRedondeo: ' + JSON.stringify(respuestaAjusteRedondeo));
+                        // FIN GENERAR AJUSTE POR REDONDEO
+                        if (respuestaAjusteRedondeo.error == true) {
+                            error = true;
+                            mensajeError = mensajeError + ' ' + respuestaAjusteRedondeo.mensajeError;
+                            respuesta = respuestaAjusteRedondeo;
+                        }
                         //objRecord = respuestaAjusteRedondeo.registro;
-                        log.debug('Creación OV (SS) - afterSubmit - LINE 702', 'objRecord: ' + JSON.stringify(objRecord));
+                        //log.debug('Creación OV (SS) - afterSubmit - LINE 702', 'objRecord: ' + JSON.stringify(objRecord));
                         if (!utilities.isEmpty(objRecord)) {
                             var cantidadLineasOV = objRecord.getLineCount({
                                 sublistId: 'item'
@@ -708,350 +713,318 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                 sublistId: 'recmachcustrecord_3k_req_compra_ov'
                             });
 
-                            log.audit('Creación OV (SS) - afterSubmit - LINE 711', 'cantidadLineasOV: ' + cantidadLineasOV + ', cantidadLineasREQ: ' + cantidadLineasREQ);
+                            log.audit('Creación OV (SS) - afterSubmit', 'cantidadLineasOV: ' + cantidadLineasOV + ', cantidadLineasREQ: ' + cantidadLineasREQ);
 
                             if (cantidadLineasOV > 0 && cantidadLineasREQ > 0) {
                                 // INICIO ACTUALIZAR REQUISICIONES
-                                log.audit('Creación OV (SS) - afterSubmit - LINE 715', 'INICIO Actualizar Requisiciones');
+                                log.audit('Creación OV (SS) - afterSubmit', 'INICIO Actualizar Requisiciones');
 
                                 var errorREQ = false;
 
-                                    for (var i = 0; i < cantidadLineasREQ; i++) {
+                                for (var i = 0; i < cantidadLineasREQ; i++) {
 
-                                        var lineNum = objRecord.selectLine({
+                                    var lineNum = objRecord.selectLine({
+                                        sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                        line: i
+                                    });
+
+
+                                    var IDInterno = objRecord.getCurrentSublistValue({
+                                        sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                        fieldId: 'internalid'
+                                    });
+
+                                    var IDArticulo = objRecord.getCurrentSublistValue({
+                                        sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                        fieldId: 'custrecord_3k_req_compra_articulo_grupo'
+                                    });
+
+                                    var IDProveedor = objRecord.getCurrentSublistValue({
+                                        sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                        fieldId: 'custrecord_3k_req_compra_proveedor'
+                                    });
+
+                                    var IDPila = objRecord.getCurrentSublistValue({
+                                        sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                        fieldId: 'custrecord_3k_req_compra_pila'
+                                    });
+
+                                    var FechaReparto = objRecord.getCurrentSublistValue({
+                                        sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                        fieldId: 'custrecord_3k_req_compra_fecha_reparto'
+                                    });
+
+                                    var informacionAdicionalOV = new Object();
+                                    informacionAdicionalOV.Articulo = IDArticulo;
+                                    informacionAdicionalOV.Proveedor = IDProveedor;
+                                    informacionAdicionalOV.Pila = IDPila;
+                                    informacionAdicionalOV.FechaReparto = FechaReparto;
+
+                                    arrayInformacionOV.push(informacionAdicionalOV);
+
+                                    //INICIO CALCULAR FECHA DE ENTREGA
+
+                                    if (!utilities.isEmpty(arrayInformacionOV) && arrayInformacionOV.length > 0) {
+                                        var objDetalleProv = arrayInformacionOV.filter(function (obj) {
+                                            return (obj.Articulo == IDArticulo);
+                                        });
+                                    }
+
+                                    var objFechaEntrega = new Object();
+                                    var fechaEntrega = '';
+
+                                    var arrayProveedores = new Array();
+                                    var stockPropio = true;
+
+                                    if (!utilities.isEmpty(objDetalleProv) && objDetalleProv.length > 0) {
+                                        for (var k = 0; k < objDetalleProv.length; k++) {
+                                            var infoProveedor = new Object();
+                                            infoProveedor.Proveedor = objDetalleProv[k].Proveedor;
+                                            infoProveedor.FechaReparto = objDetalleProv[k].FechaReparto;
+                                            arrayProveedores.push(infoProveedor);
+
+                                            if (!utilities.isEmpty(objDetalleProv[k].Pila))
+                                                stockPropio = false;
+                                        }
+                                        log.debug('Creación OV (SS) - afterSubmit', 'objDetalleProv: ' + JSON.stringify(objDetalleProv));
+                                        log.debug('Creación OV (SS) - afterSubmit', 'arrayProveedores: ' + JSON.stringify(arrayProveedores));
+                                        log.debug('Creación OV (SS) - afterSubmit', 'stockPropio: ' + JSON.stringify(stockPropio));
+
+                                        var objFechaEntrega = calcularFecha(arrayDiasNoLaborables, arrayProveedores, stockPropio, arrayDiasPedidoProveedor);
+                                        log.debug('Creación OV (SS) - afterSubmit', 'objFechaEntrega: ' + JSON.stringify(objFechaEntrega));
+
+                                        if (!utilities.isEmpty(objFechaEntrega) && objFechaEntrega.error == false) {
+                                            if (!utilities.isEmpty(objFechaEntrega.fechaBaseCalculo)) {
+                                                fechaEntrega = objFechaEntrega.fechaBaseCalculo;
+                                            } else {
+                                                respuesta.error = true;
+                                                respuestaParcial = new Object();
+                                                respuestaParcial.codigo = 'UCOV009';
+                                                respuestaParcial.mensaje = 'No se recibio fecha del proceso de calculo de fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV;
+                                                log.error('Creación OV (SS) - afterSubmit', 'UCOV009 - No se recibio fecha del proceso de calculo de fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV);
+                                                //mensajeError = respuestaParcial.mensaje.toString();
+                                                respuesta.detalle.push(respuestaParcial);
+                                            }
+                                        } else {
+                                            if (utilities.isEmpty(objFechaEntrega)) {
+                                                respuesta.error = true;
+                                                respuestaParcial = new Object();
+                                                respuestaParcial.codigo = 'UCOV010';
+                                                respuestaParcial.mensaje = 'No se recibio objeto de respuesta del proceso de calculo de fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV;
+                                                log.error('Creación OV (SS) - afterSubmit', 'UCOV010 - No se recibio objeto de respuesta del proceso de calculo de fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV);
+                                                //mensajeError = respuestaParcial.mensaje.toString();
+                                                respuesta.detalle.push(respuestaParcial);
+                                            } else {
+                                                respuesta.error = true;
+                                                respuestaParcial = new Object();
+                                                respuestaParcial.codigo = 'UCOV011';
+                                                respuestaParcial.mensaje = 'Error calculando fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV + ' - Tipo Error : ' + objFechaEntrega.tipoError + ' - Descripcion : ' + objFechaEntrega.descripcion;
+                                                log.error('Creación OV (SS) - afterSubmit', 'UCOV011 - Error calculando fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV + ' - Tipo Error : ' + objFechaEntrega.tipoError + ' - Descripcion : ' + objFechaEntrega.descripcion);
+                                                //mensajeError = respuestaParcial.mensaje.toString();
+                                                respuesta.detalle.push(respuestaParcial);
+                                            }
+                                        }
+
+                                    } else {
+                                        respuesta.error = true;
+                                        respuestaParcial = new Object();
+                                        respuestaParcial.codigo = 'UCOV012';
+                                        respuestaParcial.mensaje = 'No se encontraron Proveedores para el Articulo con ID Interno : ' + IDArticulo + '. Para configurar la Orden de Venta con ID Interno : ' + idOV;
+                                        log.error('Creación OV (SS) - afterSubmit', 'UCOV012 - No se encontraron Proveedores para el Articulo con ID Interno : ' + IDArticulo + '. Para configurar la Orden de Venta con ID Interno : ' + idOV);
+                                        mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                                        respuesta.detalle.push(respuestaParcial);
+                                    }
+
+                                    //FIN CALCULAR FECHA DE ENTREGA
+
+                                    if (!utilities.isEmpty(IDArticulo)) {
+
+                                        objRecord.setCurrentSublistValue({
                                             sublistId: 'recmachcustrecord_3k_req_compra_ov',
-                                            line: i
+                                            fieldId: 'custrecord_3k_req_compra_f_entrega',
+                                            value: fechaEntrega,
+                                            ignoreFieldChange: false
                                         });
 
 
-                                        var IDInterno = objRecord.getCurrentSublistValue({
-                                            sublistId: 'recmachcustrecord_3k_req_compra_ov',
-                                            fieldId: 'internalid'
+                                        objRecord.commitLine({
+                                            sublistId: 'recmachcustrecord_3k_req_compra_ov'
+                                        });
+
+                                        var objFechasProv = new Object();
+                                        objFechasProv.item = IDArticulo;
+                                        objFechasProv.fecha = fechaEntrega;
+                                        arrayFechasProv.push(objFechasProv);
+
+                                    } else {
+                                        errorREQ = true;
+                                        var mensaje = 'No se pudo Obtener la siguiente información Para configurar la Requisicion con ID Interno : ' + IDInterno + ' : ';
+                                        if (utilities.isEmpty(IDArticulo)) {
+                                            mensaje = mensaje + ' ID Interno del Articulo / ';
+                                        }
+                                        respuesta.error = true;
+                                        respuestaParcial = new Object();
+                                        respuestaParcial.codigo = 'UCOV013';
+                                        respuestaParcial.mensaje = mensaje;
+                                        //mensajeError = respuestaParcial.mensaje.toString();
+                                        log.error('Creación OV (SS) - afterSubmit', 'UCOV013 - ' + mensaje);
+                                        respuesta.detalle.push(respuestaParcial);
+                                    }
+
+                                }
+
+                                log.audit('Creación OV (SS) - afterSubmit', 'FIN Actualizar Requisiciones');
+
+                                // FIN ACTUALIZAR REQUISICIONES          
+
+                                // INICIO ACTUALIZAR LINEAS OV
+
+                                //var errorOV = false;
+                                //var indiceVoucher = 0;
+
+                                log.audit('Creación OV (SS) - afterSubmit', 'INICIO Actualizar Lineas OV');
+                                log.debug('Creación OV (SS) - afterSubmit', 'arrayFechasProv: ' + JSON.stringify(arrayFechasProv));
+
+                                for (var i = 0; i < cantidadLineasOV && errorREQ == false; i++) {
+                                //for (var i = 0; i < cantidadLineasOV && errorREQ == false; i++) {
+
+                                    var infoOrden = new Object();
+
+                                    var esRedondeo = objRecord.getSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: 'custcol_3k_es_redondeo',
+                                        line: i
+                                    });
+
+                                    if (!esRedondeo) {
+
+                                        var lineNum = objRecord.selectLine({
+                                            sublistId: 'item',
+                                            line: i
                                         });
 
                                         var IDArticulo = objRecord.getCurrentSublistValue({
-                                            sublistId: 'recmachcustrecord_3k_req_compra_ov',
-                                            fieldId: 'custrecord_3k_req_compra_articulo_grupo'
-                                        });
-
-                                        var IDProveedor = objRecord.getCurrentSublistValue({
-                                            sublistId: 'recmachcustrecord_3k_req_compra_ov',
-                                            fieldId: 'custrecord_3k_req_compra_proveedor'
-                                        });
-
-                                        var IDPila = objRecord.getCurrentSublistValue({
-                                            sublistId: 'recmachcustrecord_3k_req_compra_ov',
-                                            fieldId: 'custrecord_3k_req_compra_pila'
-                                        });
-
-                                        var FechaReparto = objRecord.getCurrentSublistValue({
-                                            sublistId: 'recmachcustrecord_3k_req_compra_ov',
-                                            fieldId: 'custrecord_3k_req_compra_fecha_reparto'
-                                        });
-
-                                            var informacionAdicionalOV = new Object();
-                                            informacionAdicionalOV.Articulo = IDArticulo;
-                                            informacionAdicionalOV.Proveedor = IDProveedor;
-                                            informacionAdicionalOV.Pila = IDPila;
-                                            informacionAdicionalOV.FechaReparto = FechaReparto;
-
-                                            arrayInformacionOV.push(informacionAdicionalOV);
-
-                                            //INICIO CALCULAR FECHA DE ENTREGA
-
-                                            if (!utilities.isEmpty(arrayInformacionOV) && arrayInformacionOV.length > 0) {
-                                                var objDetalleProv = arrayInformacionOV.filter(function (obj) {
-                                                    return (obj.Articulo == IDArticulo);
-                                                });
-                                            }
-
-                                            var objFechaEntrega = new Object();
-                                            var fechaEntrega = '';
-
-                                            var arrayProveedores = new Array();
-                                            var stockPropio = true;
-
-                                            if (!utilities.isEmpty(objDetalleProv) && objDetalleProv.length > 0) {
-                                                for (var k = 0; k < objDetalleProv.length; k++) {
-                                                    var infoProveedor = new Object();
-                                                    infoProveedor.Proveedor = objDetalleProv[k].Proveedor;
-                                                    infoProveedor.FechaReparto = objDetalleProv[k].FechaReparto;
-                                                    arrayProveedores.push(infoProveedor);
-
-                                                    if (!utilities.isEmpty(objDetalleProv[k].Pila))
-                                                        stockPropio = false;
-                                                }
-                                                log.debug('Creación OV (SS) - afterSubmit - LINE 784', 'objDetalleProv: ' + JSON.stringify(objDetalleProv));
-                                                log.debug('Creación OV (SS) - afterSubmit - LINE 785', 'arrayProveedores: ' + JSON.stringify(arrayProveedores));
-                                                log.debug('Creación OV (SS) - afterSubmit - LINE 786', 'stockPropio: ' + JSON.stringify(stockPropio));
-
-                                                var objFechaEntrega = calcularFecha(arrayDiasNoLaborables, arrayProveedores, stockPropio, arrayDiasPedidoProveedor);
-                                                log.debug('Creación OV (SS) - afterSubmit - LINE 789', 'objFechaEntrega: ' + JSON.stringify(objFechaEntrega));
-
-                                                if (!utilities.isEmpty(objFechaEntrega) && objFechaEntrega.error == false) {
-                                                    if (!utilities.isEmpty(objFechaEntrega.fechaBaseCalculo)) {
-                                                        fechaEntrega = objFechaEntrega.fechaBaseCalculo;
-                                                    } else {
-                                                        errorOV = true;
-                                                        respuesta.error = true;
-                                                        respuestaParcial = new Object();
-                                                        respuestaParcial.codigo = 'UCOV009';
-                                                        respuestaParcial.mensaje = 'No se recibio fecha del proceso de calculo de fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV;
-                                                        log.error('Creación OV (SS) - afterSubmit - LINE 800', 'UCOV009 - No se recibio fecha del proceso de calculo de fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV);                                                                                                                                                                   
-                                                        //mensajeError = respuestaParcial.mensaje.toString();
-                                                        respuesta.detalle.push(respuestaParcial);
-                                                    }
-                                                } else {
-                                                    if (utilities.isEmpty(objFechaEntrega)) {
-                                                        errorOV = true;
-                                                        respuesta.error = true;
-                                                        respuestaParcial = new Object();
-                                                        respuestaParcial.codigo = 'UCOV010';
-                                                        respuestaParcial.mensaje = 'No se recibio objeto de respuesta del proceso de calculo de fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV;
-                                                        log.error('Creación OV (SS) - afterSubmit - LINE 811', 'UCOV010 - No se recibio objeto de respuesta del proceso de calculo de fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV);                                                                                                                                                                                                                           
-                                                        //mensajeError = respuestaParcial.mensaje.toString();
-                                                        respuesta.detalle.push(respuestaParcial);
-                                                    } else {
-                                                        errorOV = true;
-                                                        respuesta.error = true;
-                                                        respuestaParcial = new Object();
-                                                        respuestaParcial.codigo = 'UCOV011';
-                                                        respuestaParcial.mensaje = 'Error calculando fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV + ' - Tipo Error : ' + objFechaEntrega.tipoError + ' - Descripcion : ' + objFechaEntrega.descripcion;
-                                                        log.error('Creación OV (SS) - afterSubmit - LINE 820', 'UCOV011 - Error calculando fecha de entrega para el Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV + ' - Tipo Error : ' + objFechaEntrega.tipoError + ' - Descripcion : ' + objFechaEntrega.descripcion);                                                                                                                                                                                                                           
-                                                        //mensajeError = respuestaParcial.mensaje.toString();
-                                                        respuesta.detalle.push(respuestaParcial);
-                                                    }
-                                                }
-
-                                            } else {
-                                                errorOV = true;
-                                                respuesta.error = true;
-                                                respuestaParcial = new Object();
-                                                respuestaParcial.codigo = 'UCOV012';
-                                                respuestaParcial.mensaje = 'No se encontraron Proveedores para el Articulo con ID Interno : ' + IDArticulo + '. Para configurar la Orden de Venta con ID Interno : ' + idOV;
-                                                log.error('Creación OV (SS) - afterSubmit - LINE 832', 'UCOV012 - No se encontraron Proveedores para el Articulo con ID Interno : ' + IDArticulo + '. Para configurar la Orden de Venta con ID Interno : ' + idOV);                                                                                                                                                                                                                           
-                                                mensajeError = respuestaParcial.mensaje.toString();
-                                                respuesta.detalle.push(respuestaParcial);
-                                            }
-
-                                            //FIN CALCULAR FECHA DE ENTREGA
-
-                                            if (!utilities.isEmpty(IDArticulo)) {
-
-                                                objRecord.setCurrentSublistValue({
-                                                    sublistId: 'recmachcustrecord_3k_req_compra_ov',
-                                                    fieldId: 'custrecord_3k_req_compra_f_entrega',
-                                                    value: fechaEntrega,
-                                                    ignoreFieldChange: false
-                                                });
-
-
-                                                objRecord.commitLine({
-                                                    sublistId: 'recmachcustrecord_3k_req_compra_ov'
-                                                });
-
-                                                var objFechasProv = new Object();
-                                                objFechasProv.item = IDArticulo;
-                                                objFechasProv.fecha = fechaEntrega;
-                                                arrayFechasProv.push(objFechasProv);
-
-                                            } else {
-                                                errorREQ = true;
-                                                //respuesta.error = true;
-                                                var mensaje = 'No se pudo Obtener la siguiente información Para configurar la Requisicion con ID Interno : ' + IDInterno + ' : ';
-                                                if (utilities.isEmpty(IDArticulo)) {
-                                                    mensaje = mensaje + ' ID Interno del Articulo / ';
-                                                }
-                                                respuesta.error = true;
-                                                respuestaParcial = new Object();
-                                                respuestaParcial.codigo = 'UCOV013';
-                                                respuestaParcial.mensaje = mensaje;
-                                                //mensajeError = respuestaParcial.mensaje.toString();
-                                                log.error('Creación OV (SS) - afterSubmit - LINE 870', 'UCOV013 - ' + mensaje);                                                                                                                                                                                                                           
-                                                respuesta.detalle.push(respuestaParcial);
-                                            }
-
-                                    }
-
-                                    log.audit('Creación OV (SS) - afterSubmit - LINE 876', 'FIN Actualizar Requisiciones');
-
-                                    // FIN ACTUALIZAR REQUISICIONES          
-
-                                    // INICIO ACTUALIZAR LINEAS OV
-
-                                    var errorOV = false;
-                                    //var indiceVoucher = 0;
-
-                                    log.audit('Creación OV (SS) - afterSubmit - LINE 885', 'INICIO Actualizar Lineas OV');
-                                    log.debug('Creación OV (SS) - afterSubmit - LINE 886', 'arrayFechasProv: ' +JSON.stringify(arrayFechasProv));
-
-                                    for (var i = 0; i < cantidadLineasOV && errorREQ == false; i++) {
-
-                                        var infoOrden = new Object();
-
-                                        var esRedondeo = objRecord.getSublistValue({
                                             sublistId: 'item',
-                                            fieldId: 'custcol_3k_es_redondeo',
-                                            line: i
+                                            fieldId: 'item'
                                         });
 
-                                        if (!esRedondeo) {
+                                        log.debug('Creación OV (SS) - afterSubmit', 'IDArticulo: ' + IDArticulo);
 
-                                            var lineNum = objRecord.selectLine({
-                                                sublistId: 'item',
-                                                line: i
+                                        if (!utilities.isEmpty(IDArticulo)) {
+                                            var objLineaOV = arrayArticulos.filter(function (obj) {
+                                                return (obj.articulo == IDArticulo);
                                             });
 
-                                            var IDArticulo = objRecord.getCurrentSublistValue({
-                                                sublistId: 'item',
-                                                fieldId: 'item'
-                                            });
+                                            log.debug('Creación OV (SS) - afterSubmit', 'objLineaOV: ' + JSON.stringify(objLineaOV));
 
-                                            log.debug('Creación OV (SS) - afterSubmit - LINE 910', 'IDArticulo: ' + IDArticulo);
+                                            if (!utilities.isEmpty(objLineaOV) && objLineaOV.length > 0) {
 
-                                            if (!utilities.isEmpty(IDArticulo)) {
-                                                var objLineaOV = arrayArticulos.filter(function (obj) {
-                                                    return (obj.articulo == IDArticulo);
+                                                var objFechas = arrayFechasProv.filter(function (obj) {
+                                                    return (obj.item == IDArticulo);
                                                 });
 
-                                                log.debug('Creación OV (SS) - afterSubmit - LINE 917', 'objLineaOV: ' +JSON.stringify(objLineaOV));
-
-                                                if (!utilities.isEmpty(objLineaOV) && objLineaOV.length > 0) {
-                                                
-                                                        var objFechas = arrayFechasProv.filter(function (obj) {
-                                                            return (obj.item == IDArticulo);
-                                                        });
-
-                                                        log.debug('Creación OV (SS) - afterSubmit - LINE 925', 'objFechas: ' +JSON.stringify(objFechas));                                        
+                                                log.debug('Creación OV (SS) - afterSubmit', 'objFechas: ' + JSON.stringify(objFechas));
 
 
-                                                        if (!utilities.isEmpty(objFechas) && objFechas.length > 0) {
+                                                if (!utilities.isEmpty(objFechas) && objFechas.length > 0) {
 
-                                                            fechaEntrega = objFechas[objFechas.length - 1].fecha;
-                                        
-                                                            log.debug('Creación OV (SS) - afterSubmit - LINE 932', 'fechaEntrega: ' + fechaEntrega);
+                                                    fechaEntrega = objFechas[objFechas.length - 1].fecha;
 
-                                                            objRecord.setCurrentSublistValue({
-                                                                sublistId: 'item',
-                                                                fieldId: 'custcol_3k_fecha_entrega',
-                                                                value: fechaEntrega,
-                                                                ignoreFieldChange: true
-                                                            });
+                                                    log.debug('Creación OV (SS) - afterSubmit', 'fechaEntrega: ' + fechaEntrega);
+
+                                                    objRecord.setCurrentSublistValue({
+                                                        sublistId: 'item',
+                                                        fieldId: 'custcol_3k_fecha_entrega',
+                                                        value: fechaEntrega,
+                                                        ignoreFieldChange: true
+                                                    });
 
 
-                                                            objRecord.commitLine({
-                                                                sublistId: 'item'
-                                                            });
+                                                    objRecord.commitLine({
+                                                        sublistId: 'item'
+                                                    });
 
-                                                        }
-
-                                                } else {
-                                                    errorOV = true;
-                                                    respuesta.error = true;
-                                                    respuestaParcial = new Object();
-                                                    respuestaParcial.codigo = 'UCOV014';
-                                                    respuestaParcial.mensaje = 'No se puede encontrar la informacion del Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV;
-                                                    //mensajeError = respuestaParcial.mensaje.toString();
-                                                    log.error('Creación OV (SS) - afterSubmit - LINE 955', 'UCOV014 - No se puede encontrar la informacion del Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV);                                                                                                                                                                                                                                                   
-                                                    respuesta.detalle.push(respuestaParcial);
                                                 }
+
                                             } else {
-                                                errorOV = true;
                                                 respuesta.error = true;
-                                                var mensaje = 'No se pudo Obtener la siguiente información Para configurar la Orden de Venta con ID Interno : ' + idOV + ' Numero de Linea : ' + i + 1 + ' : ';
-                                                if (utilities.isEmpty(IDArticulo)) {
-                                                    mensaje = mensaje + ' ID Interno del Articulo / ';
-                                                }
                                                 respuestaParcial = new Object();
-                                                respuestaParcial.codigo = 'UCOV015';
-                                                respuestaParcial.mensaje = mensaje;
+                                                respuestaParcial.codigo = 'UCOV014';
+                                                respuestaParcial.mensaje = 'No se puede encontrar la informacion del Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV;
                                                 //mensajeError = respuestaParcial.mensaje.toString();
-                                                log.error('Creación OV (SS) - afterSubmit - LINE 969', 'UCOV015 - ' + mensaje);                                                                                                                                                                                                                                                   
+                                                log.error('Creación OV (SS) - afterSubmit', 'UCOV014 - No se puede encontrar la informacion del Articulo con ID Interno : ' + IDArticulo + ' Para configurar la Orden de Venta con ID Interno : ' + idOV);
                                                 respuesta.detalle.push(respuestaParcial);
                                             }
-                                        }
-                                    }
-
-                                    log.audit('Creación OV (SS) - afterSubmit - LINE 976', 'FIN Actualizar Lineas OV');
-
-                                    // FIN ACTUALIZAR LINEAS OV
-
-                                    // INICIO GRABAR OV
-                                    if (respuesta.error == false) {
-                                        // GRABAR ORDEN DE VENTA
-                                        try {
-                                            var recordId = objRecord.save({
-                                                enableSourcing: true,
-                                                ignoreMandatoryFields: false
-                                            });
-                                        } catch (excepcionSave) {
-                                            error = true;
+                                        } else {
                                             respuesta.error = true;
+                                            var mensaje = 'No se pudo Obtener la siguiente información Para configurar la Orden de Venta con ID Interno : ' + idOV + ' Numero de Linea : ' + i + 1 + ' : ';
+                                            if (utilities.isEmpty(IDArticulo)) {
+                                                mensaje = mensaje + ' ID Interno del Articulo / ';
+                                            }
                                             respuestaParcial = new Object();
-                                            respuestaParcial.codigo = 'UCOV016';
-                                            respuestaParcial.mensaje = 'Excepcion Actualizando Orden de Venta con ID Interno : ' + idOV + ' - Excepcion : ' + excepcionSave.message.toString();
-                                            log.error('Creación OV (SS) - afterSubmit - LINE 993', 'UCOV016 -Excepcion Actualizando Orden de Venta con ID Interno : ' + idOV + ' - Excepcion : ' + excepcionSave.message);                                                                                                                                                                                                                                                                                               
+                                            respuestaParcial.codigo = 'UCOV015';
+                                            respuestaParcial.mensaje = mensaje;
                                             //mensajeError = respuestaParcial.mensaje.toString();
+                                            log.error('Creación OV (SS) - afterSubmit', 'UCOV015 - ' + mensaje);
                                             respuesta.detalle.push(respuestaParcial);
                                         }
-                                        if (utilities.isEmpty(recordId)) {
-                                            error = true;
-                                            respuesta.error = true;
-                                            respuestaParcial = new Object();
-                                            respuestaParcial.codigo = 'UCOV017';
-                                            respuestaParcial.mensaje = 'Error No se recibio el ID Interno de la Orden de Venta Actualizada';
-                                            log.error('Creación OV (SS) - afterSubmit - LINE 1003', 'UCOV017 -Error No se recibio el ID Interno de la Orden de Venta Actualizada');                                                                                                                                                                                                                                                                                                                                           
-                                            //mensajeError = respuestaParcial.mensaje.toString();
-                                            respuesta.detalle.push(respuestaParcial);
-                                        }
-                                        //log.audit('Generación Orden de Venta - After Submit', 'Importe Total OV : ' + importeTotalOrdenDeVenta + ' - Importe Total Voucher Devolucion : ' + importeTotalVouchers);
                                     }
-                                    // FIN GRABAR OV
+                                }
+
+                                log.audit('Creación OV (SS) - afterSubmit - LINE 976', 'FIN Actualizar Lineas OV');
+
+                                // FIN ACTUALIZAR LINEAS OV
                             }
-                        }
 
-                    } else {
-                        error = true;
-                        mensajeError = respuestaAjusteRedondeo.mensajeError;
-                        respuesta = respuestaAjusteRedondeo;
+                            // INICIO GRABAR OV
+                            try {
+                                var recordId = objRecord.save({
+                                    enableSourcing: true,
+                                    ignoreMandatoryFields: false
+                                });
+                            } catch (excepcionSave) {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV016';
+                                respuestaParcial.mensaje = 'Excepcion Actualizando Orden de Venta con ID Interno : ' + idOV + ' - Excepcion : ' + excepcionSave.message.toString();
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV016 -Excepcion Actualizando Orden de Venta con ID Interno : ' + idOV + ' - Excepcion : ' + excepcionSave.message);
+                                respuesta.detalle.push(respuestaParcial);
+                            }
+                            if (utilities.isEmpty(recordId)) {
+                                error = true;
+                                respuesta.error = true;
+                                respuestaParcial = new Object();
+                                respuestaParcial.codigo = 'UCOV017';
+                                respuestaParcial.mensaje = 'Error No se recibio el ID Interno de la Orden de Venta Actualizada';
+                                log.error('Creación OV (SS) - afterSubmit', 'UCOV017 -Error No se recibio el ID Interno de la Orden de Venta Actualizada');
+                                respuesta.detalle.push(respuestaParcial);
+                            }
+                            // FIN GRABAR OV
+                        }
                     }
+
+                } catch (excepcion) {
+                    error = true;
+                    respuesta.error = true;
+                    respuestaParcial = new Object();
+                    respuestaParcial.codigo = 'UCOV018';
+                    respuestaParcial.mensaje += excepcion;
+                    mensajeError = mensajeError + ' ' + respuestaParcial.mensaje.toString();
+                    respuesta.detalle.push(respuestaParcial);
+                    log.error('Creación OV (SS) - afterSubmit', 'UCOV018 - Excepcion : ' + excepcion);
                 }
 
-                //var idTmp = objRecord.save();
+                log.debug('Creación OV (SS) - afterSubmit ', 'error: ' + error + ' - mensajeError: ' + mensajeError);
 
-            } catch (excepcion) {
-                error = true;
-                respuesta.error = true;
-                respuestaParcial = new Object();
-                respuestaParcial.codigo = 'UCOV018';
-                respuestaParcial.mensaje += excepcion;
-                //mensajeError = respuestaParcial.mensaje.toString();
-                respuesta.detalle.push(respuestaParcial);
-                log.error('Creación OV (SS) - afterSubmit - LINE 1030', 'UCOV018 - Excepcion : ' + excepcion);                                                                                                                                                                                                                                                                                               
-                //codigoError = 'SBOV005';
-                //mensajeError = 'Excepcion Grabando Orden de Venta con ID Interno : ' + respuesta.idOV + ' Excepcion : ' + excepcion.message;
-            }
-
-            log.debug('Creación OV (SS) - afterSubmit - LINE 1035', 'error: ' + error);                
-
-            if (error == true) {
-                // SI HUBO ALGUN ERROR, GENERAR LA OV CON ESTADO "APROBACION PENDIENTE"
-                /*objRecord.setValue({
-                    fieldId: 'orderstatus',
-                    value: 'A'
-                });
-
-                objRecord.setValue({
-                    fieldId: 'custbody_3k_netsuite_ov',
-                    value: mensajeError
-                });*/
-
+                if (error == true) {
+                    // SI HUBO ALGUN ERROR, GENERAR LA OV CON ESTADO "APROBACION PENDIENTE"
                     var idOVActualizada = record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: idOV,
                         values: {
                             orderstatus: 'A',
-                            custbody_3k_netsuite_ov: mensajeError
+                            custbody_3k_netsuite_ov: logNS + ' ' + mensajeError
                         },
                         options: {
                             enableSourcing: false,
@@ -1059,32 +1032,32 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         }
                     });
 
-                log.debug('Creación OV (SS) - afterSubmit - LINEA 1062', 'respuesta: ' +JSON.stringify(respuesta));
-                log.error('Creación OV (SS) - afterSubmit - LINEA 1063', 'OV PENDIENTE APROBACION - PENDING APPROVAL');
-            }  else {
+                    log.debug('Creación OV (SS) - afterSubmit', 'respuesta: ' + JSON.stringify(respuesta));
+                    log.error('Creación OV (SS) - afterSubmit', 'OV Creada en Estado APROBACION PENDIENTE');
+                } else {
 
                     var idOVActualizada = record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: idOV,
                         values: {
-                            custbody_3k_netsuite_ov: ''
+                            custbody_3k_netsuite_ov: logNS
                         },
                         options: {
                             enableSourcing: false,
                             ignoreMandatoryFields: true
                         }
                     });
-                    
+
+                }
+
+                log.audit('Creación OV (SS)', 'FIN - afterSubmit');
+
             }
-
-            log.audit('Creación OV (SS) - LINE 1080', 'FIN - afterSubmit');       
-
-            }         
         }
 
         function obtenerInformacionProveedores() {
 
-            log.debug('obtenerInformacionProveedores - LINE 1087', 'INICIO');
+            log.debug('obtenerInformacionProveedores', 'INICIO');
 
             var respuesta = new Object();
             respuesta.error = false;
@@ -1123,16 +1096,16 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                 objRespuestaParcial.codigo = 'UDPP001';
                 objRespuestaParcial.mensaje = mensaje;
                 respuesta.detalle.push(objRespuestaParcial);
-                log.error('obtenerInformacionProveedores - LINE 1126', 'UDPP001 - ' + mensaje);
+                log.error('obtenerInformacionProveedores', 'UDPP001 - ' + mensaje);
             }
 
-            log.debug('obtenerInformacionProveedores - LINE 1129', 'FIN');
+            log.debug('obtenerInformacionProveedores', 'FIN');
             return respuesta;
         }
 
         function consultarDiasNoLoborables() {
 
-            log.audit('consultarDiasNoLoborables - LINE 1135', 'INICIO');
+            log.audit('consultarDiasNoLoborables', 'INICIO');
 
             var respuesta = new Object();
             respuesta.error = false;
@@ -1147,7 +1120,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                 objRespuestaParcial.codigo = 'UDNL001';
                 objRespuestaParcial.mensaje = 'Error Obteniendo Calendario de Dias No Laborables - Tipo Error : ' + objResultSet.tipoError + ' - Descripcion : ' + objResultSet.descripcion;
                 respuesta.detalle.push(objRespuestaParcial);
-                log.error('obtenerInformacionProveedores - LINE 1150', 'UDNL001 - Error Obteniendo Calendario de Dias No Laborables - Tipo Error : ' + objResultSet.tipoError + ' - Descripcion : ' + objResultSet.descripcion);
+                log.error('obtenerInformacionProveedores', 'UDNL001 - Error Obteniendo Calendario de Dias No Laborables - Tipo Error : ' + objResultSet.tipoError + ' - Descripcion : ' + objResultSet.descripcion);
 
                 //respuesta.tipoError = 'SROV018';
                 //respuesta.mensaje = 'Error Obteniendo Calendario de Dias No Laborables - Tipo Error : ' + objResultSet.tipoError + ' - Descripcion : ' + objResultSet.descripcion;;
@@ -1181,15 +1154,15 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                 respuesta.arrayDiasNoLaborables.push(obj);
             }
 
-            log.audit('consultarDiasNoLoborables - LINEA 1184', 'FIN');
+            log.audit('consultarDiasNoLoborables', 'FIN');
             return respuesta;
             // FIN - Obtener Array de Dias No Laborables
         }
 
         function generarAjusteRedondeo(idOV, registro) {
 
-            log.audit('generarAjusteRedondeo - LINEA 1191', 'INICIO');
-            log.debug('generarAjusteRedondeo - LINEA 1192', 'Parámetros - idOV: ' + idOV + ', registro: ' + JSON.stringify(registro));
+            log.audit('generarAjusteRedondeo ', 'INICIO');
+            log.debug('generarAjusteRedondeo', 'Parámetros - idOV: ' + idOV + ', registro: ' + JSON.stringify(registro));
 
             var objRespuesta = new Object();
             objRespuesta.error = false;
@@ -1230,8 +1203,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         var cantidadLineasOV = objRecord.getLineCount({
                             sublistId: 'item'
                         });
-                
-                        log.debug('generarAjusteRedondeo - LINEA 1234', 'importeTotalOVNS: ' +importeTotalOVNS + ', importeTotalOVWOOW: ' + importeTotalOVWOOW + ', cantidadLineasOV: ' + cantidadLineasOV);
+
+                        log.debug('generarAjusteRedondeo', 'importeTotalOVNS: ' + importeTotalOVNS + ', importeTotalOVWOOW: ' + importeTotalOVWOOW + ', cantidadLineasOV: ' + cantidadLineasOV);
 
                         if (utilities.isEmpty(importeTotalOVWOOW) || isNaN(parseFloat(importeTotalOVWOOW))) {
                             importeTotalOVWOOW = 0.00;
@@ -1240,7 +1213,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         if (!utilities.isEmpty(importeTotalOVNS) && !isNaN(parseFloat(importeTotalOVNS)) && !utilities.isEmpty(importeTotalOVWOOW) && !isNaN(parseFloat(importeTotalOVWOOW))) {
 
                             var diferenciaImporte = (parseFloat(importeTotalOVWOOW)) - parseFloat(importeTotalOVNS);
-                            log.debug('generarAjusteRedondeo - LINEA 1243', 'diferenciaImporte: ' + diferenciaImporte);
+                            log.debug('generarAjusteRedondeo', 'diferenciaImporte: ' + diferenciaImporte);
                             var eliminoLineaRedondeo = false;
                             if (parseFloat(diferenciaImporte) != 0.00) {
 
@@ -1249,8 +1222,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                                         // INICIO ELIMINAR LINEAS DE REDONDEO
 
-                                        log.debug('generarAjusteRedondeo - LINEA 1252', 'i antes de delete: ' + i);
-                                        log.debug('generarAjusteRedondeo - LINEA 1253', 'cantidadLineasOV antes de delete: ' + cantidadLineasOV);
+                                        log.debug('generarAjusteRedondeo', 'i antes de delete: ' + i);
+                                        log.debug('generarAjusteRedondeo', 'cantidadLineasOV antes de delete: ' + cantidadLineasOV);
 
                                         var esRedondeo = objRecord.getSublistValue({
                                             sublistId: 'item',
@@ -1258,7 +1231,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                             line: i
                                         });
 
-                                        log.debug('generarAjusteRedondeo - LINEA 1261', 'esRedondeo: ' + esRedondeo);
+                                        log.debug('generarAjusteRedondeo', 'esRedondeo: ' + esRedondeo);
 
                                         if (esRedondeo == true) {
 
@@ -1298,8 +1271,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                                             //break;
 
-                                            log.debug('generarAjusteRedondeo - LINEA 1301', 'i despues de delete: ' + i);
-                                            log.debug('generarAjusteRedondeo - LINEA 1302', 'cantidadLineasOV despues de delete: ' + cantidadLineasOV);
+                                            log.debug('generarAjusteRedondeo', 'i despues de delete: ' + i);
+                                            log.debug('generarAjusteRedondeo', 'cantidadLineasOV despues de delete: ' + cantidadLineasOV);
                                         }
 
                                         // FIN ELIMINAR LINEAS DE REDONDEO
@@ -1347,7 +1320,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                 articuloUtilizar = articuloAjustePositivo;
                                             }
 
-                                            log.debug('generarAjusteRedondeo - LINEA 1350', ' diferenciaImporte: ' + diferenciaImporte + ', topeMaximo: ' + topeMaximo);
+                                            log.debug('generarAjusteRedondeo', ' diferenciaImporte: ' + diferenciaImporte + ', topeMaximo: ' + topeMaximo);
 
                                             if (Math.abs(diferenciaImporte) < topeMaximo) {
 
@@ -1355,7 +1328,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                     sublistId: 'item'
                                                 });
 
-                                                log.debug('generarAjusteRedondeo - LINEA 1358', 'articuloUtilizar: ' + articuloUtilizar);
+                                                log.debug('generarAjusteRedondeo ', 'articuloUtilizar: ' + articuloUtilizar);
 
                                                 objRecord.setCurrentSublistValue({
                                                     sublistId: 'item',
@@ -1369,7 +1342,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                     value: 1
                                                 });
 
-                                                log.debug('generarAjusteRedondeo - LINEA 1372', 'diferenciaImporte: ' + diferenciaImporte);
+                                                log.debug('generarAjusteRedondeo', 'diferenciaImporte: ' + diferenciaImporte);
 
                                                 objRecord.setCurrentSublistValue({
                                                     sublistId: 'item',
@@ -1398,7 +1371,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                             fieldId: 'total'
                                                         });
 
-                                                        log.debug('generarAjusteRedondeo - LINEA 1401', 'diferenciaImporte: ' + objRespuesta.importeTotalOV);
+                                                        log.debug('generarAjusteRedondeo ', 'diferenciaImporte: ' + objRespuesta.importeTotalOV);
 
                                                         var recordId = objRecord.save();
 
@@ -1409,7 +1382,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                         objRespuestaParcial.mensaje = 'Error: Excepcion Grabando Ajuste por Redondeo - Excepcion : ' + excepcionGrabarOV.message.toString();
                                                         //objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                                                         objRespuesta.detalle.push(objRespuestaParcial);
-                                                        log.error('generarAjusteRedondeo - LINE 1412', 'UGAR001 - Error: Excepcion Grabando Ajuste por Redondeo - Excepcion : ' + excepcionGrabarOV.message);
+                                                        log.error('generarAjusteRedondeo', 'UGAR001 - Error: Excepcion Grabando Ajuste por Redondeo - Excepcion : ' + excepcionGrabarOV.message);
                                                     }
 
                                                 } else {
@@ -1417,14 +1390,13 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                 }
 
                                             } else {
-                                                //error
                                                 objRespuesta.error = true;
                                                 objRespuestaParcial = new Object({});
                                                 objRespuestaParcial.codigo = 'UGAR002';
                                                 objRespuestaParcial.mensaje = 'Error generando Ajuste de Redondeo. El ajuste por redondeo ' + diferenciaImporte.toFixed(2) + ', es mayor al tope maximo permitido: ' + topeMaximo;
                                                 objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                                                 objRespuesta.detalle.push(objRespuestaParcial);
-                                                log.error('generarAjusteRedondeo - LINE - 1427', 'UGAR002 - Error generando Ajuste de Redondeo. El ajuste por redondeo ' + diferenciaImporte.toFixed(2) + ', es mayor al tope maximo permitido: ' + topeMaximo);
+                                                log.error('generarAjusteRedondeo', 'UGAR002 - Error generando Ajuste de Redondeo. El ajuste por redondeo ' + diferenciaImporte.toFixed(2) + ', es mayor al tope maximo permitido: ' + topeMaximo);
                                             }
                                         } else {
                                             objRespuesta.error = true;
@@ -1433,7 +1405,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                             objRespuestaParcial.mensaje = 'Error generando Ajuste de Redondeo. No se encuentra realizada la configuración de Articulos de Redondeo.';
                                             objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                                             objRespuesta.detalle.push(objRespuestaParcial);
-                                            log.error('generarAjusteRedondeo - LINE 1436', 'UGAR003 - Error generando Ajuste de Redondeo. No se encuentra realizada la configuración de Articulos de Redondeo.');
+                                            log.error('generarAjusteRedondeo', 'UGAR003 - Error generando Ajuste de Redondeo. No se encuentra realizada la configuración de Articulos de Redondeo.');
                                         }
                                         // FIN ELIMINAR LINEAS DE REDONDEO
 
@@ -1455,9 +1427,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                 objRespuestaParcial = new Object({});
                                                 objRespuestaParcial.codigo = 'UGAR004';
                                                 objRespuestaParcial.mensaje = 'Error generando Ajuste de Redondeo. Excepcion Grabando Ajuste por Redondeo - Excepcion : ' + excepcionGrabarOV.message.toString();;
-                                                //objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                                                 objRespuesta.detalle.push(objRespuestaParcial);
-                                                log.error('generarAjusteRedondeo - LINE 1460', 'UGAR004 - Error generando Ajuste de Redondeo. Excepcion Grabando Ajuste por Redondeo - Excepcion : ' + excepcionGrabarOV.message);
+                                                log.error('generarAjusteRedondeo', 'UGAR004 - Error generando Ajuste de Redondeo. Excepcion Grabando Ajuste por Redondeo - Excepcion : ' + excepcionGrabarOV.message);
                                             }
 
                                         } else {
@@ -1469,9 +1440,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                     objRespuestaParcial = new Object({});
                                     objRespuestaParcial.codigo = 'UGAR005';
                                     objRespuestaParcial.mensaje = 'Error generando Ajuste de Redondeo. No se detectaron lineas en la Orden de Venta.';
-                                    objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                                     objRespuesta.detalle.push(objRespuestaParcial);
-                                    log.error('generarAjusteRedondeo - LINE 1474', 'UGAR005 - Error generando Ajuste de Redondeo. No se detectaron lineas en la Orden de Venta.');
+                                    log.error('generarAjusteRedondeo', 'UGAR005 - Error generando Ajuste de Redondeo. No se detectaron lineas en la Orden de Venta.');
                                 }
 
                             } else {
@@ -1491,9 +1461,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             objRespuestaParcial = new Object({});
                             objRespuestaParcial.codigo = 'UGAR006';
                             objRespuestaParcial.mensaje = 'Error generando Ajuste de Redondeo. Error Obteniendo Montos Totales de la Orden de Venta';
-                            //objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                             objRespuesta.detalle.push(objRespuestaParcial);
-                            log.error('generarAjusteRedondeo - LINE 1496', 'UGAR006 - Error generando Ajuste de Redondeo. Error Obteniendo Montos Totales de la Orden de Venta');
+                            log.error('generarAjusteRedondeo', 'UGAR006 - Error generando Ajuste de Redondeo. Error Obteniendo Montos Totales de la Orden de Venta');
                         }
 
 
@@ -1502,9 +1471,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         objRespuestaParcial = new Object({});
                         objRespuestaParcial.codigo = 'UGAR007';
                         objRespuestaParcial.mensaje = 'Error generando Ajuste de Redondeo. Error Cargando la Orden de Venta';
-                        //objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                         objRespuesta.detalle.push(objRespuestaParcial);
-                        log.error('generarAjusteRedondeo - LINE 1507', 'UGAR007 - Error generando Ajuste de Redondeo. Error Cargando la Orden de Venta');
+                        log.error('generarAjusteRedondeo', 'UGAR007 - Error generando Ajuste de Redondeo. Error Cargando la Orden de Venta');
                     }
 
                 } else {
@@ -1512,9 +1480,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     objRespuestaParcial = new Object({});
                     objRespuestaParcial.codigo = 'UGAR008';
                     objRespuestaParcial.mensaje = 'Error generando Ajuste de Redondeo. No se recibio registro de Orden de Venta';
-                    //objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                     objRespuesta.detalle.push(objRespuestaParcial);
-                    log.error('generarAjusteRedondeo - LINE 1517', 'UGAR008 - Error generando Ajuste de Redondeo. No se recibio registro de Orden de Venta');
+                    log.error('generarAjusteRedondeo', 'UGAR008 - Error generando Ajuste de Redondeo. No se recibio registro de Orden de Venta');
                 }
 
             } catch (excepcion) {
@@ -1522,9 +1489,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                 objRespuestaParcial = new Object({});
                 objRespuestaParcial.codigo = 'UGAR009';
                 objRespuestaParcial.mensaje = 'Error generando Ajuste de Redondeo. Excepcion Generando Ajuste por Redondeo - Excepcion : ' + excepcion.message.toString();;
-                //objRespuesta.mensajeError = objRespuestaParcial.mensaje.toString();
                 objRespuesta.detalle.push(objRespuestaParcial);
-                log.error('generarAjusteRedondeo - LINE 1527', 'UGAR009 - Error generando Ajuste de Redondeo. Excepcion Generando Ajuste por Redondeo - Excepcion : ' + excepcion.message);
+                log.error('generarAjusteRedondeo', 'UGAR009 - Error generando Ajuste de Redondeo. Excepcion Generando Ajuste por Redondeo - Excepcion : ' + excepcion.message);
             }
 
             log.audit('generarAjusteRedondeo - LINE 1530', 'FIN');
@@ -1533,10 +1499,9 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
         function creacionRequisiciones(rec, arrayLinea, fecha) {
             /******************INCIO INSERTAR A TRAVES DE RECMACH REQUISICIONES*******************************************************************/
-            /*SOLO SE CREARAN REQUISICIONES DE ITEM DE INVENTARIO QUE NO TENGAN STOCK PROPIO Y TENGAN STOCK TERCERO VIGENTE*/
-            log.audit('creacionRequisiciones - LINE 1537', 'INICIO');
-            log.debug('creacionRequisiciones - LINE 1538', 'Parámetros - rec: ' + JSON.stringify(rec));
-            log.debug('creacionRequisiciones - LINE 1539', 'Parámetros - arrayLinea: ' + JSON.stringify(arrayLinea) + ', fecha: ' + fecha);
+            log.audit('creacionRequisiciones', 'INICIO');
+            log.debug('creacionRequisiciones', 'Parámetros - rec: ' + JSON.stringify(rec));
+            log.debug('creacionRequisiciones', 'Parámetros - arrayLinea: ' + JSON.stringify(arrayLinea) + ', fecha: ' + fecha);
 
             var objRespuesta = new Object();
             objRespuesta.error = false;
@@ -1545,7 +1510,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
             try {
 
                 for (var i = 0; i < arrayLinea.length; i++) {
-                    log.debug('creacionRequisiciones - LINE 1548', 'arrayLinea: '+ JSON.stringify(arrayLinea[i]));
+                    log.debug('creacionRequisiciones', 'arrayLinea: ' + JSON.stringify(arrayLinea[i]));
 
                     if (!arrayLinea[i].isStockPropio) {
                         //NUEVA LINEA
@@ -1579,7 +1544,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             line: lineNum,
                             value: arrayLinea[i].pila
                         });
-                                
+
                         rec.setSublistValue({
                             sublistId: 'recmachcustrecord_3k_req_compra_ov',
                             fieldId: 'custrecord_3k_req_compra_cantidad',
@@ -1614,20 +1579,15 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                 } // END FOR 
 
             } catch (excepcion) {
-                log.error('creacionRequisiciones - LINE 1617', 'UCRQ001 - Error creando Requisicion. Excepcion :' + excepcion);
-                /*objRespuesta.error = true;
-                objRespuestaParcial = new Object();
-                objRespuestaParcial.codigo = 'UCRQ001';
-                objRespuestaParcial.mensaje = 'Error creando Requisición: ' + excepcion;
-                objRespuesta.detalle.push(objRespuestaParcial);*/
+                log.error('creacionRequisiciones', 'UCRQ001 - Error creando Requisicion. Excepcion :' + excepcion);
             }
 
-            log.audit('creacionRequisiciones - LINE 1625', 'FIN');
+            log.audit('creacionRequisiciones', 'FIN');
         }
 
         function calcularFecha(arrayDiasNoLaborales, arrayProveedor, stockPropio, arrayDiasEntregaProveedor) {
 
-            log.audit('calcularFecha - LINE 1630', 'INICIO');
+            log.audit('calcularFecha', 'INICIO');
 
             var objRespuesta = new Object();
             objRespuesta.error = false;
@@ -1648,7 +1608,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             idProveedores.push(arrayProveedor[i].Proveedor);
                         }
 
-                        log.debug('calcularFecha - LINE 1651', 'Cantidad Resultados Dias Entrega : ' + arrayDiasEntregaProveedor.length);
+                        log.debug('calcularFecha', 'Cantidad Resultados Dias Entrega : ' + arrayDiasEntregaProveedor.length);
 
                         // Por cada Proveedor Calcular la Fecha de Entrega
                         var fechaMayor = '';
@@ -1657,7 +1617,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                             var fechaServidor = new Date();
 
-                            log.debug('calcularFecha - LINE 1660', 'Fecha Serv : ' + fechaServidor);
+                            log.debug('calcularFecha', 'Fecha Serv : ' + fechaServidor);
 
                             if (!stockPropio)
                                 fechaServidor.setDate(fechaServidor.getDate() + 1);
@@ -1692,14 +1652,14 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                                 var diaActual = fechaActual.getDay();
 
-                                log.debug('calcularFecha - LINE 1694', 'Dia Actual : ' + diaActual);
+                                log.debug('calcularFecha', 'Dia Actual : ' + diaActual);
 
-                                log.debug('calcularFecha - LINE 1697', 'Proveedor : ' + arrayProveedor[i].Proveedor);
+                                log.debug('calcularFecha', 'Proveedor : ' + arrayProveedor[i].Proveedor);
                                 var resultDiasEntrega = arrayDiasEntregaProveedor.filter(function (obj) {
                                     return (obj.proveedor == arrayProveedor[i].Proveedor);
                                 });
 
-                                log.debug('calcularFecha - LINE 1702', 'Dias Entrega Proveedor Tam : ' + resultDiasEntrega.length);
+                                log.debug('calcularFecha', 'Dias Entrega Proveedor Tam : ' + resultDiasEntrega.length);
 
                                 //lunes es 1
                                 //martes es 2
@@ -1748,7 +1708,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                                 arrayOrdenadoEntregaProveedor.concat(arrayDiasMenor);
 
-                                log.error('calcularFecha - LINE 1751', 'arrayOrdenadoEntregaProveedor: ' + JSON.stringify(arrayOrdenadoEntregaProveedor));
+                                log.debug('calcularFecha', 'arrayOrdenadoEntregaProveedor: ' + JSON.stringify(arrayOrdenadoEntregaProveedor));
 
                                 for (var k = 0; k < arrayOrdenadoEntregaProveedor.length; k++) {
 
@@ -1756,7 +1716,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                     var diffDay = arrayOrdenadoEntregaProveedor[k].codigoDiaJS - diaActual;
                                     var fechaBaseCalculo = new Date(fechaActual.getTime());
 
-                                    log.debug('calcularFecha - LINE 1759', 'diffDay : ' + diffDay + ' linea: ' + k);
+                                    log.debug('calcularFecha', 'diffDay : ' + diffDay + ' linea: ' + k);
 
                                     if (diffDay >= 0) {
                                         fechaBaseCalculo.setDate(fechaBaseCalculo.getDate() + diffDay);
@@ -1764,7 +1724,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                         fechaBaseCalculo.setDate((fechaBaseCalculo.getDate() + 7) + diffDay);
                                     }
 
-                                    log.debug('calcularFecha - LINE 1767', 'fechaBaseCalculo despues de diffDay : ' + fechaBaseCalculo);
+                                    log.debug('calcularFecha', 'fechaBaseCalculo despues de diffDay : ' + fechaBaseCalculo);
 
                                     var resultFilter = arrayDiasNoLaborales.filter(function (obj) {
                                         return (obj.fecha.getTime() == fechaBaseCalculo.getTime());
@@ -1803,7 +1763,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                                         //objRespuesta.fechaBaseCalculo = fechaBaseCalculo;
 
-                                        log.debug('calcularFecha - LINA 1806', ' fechaBaseCalculo: ' + fechaBaseCalculo);
+                                        log.debug('calcularFecha', ' fechaBaseCalculo: ' + fechaBaseCalculo);
                                         if (utilities.isEmpty(fechaMayor)) {
                                             fechaMayor = fechaBaseCalculo;
                                         } else {
@@ -1831,7 +1791,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             objRespuestaParcial.codigo = 'UCFC001';
                             objRespuestaParcial.mensaje = mensaje;
                             objRespuesta.detalle.push(objRespuestaParcial);
-                            log.error('CcalcularFecha - LINE 1834', 'UCFC001 - ' + mensaje);
+                            log.error('CcalcularFecha', 'UCFC001 - ' + mensaje);
                         }
                     } else {
                         var mensaje = 'Error Calculando Fecha de Entrega - Error : No se recibio la informacion de los dias de Pedido de los Proveedores';
@@ -1840,7 +1800,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         objRespuestaParcial.codigo = 'UCFC002';
                         objRespuestaParcial.mensaje = mensaje;
                         objRespuesta.detalle.push(objRespuestaParcial);
-                        log.error('calcularFecha - LINE 1843', 'UCFC002 - ' + mensaje);
+                        log.error('calcularFecha', 'UCFC002 - ' + mensaje);
                     }
                 } else {
                     var mensaje = 'Error Calculando Fecha de Entrega - Error : No se recibieron los ID de los Proveedores A Calcular las Fechas de Entrega';
@@ -1849,7 +1809,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     objRespuestaParcial.codigo = 'UCFC003';
                     objRespuestaParcial.mensaje = mensaje;
                     objRespuesta.detalle.push(objRespuestaParcial);
-                    log.error('calcularFecha - LINE 1852', 'UCFC003 - ' + mensaje);
+                    log.error('calcularFecha', 'UCFC003 - ' + mensaje);
                 }
             } catch (e) {
                 objRespuesta.error = true;
@@ -1857,11 +1817,11 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                 objRespuestaParcial.codigo = 'UCFC004';
                 objRespuestaParcial.mensaje = 'Error Calculando Fecha de Entrega - Excepcion: ' + e.message;
                 objRespuesta.detalle.push(objRespuestaParcial);
-                log.error('calcularFecha - LINE 1860', 'UCFC004 - Error Calculando Fecha de Entrega - Excepcion' + e.message);
+                log.error('calcularFecha', 'UCFC004 - Error Calculando Fecha de Entrega - Excepcion' + e.message);
 
             }
 
-            log.audit('calcularFecha - LINE 1864', 'FIN');
+            log.audit('calcularFecha', 'FIN');
 
             return objRespuesta;
         }
