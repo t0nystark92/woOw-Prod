@@ -1,6 +1,6 @@
 /**
  * @NApiVersion 2.x
- * @NAmdConfig /SuiteBundles/Bundle 158453/configuration.json
+ * @NAmdConfig ./configuration.json
  * @NScriptType UserEventScript
  * @NModuleScope Public
  */
@@ -476,10 +476,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
             if ((scriptContext.type == 'create') || (scriptContext.type == 'edit')) {
 
                 try {
-                    //INICIO - Consultar la configuración de información de facturación genérica y setearla en la orden de venta si los datos de facturación vienen vacíos
                     log.audit('Creación OV (SS)', 'INICIO - afterSubmit');
                     log.audit('Creación OV (SS) - afterSubmit', 'Tipo : Servidor - Evento : ' + scriptContext.type);
-                    /************************************INICIO SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
 
                     var recId = scriptContext.newRecord.id;
                     var recType = scriptContext.newRecord.type;
@@ -501,7 +499,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     });
 
                     log.debug('Creación OV (SS) - afterSubmit', 'idOV: ' + idOV + ', dirOV: ' + dirOV);
-
+                    //INICIO - Consultar la configuración de información de facturación genérica y setearla en la orden de venta si los datos de facturación vienen vacíos
                     //Si la dirección de facturación viene vacía, consultar en el SS la configuración de dirección de facturación genérica
                     if (utilities.isEmpty(dirOV)) {
                         var searchConfDomicilio = utilities.searchSavedPro('customsearch_3k_conf_dom_fact');
@@ -885,8 +883,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                 log.audit('Creación OV (SS) - afterSubmit', 'INICIO Actualizar Lineas OV');
                                 log.debug('Creación OV (SS) - afterSubmit', 'arrayFechasProv: ' + JSON.stringify(arrayFechasProv));
 
-                                for (var i = 0; i < cantidadLineasOV && errorREQ == false; i++) {
-                                //for (var i = 0; i < cantidadLineasOV && errorREQ == false; i++) {
+                                for (var i = 0; i < cantidadLineasOV; i++) {
 
                                     var infoOrden = new Object();
 
