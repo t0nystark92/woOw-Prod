@@ -3227,13 +3227,14 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             return respuesta;
         }
 
-        function crearDepositos(carrito, cliente, pago) {
+        function crearDepositos(arrayOV, pago) {
+
             var recordId = '';
             try {
                 var respuesta = new Object();
                 respuesta.idOV = '';
-                respuesta.idOV = carrito;
-                respuesta.idCliente = cliente;
+                respuesta.idOV = arrayOV[0].idOV;
+                respuesta.idCliente = arrayOV[0].idCliente;
                 respuesta.error = false;
                 respuesta.depositos = new Array();
                 respuesta.detalle = new Array();
@@ -3443,7 +3444,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                     // INICIO Generar Deposito Cliente
                     for (var i = 0; i < pago.length; i++) {
 
-                        log.audit('Cobranza Cliente', 'ID Orden de Venta : ' + carrito + ' - ID Cliente : ' + cliente + ' - Forma de Pago : ' + pago[i].formaPago + ' - Importe Pago : ' + pago[i].importePago);
+                        log.audit('Cobranza Cliente', 'ID Orden de Venta : ' + arrayOV[0].idOV + ' - ID Cliente : ' + arrayOV[0].idCliente + ' - Forma de Pago : ' + pago[i].formaPago + ' - Importe Pago : ' + pago[i].importePago);
 
                         var monedaOV = '';
                         var tipoCambioOV = '';
@@ -3456,22 +3457,22 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
                         var formaPago = pago[i].formaPago;
                         var importePago = parseFloat(pago[i].importePago, 10);
-                        var monedaPago = pago[i].monedaPago;
-                        var tipoCambioPago = pago[i].tipoCambioPago;
+                        var monedaPago = arrayOV[0].monedaPago;
+                        var tipoCambioPago = arrayOV[0].tipoCambioPago;
                         if (!utilities.isEmpty(tipoCambioPago)) {
                             tipoCambioPago = parseFloat(tipoCambioPago, 10);
                         }
-                        var cantidadMillas = pago[i].cantidadMillas;
-                        var tipoCambioMillas = pago[i].tipoCambioMillas;
-                        if (!utilities.isEmpty(tipoCambioMillas)) {
+                        //var cantidadMillas = pago[i].cantidadMillas;
+                        //var tipoCambioMillas = pago[i].tipoCambioMillas;
+                        /*if (!utilities.isEmpty(tipoCambioMillas)) {
                             tipoCambioMillas = parseFloat(tipoCambioMillas, 10);
-                        }
+                        }*/
                         //var tipoCambioOficial = pago[i].tipoCambioPago;
                         /*var tipoCambioOficial = pago[i].tipoCambioOficial;
                         if (!utilities.isEmpty(tipoCambioOficial)) {
                             tipoCambioOficial = parseFloat(tipoCambioOficial, 10);
                         }*/
-                        var transactionID = pago[i].transactionID;
+                       // var transactionID = pago[i].transactionID;
                         var cantidadCuotasPago = pago[i].cantidadCuotas;
 
 
@@ -3502,16 +3503,16 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             tipoCambioOficial = parseFloat(tipoCambioOficial, 10);
                         }*/
 
-                        var objFieldLookUpMoneda = search.lookupFields({
+                        /*var objFieldLookUpMoneda = search.lookupFields({
                             type: 'transaction',
                             id: respuesta.idOV,
                             columns: [
                                 'currency', 'exchangerate'
                             ]
-                        });
+                        });*/
 
-                        monedaOV = objFieldLookUpMoneda.currency[0].value;
-                        tipoCambioOV = objFieldLookUpMoneda.exchangerate;
+                        monedaOV = arrayOV[0].monedaOV;
+                        tipoCambioOV = arrayOV[0].tipoCambioOV;
 
 
                         objRecordDeposit.setValue({
@@ -3588,7 +3589,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             });
                         }
 
-                        if (!utilities.isEmpty(cantidadMillas) && cantidadMillas > 0) {
+                        /*if (!utilities.isEmpty(cantidadMillas) && cantidadMillas > 0) {
 
                             objRecordDeposit.setValue({
                                 fieldId: 'custbody_3k_millas_aplicadas',
@@ -3596,9 +3597,9 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 ignoreFieldChange: false,
                                 fireSlavingSync: true
                             });
-                        }
+                        }*/
 
-                        if (!utilities.isEmpty(tipoCambioMillas) && tipoCambioMillas > 0) {
+                        /*if (!utilities.isEmpty(tipoCambioMillas) && tipoCambioMillas > 0) {
 
                             objRecordDeposit.setValue({
                                 fieldId: 'custbody_3k_tasa_conv_millas',
@@ -3606,7 +3607,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 ignoreFieldChange: false,
                                 fireSlavingSync: true
                             });
-                        }
+                        }*/
 
 
                         if (!utilities.isEmpty(importePago)) {
@@ -3619,7 +3620,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             });
                         }
 
-                        if (!utilities.isEmpty(transactionID)) {
+                        /*if (!utilities.isEmpty(transactionID)) {
 
                             objRecordDeposit.setValue({
                                 fieldId: 'custbody_3k_numero_transaccion',
@@ -3627,7 +3628,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 ignoreFieldChange: false,
                                 fireSlavingSync: true
                             });
-                        }
+                        }*/
 
                         if (!utilities.isEmpty(cantidadCuotasPago)) {
                             objRecordDeposit.setValue({
@@ -3684,6 +3685,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 importeGanancia = (parseFloat(importePago, 10) * (Math.abs(parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10))));
 
                                             }
+                                            log.audit('Cobranza Cliente', 'tipoCambioOficial : ' +tipoCambioOficial);
 
                                             objRecordDeposit.setValue({
                                                 fieldId: 'custbody_3k_tipo_cambio_woow',
@@ -3691,6 +3693,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 ignoreFieldChange: false,
                                                 fireSlavingSync: true
                                             });
+
+                                            log.audit('Cobranza Cliente', 'importeGanancia : ' +importeGanancia);
 
                                             objRecordDeposit.setValue({
                                                 fieldId: 'custbody_3k_ganancia_tipo_cambio',
@@ -3859,9 +3863,10 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                         respuesta.detalle.push(respuestaParcial);
                                     } else {
                                         //respuesta.idDeposito = recordId;
-                                        var respuestaAfterDep = afterSubmitDep(recordId, carrito, cliente, pago[i], idMedioPagoFinal);
+                                        //var respuestaAfterDep = afterSubmitDep(recordId, carrito, cliente, pago[i], idMedioPagoFinal);
+                                        var respuestaAfterDep = afterSubmitDep(recordId, arrayOV, pago[i], idMedioPagoFinal);
 
-                                        if (respuestaAfterDep.error) {
+                                        /*if (respuestaAfterDep.error) {
                                             // Inicio Eliminar Deposito
                                             var respuestaEliminacion = eliminarRegistrosDependientes(respuestaAfterDep, recordId);
                                             /*var objRecord = record.delete({
@@ -3869,7 +3874,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 id: recordId,
                                             });*/
                                             // Fin Eliminar Deposito
-                                            respuesta.error = true;
+                                            /*respuesta.error = true;
                                             respuestaParcial = new Object();
                                             respuestaParcial.codigo = 'RDEP030';
                                             respuestaParcial.mensaje = JSON.stringify(respuestaAfterDep);
@@ -3888,13 +3893,13 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                             }
 
                                             return respuesta;
-                                        }
-                                        var objRespuestaAfter = new Object({})
+                                        }*/
+                                        /*var objRespuestaAfter = new Object({})
                                         objRespuestaAfter.idDeposito = respuestaAfterDep.idDeposito;
                                         objRespuestaAfter.formaPago = formaPago;
                                         objRespuestaAfter.importePago = importePago;
                                         objRespuestaAfter.cupones = respuestaAfterDep.cupones;
-                                        respuesta.depositos.push(objRespuestaAfter);
+                                        respuesta.depositos.push(objRespuestaAfter);*/
                                     }
                                 } catch (excepcionSave) {
                                     if (!utilities.isEmpty(recordId)) {
@@ -3945,7 +3950,9 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             log.audit('Cobranza Cliente', 'FIN Generacion Deposito Cliente - ID Interno Deposito : ' + recordId);
         }
 
-        function afterSubmitDep(idDep, idOV, idCliente, pago, idMedioPagoFinal) {
+        function afterSubmitDep(idDep, arrayOV, pago, idMedioPagoFinal) {
+            //function afterSubmitDep(idDep, idOV, idCliente, pago, idMedioPagoFinal) {
+            
             var recordId = '';
             var arrayCuponesProcesar = new Array();
             var arrayCuponesProcesados = new Array();
@@ -3966,18 +3973,18 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
 
                 respuesta.idDeposito = idDep;
-                respuesta.idOV = idOV;
+                respuesta.idOV = arrayOV[0].idOV;
                 respuesta.formaPago = pago.formaPago;
-                respuesta.monedaPago = pago.monedaPago;
-                respuesta.tipoCambioPago = pago.tipoCambioPago;
-                respuesta.cantidadMillas = pago.cantidadMillas;
-                respuesta.tipoCambioMillas = pago.tipoCambioMillas;
-                respuesta.idCliente = idCliente;
-                respuesta.tipoCambioMenor = pago.tipoCambioMenor;
+                respuesta.monedaPago = arrayOV[0].monedaPago;
+                respuesta.tipoCambioPago = arrayOV[0].tipoCambioPago;
+                //respuesta.cantidadMillas = pago.cantidadMillas;
+                //respuesta.tipoCambioMillas = pago.tipoCambioMillas;
+                respuesta.idCliente = arrayOV[0].idCliente;
+                //respuesta.tipoCambioMenor = pago.tipoCambioMenor;
                 respuesta.cantidadCuotasPago = pago.cantidadCuotas;
 
 
-                log.audit('After Submit', 'INICIO Generacion Cupones - ID Interno OV : ' + respuesta.idOV + ' - ID Interno Deposito : ' + respuesta.idDeposito + ' - ID MP 1 : ' + idMedioPagoFinal);
+                /*log.audit('After Submit', 'INICIO Generacion Cupones - ID Interno OV : ' + respuesta.idOV + ' - ID Interno Deposito : ' + respuesta.idDeposito + ' - ID MP 1 : ' + idMedioPagoFinal);
 
                 var respuestaGeneracionCupon = generarCupones(idDep, idOV, idCliente, pago);
 
@@ -3987,12 +3994,12 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                     respuesta.detalle = respuestaGeneracionCupon.detalle;
                     esServicio = respuestaGeneracionCupon.esServicio;
                     isTravel = respuestaGeneracionCupon.isTravel;
-                }
+                }*/
 
                 if (respuesta.error == false) {
                     // INICIO - Actualizar Requisiciones con Cupones Generados
                     // INICIO - Obtener Requisiciones Generadas por Orden de Venta
-                    var arrayRequisiciones = new Array();
+                    /*var arrayRequisiciones = new Array();
                     var objParam = new Object();
                     objParam.name = 'custrecord_3k_req_compra_ov';
                     objParam.operator = 'IS';
@@ -4045,11 +4052,11 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             respuestaParcial.mensaje = 'Error Consultando Requisiciones por Orden de Venta para Actualizar Cupones en Orden de Venta con ID Interno : ' + respuesta.idOV + ' - Tipo Error : ' + searchRequisiciones.tipoError + ' - Descripcion : ' + searchRequisiciones.descripcion;
                             respuesta.detalle.push(respuestaParcial);
                         }
-                    }
+                    }*/
                     // FIN - Obtener Requisiciones Generadas por Orden de Venta
 
                     // INICIO - Actualizar Requisiciones
-                    if (!utilities.isEmpty(respuestaGeneracionCupon.informacionCupones)) {
+                    /*if (!utilities.isEmpty(respuestaGeneracionCupon.informacionCupones)) {
                         respuesta.cupones = respuestaGeneracionCupon.informacionCuponesResult;
                         for (var s = 0; s < respuestaGeneracionCupon.informacionCupones.length && respuesta.error == false; s++) {
                             var objRequisicion = arrayRequisiciones.filter(function (obj) {
@@ -4100,7 +4107,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                         respuestaParcial.codigo = 'RDEP019';
                         respuestaParcial.mensaje = 'Error Actualizando Cupones en Requisiciones en Orden de Venta con ID Interno : ' + respuesta.idOV + ' - Error : No se Recibio Informacion de Array de Cupones';
                         respuesta.detalle.push(respuestaParcial);
-                    }
+                    }*/
                     // FIN - Actualizar Requisiciones
 
                     // FIN - Obtener Cupones Generados por Orden de Venta
@@ -4110,8 +4117,10 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                     if (respuesta.error == false) {
 
                         // INICIO - Generar Medios de Pago
+                        //var respuestaMediosPago = generarMediosDePago(idDep, idMedioPagoFinal, esServicio, isTravel);
+                        esServicio = arrayOV[0].esServicio;
+                        isTravel = arrayOV[0].esTravel;
                         var respuestaMediosPago = generarMediosDePago(idDep, idMedioPagoFinal, esServicio, isTravel);
-
 
                         if (!utilities.isEmpty(respuestaMediosPago)) {
                             respuesta.idConciliacion = respuestaMediosPago.idConciliacion;
@@ -4161,7 +4170,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                 // FIN - Generar Custom Transaction de Cupones
 
 
-                log.audit('After Submit', 'FIN Generacion Cupones - ID Interno OV : ' + respuesta.idOV + ' - ID Interno Deposito : ' + recordId);
+                //log.audit('After Submit', 'FIN Generacion Cupones - ID Interno OV : ' + respuesta.idOV + ' - ID Interno Deposito : ' + recordId);
 
             } catch (excepcionGeneral) {
                 respuesta.error = true;
