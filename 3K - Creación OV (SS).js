@@ -38,7 +38,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
             objRespuesta.message = "";
             objRespuesta.detalle = new Array();
 
-            if ((scriptContext.type == 'create') || (scriptContext.type == 'edit')) {
+            if (scriptContext.type == 'create') {
 
                 try {
                     log.audit('Creación OV (SS)', 'INICIO - beforeSubmit');
@@ -473,7 +473,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
             var arrayArticulos = new Array();
             var arrayFechasProv = new Array();
 
-            if ((scriptContext.type == 'create') || (scriptContext.type == 'edit')) {
+            if (scriptContext.type == 'create') {
 
                 try {
                     log.audit('Creación OV (SS)', 'INICIO - afterSubmit');
@@ -968,7 +968,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                     }
                                 }
 
-                                log.audit('Creación OV (SS) - afterSubmit - LINE 976', 'FIN Actualizar Lineas OV');
+                                log.audit('Creación OV (SS) - afterSubmit', 'FIN Actualizar Lineas OV');
 
                                 // FIN ACTUALIZAR LINEAS OV
                             }
