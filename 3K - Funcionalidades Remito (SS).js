@@ -41,7 +41,18 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
         var shipStatus = scriptContext.newRecord.getValue({
           fieldId: 'shipstatus'
         });
-        if (( /*scriptContext.type == 'create' ||*/ scriptContext.type == 'edit') && (shipStatus.toLowerCase() == 'b' || shipStatus.toLowerCase() == 'c') && utilities.isEmpty(idFactura)) {
+        var idOrdenVenta = scriptContext.newRecord.getValue({
+          fieldId: 'createdfrom'
+        });
+        var searchTravelServicio = search.lookupFields({
+          type: SALES_ORDER,
+          id: idOrdenVenta,
+          columns: [
+            'custbody_3k_ov_servicio', 'custbody_3k_ov_travel'
+          ]
+        });
+        var esProducto = !(searchTravelServicio.custbody_3k_ov_servicio || searchTravelServicio.custbody_3k_ov_travel) || false;
+        if (( /*scriptContext.type == 'create' ||*/ scriptContext.type == 'edit') && (shipStatus.toLowerCase() == 'b' || shipStatus.toLowerCase() == 'c') && utilities.isEmpty(idFactura) && esProducto) {
           var idRemito = scriptContext.newRecord.id;
           var tipoTransaccion = scriptContext.newRecord.type;
           if (!utilities.isEmpty(idRemito) && !utilities.isEmpty(tipoTransaccion)) {
@@ -52,10 +63,6 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
               isDynamic: true,
             });
             if (!utilities.isEmpty(remRecord)) {
-
-              var idOrdenVenta = remRecord.getValue({
-                fieldId: 'createdfrom'
-              });
 
               var fechaRemito = remRecord.getValue({
                 fieldId: 'trandate'
@@ -232,7 +239,8 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                           factRecord.setCurrentSublistValue({
                             sublistId: 'item',
                             fieldId: 'quantity',
-                            value: packed[0].cantidad
+                            value: packed[0].cantidad,
+                            ignoreFieldChange: true
                           });
                           if (importeEnvioOV > 0) {
                             var importeEnvioFact = (parseFloat(packed[0].cantidad) * parseFloat(importeEnvioOV)) / parseFloat(cantidadOV);
