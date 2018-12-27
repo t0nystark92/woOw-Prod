@@ -114,6 +114,41 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             line: i
                         });
 
+                        var comisionServicio = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_comision',
+                            line: i
+                        });
+
+                        var grossAmount = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'grossamt',
+                            line: i
+                        });
+
+                        log.debug('Creación OV (SS) - beforeSubmit', 'comisionServicio: ' + comisionServicio + ', grossAmount: ' + grossAmount);
+
+                        if (!utilities.isEmpty(comisionServicio) && comisionServicio > 0){
+                            var impFacturar = parseFloat((grossAmount * ((parseFloat(comisionServicio, 10)) / 100)), 10).toFixed(2);
+                            var deudaPagar = parseFloat((grossAmount - (parseFloat(impFacturar, 10))), 10).toFixed(2);
+
+                            log.debug('Creación OV (SS) - beforeSubmit', 'impFacturar: ' + impFacturar + ', deudaPagar: ' + deudaPagar);
+
+                            objRecord.setSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_importe_fact_liq',
+                                line: i,
+                                value: impFacturar
+                            });
+
+                            objRecord.setSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_deuda_pagar',
+                                line: i,
+                                value: deudaPagar
+                            });
+                        }
+
                         arrayArticulos.push(objJSON.articulo);
                         arrayItems.push(objJSON);
                     }
