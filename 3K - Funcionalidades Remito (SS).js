@@ -45,7 +45,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
           fieldId: 'createdfrom'
         });
         var searchTravelServicio = search.lookupFields({
-          type: SALES_ORDER,
+          type: record.Type.SALES_ORDER,
           id: idOrdenVenta,
           columns: [
             'custbody_3k_ov_servicio', 'custbody_3k_ov_travel'
@@ -311,7 +311,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                     }
                   }
                   log.audit('Todos los datos completados', 'Guardando Factura para el remito con ID Interno: ' + idRemito);
-                  var idFactGenerada = factRecord.save();
+                  if (respuesta.error == false){
+                    var idFactGenerada = factRecord.save();
+                  }
                   if (!utilities.isEmpty(idFactGenerada)) {
                     log.debug('Seteando ID de Factura')
                     remRecord.setValue({
