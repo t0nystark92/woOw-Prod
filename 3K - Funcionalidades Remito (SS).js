@@ -52,7 +52,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
           ]
         });
         var esProducto = !(searchTravelServicio.custbody_3k_ov_servicio || searchTravelServicio.custbody_3k_ov_travel) || false;
-        if (( /*scriptContext.type == 'create' ||*/ scriptContext.type == 'edit') && (shipStatus.toLowerCase() == 'b' || shipStatus.toLowerCase() == 'c') && utilities.isEmpty(idFactura) && esProducto) {
+        if ((scriptContext.type == 'pack' || scriptContext.type == 'edit') && (shipStatus.toLowerCase() == 'b' || shipStatus.toLowerCase() == 'c') && utilities.isEmpty(idFactura) && esProducto) {
           var idRemito = scriptContext.newRecord.id;
           var tipoTransaccion = scriptContext.newRecord.type;
           if (!utilities.isEmpty(idRemito) && !utilities.isEmpty(tipoTransaccion)) {
@@ -311,9 +311,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                     }
                   }
                   log.audit('Todos los datos completados', 'Guardando Factura para el remito con ID Interno: ' + idRemito);
-                  if (respuesta.error == false){
-                    var idFactGenerada = factRecord.save();
-                  }
+                  var idFactGenerada = factRecord.save();
                   if (!utilities.isEmpty(idFactGenerada)) {
                     log.debug('Seteando ID de Factura')
                     remRecord.setValue({
