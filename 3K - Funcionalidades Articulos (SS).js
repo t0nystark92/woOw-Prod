@@ -289,6 +289,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                 log.error('Grabar Articulo', 'BeforeSubmit - Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
                 throw utilities.crearError('SART007', 'Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
             }
+            afterConvertido(scriptContext);
         }
 
         /**
@@ -300,15 +301,15 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
          * @param {string} scriptContext.type - Trigger type
          * @Since 2015.2
          */
-        function afterSubmit(scriptContext) {
+        function afterConvertido(scriptContext) {
             try {
                 log.audit('Inicio Grabar Articulo', 'AftereSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
                 if (scriptContext.type == 'create' || scriptContext.type == 'edit') {
                     var cuentaIngresos = '';
                     var baseNumeracion = 0;
-                    var idArticulo = scriptContext.newRecord.id;
+                    //var idArticulo = scriptContext.newRecord.id;
                     var tipoArticulo = scriptContext.newRecord.type;
-                    if (!utilities.isEmpty(idArticulo) && !utilities.isEmpty(tipoArticulo)) {
+                    if (/*!utilities.isEmpty(idArticulo) &&*/ !utilities.isEmpty(tipoArticulo)) {
                         // INICIO - Obtener Ultimo nivel de Rubro del Articulo
                         var rubro1 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_1' });
                         var rubro2 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_2' });
@@ -390,13 +391,13 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                                         baseNumeracion = parseInt(baseNumeracion, 10);
                                     } else {
                                         baseNumeracion = '';
-                                        log.error('Grabar Articulo', 'AfterSubmit - No se encuentra configurada la Base de Numeracion de los Articulos en la Configuracion de Articulos');
+                                        log.error('Grabar Articulo', 'AfterSubmitConvertido - No se encuentra configurada la Base de Numeracion de los Articulos en la Configuracion de Articulos');
                                         throw utilities.crearError('SART009', 'No se encuentra configurada la Base de Numeracion de los Articulos en la Configuracion de Articulos');
                                     }
                                 } else {
                                     // No se encuentra Definida la Numeracion de los Articulos
                                     baseNumeracion = '';
-                                    log.error('Grabar Articulo', 'AfterSubmit - No se encuentra definida la Configuracion de Articulos');
+                                    log.error('Grabar Articulo', 'AfterSubmitConvertido - No se encuentra definida la Configuracion de Articulos');
                                     throw utilities.crearError('SART003', 'No se encuentra definida la Configuracion de Articulos');
                                 }
                                 // FIN - Obtener Numerador Base de Articulo
@@ -408,27 +409,47 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                                     NombreArticulo = nombreArticuloOriginal;
                                 }
                                 try {
-                                    var idRecord = record.submitFields({
-                                        type: tipoArticulo,
-                                        id: idArticulo,
-                                        values: {
-                                            itemid: NombreArticulo,
-                                            externalid: NombreArticulo,
-                                            custitem_3k_numero_art: NumeroArticuloCompleto,
-                                            custitem_3k_rubro: idRubroArticulo,
-                                            incomeaccount: cuentaIngresos
-                                        },
-                                        options: {
-                                            enableSourcing: true,
-                                            ignoreMandatoryFields: false
-                                        }
+                                    // var idRecord = record.submitFields({
+                                        // type: tipoArticulo,
+                                        // id: idArticulo,
+                                        // values: {
+                                            // itemid: NombreArticulo,
+                                            // externalid: NombreArticulo,
+                                            // custitem_3k_numero_art: NumeroArticuloCompleto,
+                                            // custitem_3k_rubro: idRubroArticulo,
+                                            // incomeaccount: cuentaIngresos
+                                        // },
+                                        // options: {
+                                            // enableSourcing: true,
+                                            // ignoreMandatoryFields: false
+                                        // }
+                                    // });
+                                    scriptContext.newRecord.setValue({
+                                      fieldId: 'itemid',
+                                      value: NombreArticulo
                                     });
-                                    if (utilities.isEmpty(idRecord)) {
-                                        log.error('Grabar Articulo', 'AfterSubmit - Error Grabando Campos de Articulo - Error : No se recibio ID de Articulo Grabado');
-                                        throw utilities.crearError('SART010', 'Error Grabando Campos de Articulo - Error : No se recibio ID de Articulo Grabado');
-                                    }
+                                    scriptContext.newRecord.setValue({
+                                      fieldId: 'externalid',
+                                      value: NombreArticulo
+                                    });
+                                    scriptContext.newRecord.setValue({
+                                      fieldId: 'custitem_3k_numero_art',
+                                      value: NumeroArticuloCompleto
+                                    });
+                                    scriptContext.newRecord.setValue({
+                                      fieldId: 'custitem_3k_rubro',
+                                      value: idRubroArticulo
+                                    });
+                                    scriptContext.newRecord.setValue({
+                                      fieldId: 'incomeaccount',
+                                      value: cuentaIngresos
+                                    });
+                                    // if (utilities.isEmpty(idRecord)) {
+                                        // log.error('Grabar Articulo', 'AfterSubmitConvertido - Error Grabando Campos de Articulo - Error : No se recibio ID de Articulo Grabado');
+                                        // throw utilities.crearError('SART010', 'Error Grabando Campos de Articulo - Error : No se recibio ID de Articulo Grabado');
+                                    // }
                                 } catch (exepcionSubmit) {
-                                    log.error('Grabar Articulo', 'AfterSubmit - Excepcion Grabando Campos de Articulo - Excepcion : ' + exepcionSubmit.message);
+                                    log.error('Grabar Articulo', 'AfterSubmitConvertido - Excepcion Grabando Campos de Articulo - Excepcion : ' + exepcionSubmit.message);
                                     throw utilities.crearError('SART011', 'Excepcion Grabando Campos de Articulo - Excepcion : ' + exepcionSubmit.message);
                                 }
                             } else {
@@ -448,7 +469,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                             }
                         } else {
                             // El Rubro No Posee Nomenclatura SKU
-                            log.error('Grabar Articulo', 'AfterSubmit - El Rubro con ID Interno : ' + idRubroArticulo + ' No posee Nomneclatura SKU');
+                            log.error('Grabar Articulo', 'AfterSubmitConvertido - El Rubro con ID Interno : ' + idRubroArticulo + ' No posee Nomneclatura SKU');
                             throw utilities.crearError('SART013', 'El Rubro con ID Interno : ' + idRubroArticulo + ' No posee Nomneclatura SKU');
                         }
                     } else {
@@ -465,7 +486,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                     }
                 }
             } catch (excepcion) {
-                log.error('Grabar Articulo', 'AfterSubmit - Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
+                log.error('Grabar Articulo', 'AfterSubmitConvertido - Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
                 throw utilities.crearError('SART015', 'Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
             }
             log.audit('Fin Grabar Articulo', 'AftereSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
@@ -474,8 +495,8 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
 
         return {
             beforeLoad: beforeLoad,
-            beforeSubmit: beforeSubmit,
-            afterSubmit: afterSubmit
+            beforeSubmit: beforeSubmit
+            //afterSubmit: afterSubmit
         };
 
     });
