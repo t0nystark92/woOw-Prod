@@ -3645,6 +3645,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
                         var monedaCustomTransaction = '';
                         var importeGanancia = 0;
+                        var importeGananciaPpal = 0;
                         if (monedaOV != monedaPago) {
                             if (!utilities.isEmpty(tipoCambioPago)) {
                                 // INICIO - Obtener Moneda de la Subsidiaria
@@ -3676,6 +3677,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                             if (monedaPago != monedaPrincipalSubsidiaria) {
 
                                                 importeGanancia = (parseFloat(importePago, 10) * (Math.abs(parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10))));
+                                                
+                                                importeGananciaPpal = (parseFloat(importePago, 10) * (parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10)));
 
                                                 importePago = parseFloat(importePago, 10) * parseFloat(tipoCambioPago, 10);
 
@@ -3683,7 +3686,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 importePago = parseFloat(importePago, 10) / parseFloat(tipoCambioPago, 10);
 
                                                 importeGanancia = (parseFloat(importePago, 10) * (Math.abs(parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10))));
-
+                                                
+                                                importeGananciaPpal = (parseFloat(importePago, 10) * (parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10)));
                                             }
                                             log.audit('Cobranza Cliente', 'tipoCambioOficial : ' +tipoCambioOficial);
 
@@ -3694,11 +3698,11 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 fireSlavingSync: true
                                             });
 
-                                            log.audit('Cobranza Cliente', 'importeGanancia : ' +importeGanancia);
+                                            log.audit('Cobranza Cliente', 'importeGanancia : ' +importeGanancia + ', importeGananciaPpal : ' +importeGananciaPpal);
 
                                             objRecordDeposit.setValue({
                                                 fieldId: 'custbody_3k_ganancia_tipo_cambio',
-                                                value: importeGanancia.toFixed(2).toString(),
+                                                value: importeGananciaPpal.toFixed(2).toString(),                                                
                                                 ignoreFieldChange: false,
                                                 fireSlavingSync: true
                                             });
@@ -6733,10 +6737,14 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             var importeUtilizarMedioPago = '';
 
                             if (moneda != monedaPrincipalSubsidiaria) {
-                                monedaUtilizar = moneda;
+                                monedaUtilizar = monedaPago;
+                                importeUtilizar = parseFloat(importePago, 10) * parseFloat(tipoCambio, 10);
+                                importeIn = parseFloat(importePago, 10);
+                                importeUtilizarMedioPago = parseFloat(importeUtilizar, 10);                            
+                                /*monedaUtilizar = moneda;
                                 importeUtilizarMedioPago = parseFloat(importePago, 10) * parseFloat(tipoCambio, 10);
                                 importeIn = parseFloat(importeUtilizarMedioPago, 10);
-                                importeUtilizar = parseFloat(importePago, 10);
+                                importeUtilizar = parseFloat(importePago, 10);*/
                             } else {
                                 monedaUtilizar = monedaPago;
                                 importeUtilizar = parseFloat(importePago, 10) / parseFloat(tipoCambio, 10);
@@ -6782,9 +6790,9 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
 
                         if (respuesta.error == false) {
-
+                            log.debug('Cobranza', 'CONCILIACION IMPACTO - importeDifCambio : ' + JSON.stringify(importeDifCambio));
                             /////////////////////////////
-                            if (!utilities.isEmpty(importeDifCambio) && parseFloat(importeDifCambio, 10) > 0 && esServicio && isTravel==false) {
+                            if (!utilities.isEmpty(importeDifCambio) && importeDifCambio != 0.00 && esServicio && isTravel==false) {
 
                                 // INICIO - Realizar Movimiento de Cuenta Estandard de NetSuite a Cuenta woOw
                                 var searchConfig = search.load({
@@ -6823,7 +6831,15 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                     var importeUtilizarImpacto = '';
                                     importeUtilizarImpacto = parseFloat(importeIn, 10);
 
-                                    var respuesta = generarCustomTransactionCuentaImpactoCobranza(subsidiaria, fecha, monedaPrincipalSubsidiaria, tipoCambioNS, idCobranza, idRegistroCuentaImpacto, idCuentaIngresoNS, idCuentaIngreso, importeUtilizarImpacto, idCuentaDifTipoCambio, importeDifCambio, sitioWeb, sistema);
+                                    if (importeDifCambio > 0.00){
+                                        //La cuenta de ganancia va en el credito
+                                        var respuesta = generarCustomTransactionCuentaImpactoCobranza(subsidiaria, fecha, monedaPrincipalSubsidiaria, tipoCambioNS, idCobranza, idRegistroCuentaImpacto, idCuentaIngresoNS, idCuentaIngreso, importeUtilizarImpacto, idCuentaDifTipoCambio, importeDifCambio, sitioWeb, sistema);
+                                    } else {
+                                        //La cuenta de ganancia va en el debito
+                                        importeDifCambio = Math.abs(importeDifCambio);
+                                        var respuesta = generarCustomTransactionCuentaImpactoCobranza(subsidiaria, fecha, monedaPrincipalSubsidiaria, tipoCambioNS, idCobranza, idRegistroCuentaImpacto, idCuentaDifTipoCambio, idCuentaIngreso, importeUtilizarImpacto, idCuentaIngresoNS, importeDifCambio, sitioWeb, sistema);
+                                    }
+                                    //var respuesta = generarCustomTransactionCuentaImpactoCobranza(subsidiaria, fecha, monedaPrincipalSubsidiaria, tipoCambioNS, idCobranza, idRegistroCuentaImpacto, idCuentaIngresoNS, idCuentaIngreso, importeUtilizarImpacto, idCuentaDifTipoCambio, importeDifCambio, sitioWeb, sistema);
                                     log.debug('Cobranza', 'RESPUESTA CONCILIACION IMPACTO : ' + JSON.stringify(respuesta));
                                     if (respuesta.error == false && !utilities.isEmpty(respuesta.idConciliacionImpacto)) {
                                         objRecordCobranza.setValue({
@@ -7463,7 +7479,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                     objRecorConciliacion.setCurrentSublistValue({
                         sublistId: 'line',
                         fieldId: 'account',
-                        value: cuentaClearing
+                        //value: cuentaClearing
+                        value: cuentaContableFinal
                     });
 
                     objRecorConciliacion.setCurrentSublistValue({
@@ -7482,7 +7499,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                     objRecorConciliacion.setCurrentSublistValue({
                         sublistId: 'line',
                         fieldId: 'account',
-                        value: cuentaContableFinal
+                        //value: cuentaContableFinal
+                        value: cuentaClearing
                     });
 
                     objRecorConciliacion.setCurrentSublistValue({
