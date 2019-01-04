@@ -86,6 +86,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                     log.debug('Creación OV (SS) - beforeSubmit', 'numLines: ' + numLines);
 
+                    var travelOV = false;
+
                     for (var i = 0; !utilities.isEmpty(numLines) && i < numLines; i++) {
                         var objJSON = new Object({});
 
@@ -114,23 +116,33 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             line: i
                         });
 
+                        var isTravel = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_travel',
+                            line: i
+                        });
+
+                        if (isTravel == true) {
+                            travelOV = true;
+                        }                    
+
                         var comisionServicio = objRecord.getSublistValue({
                             sublistId: 'item',
                             fieldId: 'custcol_3k_comision',
                             line: i
                         });
 
-                        var grossAmount = objRecord.getSublistValue({
+                        var amount = objRecord.getSublistValue({
                             sublistId: 'item',
-                            fieldId: 'grossamt',
+                            fieldId: 'amount',
                             line: i
                         });
 
-                        log.debug('Creación OV (SS) - beforeSubmit', 'comisionServicio: ' + comisionServicio + ', grossAmount: ' + grossAmount);
+                        log.debug('Creación OV (SS) - beforeSubmit', 'comisionServicio: ' + comisionServicio + ', amount: ' + amount);
 
                         if (!utilities.isEmpty(comisionServicio) && comisionServicio > 0){
-                            var impFacturar = parseFloat((grossAmount * ((parseFloat(comisionServicio, 10)) / 100)), 10).toFixed(2);
-                            var deudaPagar = parseFloat((grossAmount - (parseFloat(impFacturar, 10))), 10).toFixed(2);
+                            var impFacturar = parseFloat((amount * ((parseFloat(comisionServicio, 10)) / 100)), 10).toFixed(2);
+                            var deudaPagar = parseFloat((amount - (parseFloat(impFacturar, 10))), 10).toFixed(2);
 
                             log.debug('Creación OV (SS) - beforeSubmit', 'impFacturar: ' + impFacturar + ', deudaPagar: ' + deudaPagar);
 
@@ -429,11 +441,16 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         }
 
                     }
-                    log.debug('Creación OV (SS) - beforeSubmit', 'servicioOV: ' + servicioOV);
+                    log.debug('Creación OV (SS) - beforeSubmit', 'servicioOV: ' + servicioOV + ', travelOV: ' + travelOV);
 
                     objRecord.setValue({
                         fieldId: 'custbody_3k_ov_servicio',
                         value: servicioOV
+                    });
+
+                    objRecord.setValue({
+                        fieldId: 'custbody_3k_ov_travel',
+                        value: travelOV
                     });
 
                     log.debug('Creación OV (SS) - beforeSubmit', 'arrayLinea lineas OV: ' + JSON.stringify(arrayLinea));
