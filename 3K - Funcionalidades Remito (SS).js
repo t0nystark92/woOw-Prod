@@ -33,13 +33,26 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
       respuesta.error = false;
       respuesta.detalle = new Array();
 
-      var estadoEnviadoCupon = '';
       try {
         log.audit('Inicio Grabar Remito', 'AfterSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
+        var idFactura = scriptContext.newRecord.getValue({
+          fieldId: 'custbody_3k_factura_generada'
+        });
         var shipStatus = scriptContext.newRecord.getValue({
           fieldId: 'shipstatus'
         });
-        if ((scriptContext.type == 'create' || scriptContext.type == 'edit') && shipStatus.toLowerCase() == 'c') {
+        var idOrdenVenta = scriptContext.newRecord.getValue({
+          fieldId: 'createdfrom'
+        });
+        var searchTravelServicio = search.lookupFields({
+          type: record.Type.SALES_ORDER,
+          id: idOrdenVenta,
+          columns: [
+            'custbody_3k_ov_servicio', 'custbody_3k_ov_travel'
+          ]
+        });
+        var esProducto = !(searchTravelServicio.custbody_3k_ov_servicio || searchTravelServicio.custbody_3k_ov_travel) || false;
+        if ((scriptContext.type == 'pack' || scriptContext.type == 'edit') && (shipStatus.toLowerCase() == 'b' || shipStatus.toLowerCase() == 'c') && utilities.isEmpty(idFactura) && esProducto) {
           var idRemito = scriptContext.newRecord.id;
           var tipoTransaccion = scriptContext.newRecord.type;
           if (!utilities.isEmpty(idRemito) && !utilities.isEmpty(tipoTransaccion)) {
@@ -50,10 +63,6 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
               isDynamic: true,
             });
             if (!utilities.isEmpty(remRecord)) {
-
-              var idOrdenVenta = remRecord.getValue({
-                fieldId: 'createdfrom'
-              });
 
               var fechaRemito = remRecord.getValue({
                 fieldId: 'trandate'
@@ -131,11 +140,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                 if (respuesta.error == false) {
                   // Solo Genera la Factura si el Remito se genera desde una Orden de Venta
                   if (tipoTransaccion == 'salesorder') {
-
                     var cantidadLineasRemito = remRecord.getLineCount({
                       sublistId: 'item'
                     });
-                    var ssConfigVoucher = utilities.searchSavedPro('customsearch_3k_configuracion_voucher_ss').objRsponseFunction;
                     var informacionRemito = new Array();
                     var idOrdenes = new Array();
                     for (var i = 0; i < cantidadLineasRemito && respuesta.error == false; i++) {
@@ -155,6 +162,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                       if (!utilities.isEmpty(idArtOV)) {
                         if (!utilities.isEmpty(cantidad) && !isNaN(cantidad) && cantidad > 0) {
                           var infoLinea = new Object();
+                          var idArticulos = [];
                           infoLinea.idArtOV = idArtOV;
                           infoLinea.cantidad = cantidad;
                           informacionRemito.push(infoLinea);
@@ -186,21 +194,27 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                         fromType: record.Type.SALES_ORDER,
                         fromId: idOrdenVenta,
                         toType: record.Type.INVOICE,
-                        isDynamic: true,
+                        isDynamic: true
+                      });
+                      var totalOV = factRecord.getValue({
+                        fieldId: 'total'
                       });
                       //CAMBIAR LA FECHA DE LA FACTURA POR LA DEL REMITO
+                      log.debug('Cambiar Fecha Factura', 'Cambiando Fecha de Factura por Fecha de Remito');
                       factRecord.setValue({
                         fieldId: 'trandate',
-                        value: fechaRemitoString
+                        value: fechaRemitoDate
                       });
 
-                      //DEJAR UNICAMENTE LAS LÍNEAS QUE HAYAN SIDO SHIPPEADAS EN EL REMITO
+                      //DEJAR UNICAMENTE LAS LÍNEAS QUE HAYAN SIDO PACKEADAS EN EL REMITO
+                      log.debug('Dejando líneas del remito', 'Dejando solo las lineas packed');
                       var lineasFactura = factRecord.getLineCount({
                         sublistId: 'item'
                       });
-                      var vouchers = []; //Para guardar los vouchers de descuento y crear las líneas luego crear las líneas
-                      for (var i = 0; i < lineasFactura && respuesta.error != false; i++) {
-                        factRecord.selectSublistLine({
+                      log.debug('lineasFactura', lineasFactura);
+                      for (var i = lineasFactura - 1; i > -1 && respuesta.error == false; i--) {
+                        log.debug('Validando Línea', 'Linea: ' + i);
+                        factRecord.selectLine({
                           sublistId: 'item',
                           line: i
                         });
@@ -208,52 +222,56 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                           sublistId: 'item',
                           fieldId: 'item'
                         });
-                        var shipped = infoLinea.filter(function (obj) {
+                        var importeEnvioOV = factRecord.getCurrentSublistValue({
+                          sublistId: 'item',
+                          fieldId: 'shippingcost'
+                        });
+                        var cantidadOV = factRecord.getCurrentSublistValue({
+                          sublistId: 'item',
+                          fieldId: 'quantity'
+                        });
+                        log.debug('idArtFact', idArtFact);
+                        var packed = informacionRemito.filter(function (obj) {
                           return obj.idArtOV == idArtFact;
                         });
-                        var idVoucher = factRecord.getCurrentSublistValue({
-                          sublistId: 'item',
-                          fieldId: 'custcol_3k_voucher'
-                        });
-                        if (shipped.length == 1) {
-                          if (!utilities.isEmpty(idVoucher)) {
-                            var accionVoucher = factRecord.getCurrentSublistValue({
-                              sublistId: 'item',
-                              fieldId: 'custcol_3k_cod_accion_voucher'
-                            });
-                            //Si no es voucher de devolución, se toma la info para luego colocar una línea de descuento
-                            if (accionVoucher != '2') {
-                              var cantTotal = factRecord.getCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'quantity'
-                              });
-                              var importeVoucher = factRecord.getCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_importe_voucher'
-                              });
-                              var cantShipped = shipped[0].cantidad;
-                              var importeVoucherAplicado = (parseFloat(cantShipped) * parseFloat(importeVoucher)) / parseFloat(cantTotal);
-                              factRecord.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_importe_voucher',
-                                value: importeVoucherAplicado
-                              });
-                              vouchers.push({
-                                linea: i,
-                                idVoucher: idVoucher,
-                                importeVoucherAplicado: importeVoucherAplicado
-                              });
-                            }
-                          }
+                        log.debug('packed', packed);
+                        if (packed.length == 1) {
                           factRecord.setCurrentSublistValue({
                             sublistId: 'item',
                             fieldId: 'quantity',
-                            value: shipped[0].cantidad
+                            value: packed[0].cantidad,
+                            ignoreFieldChange: true
                           });
+                          if (importeEnvioOV > 0) {
+                            var importeEnvioFact = (parseFloat(packed[0].cantidad) * parseFloat(importeEnvioOV)) / parseFloat(cantidadOV);
+                            factRecord.setCurrentSublistValue({
+                              sublistId: 'item',
+                              fieldId: 'shippingcost',
+                              value: importeEnvioFact
+                            });
+                          }
                           factRecord.commitLine({
                             sublistId: 'item'
                           });
-                        } else if (shipped.length > 1) {
+                          //Si no es la última línea de la FC, se verifica si tiene descuento
+                          //var verificarDescuento = (i + 1 < lineasFactura);
+                          //log.debug('verificarDescuento', verificarDescuento);
+                          //var lineasDescuento = 1;
+                          //while (verificarDescuento) {
+                          //factRecord.selectLine({
+                          //sublistId: 'item',
+                          //line: i + 1
+                          //});
+                          //var esDescuento = factRecord.getCurrentSublistValue({
+                          //sublistId: 'item',
+                          //fieldId: 'custcol_3k_tipo_item'
+                          //}) == '8'; //Es descuento si el Tipo de Item es 8 OJO: PODRÍA CAMBIAR
+                          //log.debug('esDescuento', esDescuento);
+                          //i += (esDescuento) ? 1 : 0;
+                          ////Si no es la última línea de la FC, se verifica si tiene descuento
+                          //var verificarDescuento = (esDescuento && (i + 1 < lineasFactura));
+                          //}
+                        } else if (packed.length > 1) {
                           mensaje = "Existen 2 o más copias del mismo artículo en la OV";
                           respuesta.error = true;
                           respuestaParcial = new Object();
@@ -261,77 +279,83 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                           respuestaParcial.mensaje = 'Error Facturando Remito para el Remito con ID Interno : ' + respuesta.idRemito + ' - Error : ' + mensaje;
                           respuesta.detalle.push(respuestaParcial);
                         } else {
-                          log.debug('No está en el remito', 'La línea: ' + i + ' no está en el remito, se removerá');
-                          factRecord.removeLine({
+                          var esDescuento = factRecord.getCurrentSublistValue({
                             sublistId: 'item',
-                            line: i
+                            fieldId: 'custcol_3k_tipo_item'
+                          }) == '8';
+                          var esRedondeo = factRecord.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_es_redondeo'
                           });
-                          i--;
-                          lineasFactura--;
+                          if (!esDescuento && !utilities.isEmpty(idArtFact) && !esRedondeo) {
+                            log.debug('No está en el remito', 'La línea: ' + i + ' no está en el remito, se removerá');
+                            factRecord.removeLine({
+                              sublistId: 'item',
+                              line: i
+                            });
+                            log.debug('Linea removida', 'Linea removida: ' + i);
+                            //i--;
+                            //lineasFactura = factRecord.getLineCount({
+                            //  sublistId: 'item'
+                            //});;
+                          }
+                          /*else if (esRedondeo){
+                                                     log.debug('Recalcular Redondeo','Hay redondeo, se recalculará');
+                                                     var montoRedondeo = factRecord.getCurrentSublistValue({
+                                                       sublistId: 'item',
+                                                       fieldId: 'grossamount'
+                                                     });*/
+
                         }
                       }
-                      if (respuesta.error == false && vouchers.length > 0) {
-                        //Agrego las líneas de descuento por voucher
-                        var artDescuentoVoucher = ssConfigVoucher.result.getValue('custrecord_3k_configvou_articulo');
-                        for (var i = 0; respuesta.error == false && i < vouchers.length; i++) {
-                          log.debug('Agregando Voucher', vouchers[i]);
-                          factRecord.selectNewLine({
-                            sublistId: 'item'
-                          });
-                          factRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'item',
-                            value: artDescuentoVoucher
-                          });
-                          factRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'custcol_3k_voucher',
-                            value: vouchers[i].idVoucher
-                          })
-                          factRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'grossamount',
-                            value: parseFloat(vouchers[i].importeVoucherAplicado)
-                          });
-                          factRecord.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'custcol_3k_linea_voucher',
-                            value: true
-                          });
-                          factRecord.commitLine();
-                          log.debug('Voucher agregado', vouchers[i]);
-                        }
-                      }
-                      log.audit('Todos los datos completados', 'Guardando Factura para el remito con ID Interno: ' + idRemito);
-                      var idFactGenerada = factRecord.save();
-                      log.audit('Factura Guardada','Generada Factura con ID Interno: '+ idFactGenerada + '. Para el Remito con ID Interno: '+ idRemito);
                     }
                   }
+                  log.audit('Todos los datos completados', 'Guardando Factura para el remito con ID Interno: ' + idRemito);
+                  var idFactGenerada = factRecord.save();
+                  if (!utilities.isEmpty(idFactGenerada)) {
+                    log.debug('Seteando ID de Factura')
+                    remRecord.setValue({
+                      fieldId: 'custbody_3k_factura_generada',
+                      value: idFactGenerada
+                    });
+                    record.submitFields({
+                      type: record.Type.ITEM_FULFILLMENT,
+                      id: remRecord.id,
+                      values: {
+                        'custbody_3k_factura_generada': idFactGenerada
+                      },
+                      options: {
+                        enableSourcing: false,
+                        ignoreMandatoryFields: false
+                      }
+                    })
+                  }
+                  log.audit('Factura Guardada', 'Generada Factura con ID Interno: ' + idFactGenerada + '. Para el Remito con ID Interno: ' + idRemito);
                 }
               }
-            } else {
-              var mensaje = 'Error cargando Registro de Remito';
-              respuesta.error = true;
-              respuestaParcial = new Object();
-              respuestaParcial.codigo = 'SREM004';
-              respuestaParcial.mensaje = 'Error Generando Factura para el Remito con ID Interno : ' + respuesta.idRemito + ' - Error : ' + mensaje;
-              respuesta.detalle.push(respuestaParcial);
             }
           } else {
-            var mensaje = 'Error obteniendo la siguiente informacion del Remito : ';
-            if (utilities.isEmpty(idRemito)) {
-              mensaje = mensaje + " ID Interno del Remito / ";
-            }
-            if (utilities.isEmpty(tipoTransaccion)) {
-              mensaje = mensaje + " Tipo de transaccion / ";
-            }
+            var mensaje = 'Error cargando Registro de Remito';
             respuesta.error = true;
             respuestaParcial = new Object();
-            respuestaParcial.codigo = 'SREM003';
+            respuestaParcial.codigo = 'SREM004';
             respuestaParcial.mensaje = 'Error Generando Factura para el Remito con ID Interno : ' + respuesta.idRemito + ' - Error : ' + mensaje;
             respuesta.detalle.push(respuestaParcial);
           }
-        }
+        } //else {
+        //var mensaje = 'Error obteniendo la siguiente informacion del Remito : ';
+        //if (utilities.isEmpty(idRemito)) {
+        //mensaje = mensaje + " ID Interno del Remito / ";
+        //}
+        //if (utilities.isEmpty(tipoTransaccion)) {
+        //mensaje = mensaje + " Tipo de transaccion / ";
+        //}
+        //respuesta.error = true;
+        //respuestaParcial = new Object();
+        //respuestaParcial.codigo = 'SREM003';
+        //respuestaParcial.mensaje = 'Error Generando Factura para el Remito con ID Interno : ' + respuesta.idRemito + ' - Error : ' + mensaje;
+        //respuesta.detalle.push(respuestaParcial);
+        //}
 
       } catch (excepcionGeneral) {
         respuesta.error = true;
