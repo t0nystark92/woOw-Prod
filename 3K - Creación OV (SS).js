@@ -62,7 +62,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     var arrayArticulos = [];
                     var arrayItems = [];
 
-                    var id = objRecord.id
+                    var id = objRecord.id;
 
                     var ubicacion = objRecord.getValue({
                         fieldId: 'location'
@@ -78,6 +78,46 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                     log.debug('Creación OV (SS) - beforeSubmit', ' id: ' + id + ', ubicacion: ' + ubicacion + ', sitio: ' + sitio + ', logNS: ' + logNS);
 
+                    //Consultar Item Programa Fidelidad
+
+                    var searchConfigProg = utilities.searchSaved('customsearch_3k_conf_prog_fidelidad');
+
+                    if (!utilities.isEmpty(searchConfigProg) && searchConfigProg.error == false) {
+                        if (!utilities.isEmpty(searchConfigProg.objRsponseFunction.result) && searchConfigProg.objRsponseFunction.result.length > 0) {
+
+                            var resultSet = searchConfigProg.objRsponseFunction.result;
+                            var resultSearch = searchConfigProg.objRsponseFunction.search;
+
+                            var idItemMilla = '';
+
+                            for (var i = 0; !utilities.isEmpty(resultSet) && i < resultSet.length; i++) {
+                                idItemMilla = resultSet[i].getValue({
+                                    name: resultSearch.columns[0]
+                                });
+                            }
+                        } else {
+                            respuesta.error = true;
+                            respuestaParcial = new Object();
+                            respuestaParcial.codigo = 'UCOV004';
+                            respuestaParcial.mensaje = 'Error Consultando Configuracion Programa Fidelidad.';
+                            respuesta.detalle.push(respuestaParcial);
+                        }
+                    } else {
+                        if (utilities.isEmpty(searchRequisiciones)) {
+                            respuesta.error = true;
+                            respuestaParcial = new Object();
+                            respuestaParcial.codigo = 'UCOV004';
+                            respuestaParcial.mensaje = 'Error Consultando Configuracion Programa Fidelidad.';
+                            respuesta.detalle.push(respuestaParcial);
+                        } else {
+                            respuesta.error = true;
+                            respuestaParcial = new Object();
+                            respuestaParcial.codigo = 'UCOV004';
+                            respuestaParcial.mensaje = 'Error Consultando Configuracion Programa Fidelidad - Tipo Error : ' + searchConfigProg.tipoError + ' - Descripcion : ' + searchConfigProg.descripcion;
+                            respuesta.detalle.push(respuestaParcial);
+                        }
+                    }
+    
                     /************************************INICIO SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
 
                     var numLines = objRecord.getLineCount({
@@ -87,6 +127,10 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     log.debug('Creación OV (SS) - beforeSubmit', 'numLines: ' + numLines);
 
                     var travelOV = false;
+
+                    var sumCantidadMillas = 0;
+                    var sumUnitarioMillas = 0;
+                    var sumTotalMillas = 0;
 
                     for (var i = 0; !utilities.isEmpty(numLines) && i < numLines; i++) {
                         var objJSON = new Object({});
@@ -124,8 +168,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                         if (isTravel == true) {
                             travelOV = true;
-                        }                    
-
+                        }             
+                    
                         var comisionServicio = objRecord.getSublistValue({
                             sublistId: 'item',
                             fieldId: 'custcol_3k_comision',
@@ -161,6 +205,36 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             });
                         }
 
+                        var millasCantidad = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_millas_utilizadas',
+                            line: i
+                        });
+
+                        if (!utilities.isEmpty(millasCantidad) && millasCantidad > 0) {
+                            sumCantidadMillas = parseFloat(sumCantidadMillas, 0) + parseFloat(millasCantidad, 0);
+                        }
+
+                        var millasImpUnitario = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_importe_unitario_millas',
+                            line: i
+                        });
+
+                        if (!utilities.isEmpty(millasImpUnitario) && millasImpUnitario > 0) {
+                            sumUnitarioMillas = parseFloat(sumUnitarioMillas, 0) + parseFloat(millasImpUnitario, 0);
+                        }
+
+                        var millasImpTotal = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_imp_tot_millas',
+                            line: i
+                        });
+
+                        if (!utilities.isEmpty(millasImpTotal) && millasImpTotal > 0) {
+                            sumTotalMillas = parseFloat(sumTotalMillas, 0) + parseFloat(millasImpTotal, 0);
+                        }
+
                         arrayArticulos.push(objJSON.articulo);
                         arrayItems.push(objJSON);
                     }
@@ -185,6 +259,30 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     log.debug('Creación OV (SS) - beforeSubmit', 'articulo.length: ' + articulo.length);
 
                     /************************************FIN SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
+
+                    /************************************ INICIO - AGREGAR LINEA DE MILLAS ************************************/
+
+                        //var idItemMilla = '1392861';
+                        log.debug('Creación OV (SS) - beforeSubmit', 'idItemMilla: ' + idItemMilla + ', sumCantidadMillas: ' + sumCantidadMillas + ', sumUnitarioMillas: ' + sumUnitarioMillas + ', sumTotalMillas: ' + sumTotalMillas);
+
+                        //Verificar que esté completa la informacion de Millas para agregar la línea
+                        if (!utilities.isEmpty(idItemMilla) && !utilities.isEmpty(sumCantidadMillas) && sumCantidadMillas > 0 && !utilities.isEmpty(sumUnitarioMillas) && sumUnitarioMillas > 0 && !utilities.isEmpty(sumTotalMillas) && sumTotalMillas > 0){
+
+                            var lineNum = 0;
+                            cantidadItem = objRecord.getLineCount({sublistId: 'item'});
+                            if (cantidadItem==0)
+                            {
+                                lineNum = 0
+                            } else {
+                                lineNum = parseInt(cantidadItem);
+                            }
+                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'item', line: lineNum,  value: idItemMilla});
+                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'quantity', line: lineNum,  value: sumCantidadMillas});
+                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'rate', line: lineNum,  value: sumUnitarioMillas});
+                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'amount', line: lineNum,  value: sumTotalMillas});
+                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'custcol_3k_importe_bruto_woow', line: lineNum,  value: sumTotalMillas});
+                        }
+                    /************************************ FIN - AGREGAR LINEA DE MILLAS ************************************/
 
                     /***************************INICIO SE CREA ARREGLO DE COMPONENTES PARA LUEGO PASARLO A SS DE BUSQUEDA DE STOCK TERCEROS Y STOCK PROPIO************************************************************/
 
@@ -316,7 +414,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                 if (componenteFilter[0].locationquantityavailable > 0) {
                                                     log.debug('Creación OV (SS) - beforeSubmit', 'STOCK PROPIO - NO GENERA REQUISICION');
                                                 } else {
-                                                    log.debug('Creación OV (SS) - beforeSubmit - LINE 270', 'STOCK TERCERO - SI GENERA REQUISICION');
+                                                    log.debug('Creación OV (SS) - beforeSubmit', 'STOCK TERCERO - SI GENERA REQUISICION');
                                                     diferenciaStock = (arrayItems[i].cantidad * articuloFilter[j]["Cantidad Componente"]) - componenteFilter[0].locationquantityavailable;
                                                     var indice = 0;
                                                     var stockFilter = stockTerceros.filter(function (obj) {
@@ -623,13 +721,14 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                     //FIN - Consultar la configuración de información de facturación genérica y setearla en la orden de venta si los datos de facturación vienen vacíos
 
-                    //INICIO - Cálculo y actualización de la fecha de entrega de proveedor.
-
+                    //INICIO - Verificar si algun item de la OV es de Fidelidad, para luego marcar la OV como Programa de Fidelidad
                     var numLines = objRecord.getLineCount({
                         sublistId: 'item'
                     });
 
                     log.debug('Creación OV (SS) - afterSubmit', 'numLines: ' + numLines);
+
+                    var fidelidadOV = false;
 
                     for (var i = 0; !utilities.isEmpty(numLines) && i < numLines; i++) {
                         var objJSON = new Object({});
@@ -641,12 +740,24 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         });
 
                         arrayArticulos.push(objJSON);
+    
+                        var esFidelidad = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_programa_fidelidad',
+                            line: i
+                        });
+    
+                        if (esFidelidad == true) {
+                            fidelidadOV = true;
+                        }  
                     }
 
                     log.debug('Creación OV (SS) - afterSubmit', 'arrayArticulos: ' + JSON.stringify(arrayArticulos));
+                    //FIN - Verificar si algun item de la OV es de Fidelidad, para luego marcar la OV como Programa de Fidelidad
 
+                    //INICIO - Cálculo y actualización de la fecha de entrega de proveedor.
 
-                    // INICIO - Obtener Dias Pedidos Proveedores
+                    //INICIO - Obtener Dias Pedidos Proveedores
                     var arrayDiasPedidoProveedor = new Array();
 
                     var respDiasPedidosProv = obtenerInformacionProveedores();
@@ -1024,6 +1135,11 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                                 // FIN ACTUALIZAR LINEAS OV
                             }
+
+                            objRecord.setValue({
+                                fieldId: 'custbody_3k_programa_fidelidad',
+                                value: fidelidadOV
+                            });
 
                             // INICIO GRABAR OV
                             try {
