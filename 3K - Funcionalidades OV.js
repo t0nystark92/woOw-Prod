@@ -3898,12 +3898,12 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
                                             return respuesta;
                                         }*/
-                                        /*var objRespuestaAfter = new Object({})
+                                        var objRespuestaAfter = new Object({})
                                         objRespuestaAfter.idDeposito = respuestaAfterDep.idDeposito;
                                         objRespuestaAfter.formaPago = formaPago;
                                         objRespuestaAfter.importePago = importePago;
-                                        objRespuestaAfter.cupones = respuestaAfterDep.cupones;
-                                        respuesta.depositos.push(objRespuestaAfter);*/
+                                        //objRespuestaAfter.cupones = respuestaAfterDep.cupones;
+                                        respuesta.depositos.push(objRespuestaAfter);
                                     }
                                 } catch (excepcionSave) {
                                     if (!utilities.isEmpty(recordId)) {
@@ -3966,7 +3966,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             var respuesta = new Object();
             respuesta.idOV = '';
             respuesta.idDeposito = '';
-            respuesta.cupones = new Array();
+            //respuesta.cupones = new Array();
             respuesta.error = false;
             respuesta.detalle = new Array();
             respuesta.idConciliacion = '';
