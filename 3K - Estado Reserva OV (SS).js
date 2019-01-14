@@ -219,6 +219,11 @@ define(['N/record', 'N/search', 'N/format', '3K/utilities'], function (record, s
                                     var aplicacionDeposito = filterEstados[j].custrecord_3k_accionable_aplicacion;
                                     var orden = filterEstados[j].custrecord_3k_accionable_orden;
                                     var cuentaPayment = filterEstados[j].custrecord_3k_accionable_paymentacct;
+                                    var isvoid = filterEstados[j].custrecord_3k_accionable_void;
+                                    var factFull = filterEstados[j].custrecord_3k_accionable_factfull;
+                                    var formaPago = filterEstados[j].custrecord_3k_accionable_forma_pago;
+
+
 
                                     log.debug('accion', accion);
                                     log.debug('transform', transform);
@@ -322,9 +327,41 @@ define(['N/record', 'N/search', 'N/format', '3K/utilities'], function (record, s
                                             obj.order = orden;
                                             arrayTranCreated.push(obj);
 
+                                            if (unredeem == true && factFull == true) {
+
+                                                var recTransform = record.transform({
+                                                    fromType: accion.toString(),
+                                                    fromId: idTran,
+                                                    toType: 'customerpayment',
+                                                    isDynamic: true
+
+                                                });
+
+                                                recTransform.setValue({
+                                                    fieldId: 'paymentmethod',
+                                                    value: formaPago
+                                                });
+
+                                                var idTran2 = recTransform.save();
+
+                                                var obj = new Object();
+                                                obj.idTran = idTran2;
+                                                obj.accion = 'customerpayment';
+                                                obj.order = orden;
+                                                arrayTranCreated.push(obj);
+
+
+                                            }
+
 
 
                                         } else {
+
+                                            if(isvoid == true){
+
+                                                //TODO: Buscar el deposito con el custom transaction Liquidacion a confirmar y anularlo.
+
+                                            }
 
 
                                             if (journal == true) {
@@ -530,7 +567,7 @@ define(['N/record', 'N/search', 'N/format', '3K/utilities'], function (record, s
                                                         fieldId: 'account',
                                                         value: cuentaPayment
                                                     });
-                                                    
+
 
                                                     if (!utilities.isEmpty(sitioWeb)) {
 
