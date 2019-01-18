@@ -98,7 +98,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         } else {
                             respuesta.error = true;
                             respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV004';
+                            respuestaParcial.codigo = 'UCOV019';
                             respuestaParcial.mensaje = 'Error Consultando Configuracion Programa Fidelidad.';
                             respuesta.detalle.push(respuestaParcial);
                         }
@@ -106,18 +106,63 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         if (utilities.isEmpty(searchRequisiciones)) {
                             respuesta.error = true;
                             respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV004';
+                            respuestaParcial.codigo = 'UCOV019';
                             respuestaParcial.mensaje = 'Error Consultando Configuracion Programa Fidelidad.';
                             respuesta.detalle.push(respuestaParcial);
                         } else {
                             respuesta.error = true;
                             respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV004';
+                            respuestaParcial.codigo = 'UCOV019';
                             respuestaParcial.mensaje = 'Error Consultando Configuracion Programa Fidelidad - Tipo Error : ' + searchConfigProg.tipoError + ' - Descripcion : ' + searchConfigProg.descripcion;
                             respuesta.detalle.push(respuestaParcial);
                         }
                     }
-    
+
+                    //Consultar Configuracion Liquidaciones - TASA ARTICULO LIQUIDACION
+
+                    var searchConfigLiq = utilities.searchSaved('customsearch_3k_config_liquidaciones');
+
+                    if (!utilities.isEmpty(searchConfigLiq) && searchConfigLiq.error == false) {
+                        if (!utilities.isEmpty(searchConfigLiq.objRsponseFunction.result) && searchConfigLiq.objRsponseFunction.result.length > 0) {
+
+                            var resultSet = searchConfigLiq.objRsponseFunction.result;
+                            var resultSearch = searchConfigLiq.objRsponseFunction.search;
+
+                            var tasaArticuloLiq = '';
+
+                            for (var i = 0; !utilities.isEmpty(resultSet) && i < resultSet.length; i++) {
+                                tasaArticuloLiq = resultSet[i].getValue({
+                                    name: resultSearch.columns[15]
+                                });
+                            }
+
+                            if (!utilities.isEmpty(tasaArticuloLiq)) {
+                                tasaArticuloLiq = (parseFloat(tasaArticuloLiq, 10));
+                            }
+
+                        } else {
+                            respuesta.error = true;
+                            respuestaParcial = new Object();
+                            respuestaParcial.codigo = 'UCOV020';
+                            respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones.';
+                            respuesta.detalle.push(respuestaParcial);
+                        }
+                    } else {
+                        if (utilities.isEmpty(searchConfigLiq)) {
+                            respuesta.error = true;
+                            respuestaParcial = new Object();
+                            respuestaParcial.codigo = 'UCOV020';
+                            respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones.';
+                            respuesta.detalle.push(respuestaParcial);
+                        } else {
+                            respuesta.error = true;
+                            respuestaParcial = new Object();
+                            respuestaParcial.codigo = 'UCOV020';
+                            respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones - Tipo Error : ' + searchConfigProg.tipoError + ' - Descripcion : ' + searchConfigProg.descripcion;
+                            respuesta.detalle.push(respuestaParcial);
+                        }
+                    }
+
                     /************************************INICIO SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
 
                     var numLines = objRecord.getLineCount({
@@ -168,8 +213,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                         if (isTravel == true) {
                             travelOV = true;
-                        }             
-                    
+                        }
+
                         var comisionServicio = objRecord.getSublistValue({
                             sublistId: 'item',
                             fieldId: 'custcol_3k_comision',
@@ -182,10 +227,16 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             line: i
                         });
 
-                        log.debug('Creación OV (SS) - beforeSubmit', 'comisionServicio: ' + comisionServicio + ', amount: ' + amount);
+                        var millasImpTotal = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_imp_tot_millas',
+                            line: i
+                        });
 
-                        if (!utilities.isEmpty(comisionServicio) && comisionServicio > 0){
-                            var impFacturar = parseFloat((amount * ((parseFloat(comisionServicio, 10)) / 100)), 10).toFixed(2);
+                        log.debug('Creación OV (SS) - beforeSubmit', 'comisionServicio: ' + comisionServicio + ', amount: ' + amount + ', tasaArticuloLiq: ' + tasaArticuloLiq + ', millasImpTotal: ' + millasImpTotal);
+
+                        if (!utilities.isEmpty(comisionServicio) && comisionServicio > 0 && !utilities.isEmpty(tasaArticuloLiq) && tasaArticuloLiq > 0) {
+                            var impFacturar = parseFloat((amount * ((parseFloat(comisionServicio, 10)) / 100)) * (((parseFloat(tasaArticuloLiq, 10)) / 100) + 1), 10).toFixed(2);
                             var deudaPagar = parseFloat((amount - (parseFloat(impFacturar, 10))), 10).toFixed(2);
 
                             log.debug('Creación OV (SS) - beforeSubmit', 'impFacturar: ' + impFacturar + ', deudaPagar: ' + deudaPagar);
@@ -202,6 +253,25 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                 fieldId: 'custcol_3k_deuda_pagar',
                                 line: i,
                                 value: deudaPagar
+                            });
+
+                            impFacturarMillas = parseFloat((millasImpTotal * ((parseFloat(comisionServicio, 10)) / 100)) * (((parseFloat(tasaArticuloLiq, 10)) / 100) + 1), 10).toFixed(2);
+                            deudaPagarMillas = parseFloat((millasImpTotal - (parseFloat(impFacturarMillas, 10))), 10).toFixed(2);
+
+                            log.debug('Creación OV (SS) - beforeSubmit', 'impFacturarMillas: ' + impFacturarMillas + ', deudaPagarMillas: ' + deudaPagarMillas);
+
+                            objRecord.setSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_importe_fact_liq_millas',
+                                line: i,
+                                value: impFacturarMillas
+                            });
+
+                            objRecord.setSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_deuda_pagar_millas',
+                                line: i,
+                                value: deudaPagarMillas
                             });
                         }
 
@@ -221,8 +291,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             line: i
                         });
 
-                        if (!utilities.isEmpty(millasImpUnitario) && millasImpUnitario > 0) {
+                        /*if (!utilities.isEmpty(millasImpUnitario) && millasImpUnitario > 0) {
                             sumUnitarioMillas = parseFloat(sumUnitarioMillas, 0) + parseFloat(millasImpUnitario, 0);
+                        }*/
+
+                        if (utilities.isEmpty(sumUnitarioMillas) || sumUnitarioMillas == 0) {
+                            sumUnitarioMillas = parseFloat(millasImpUnitario, 0);
                         }
 
                         var millasImpTotal = objRecord.getSublistValue({
@@ -262,26 +336,24 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                     /************************************ INICIO - AGREGAR LINEA DE MILLAS ************************************/
 
-                        //var idItemMilla = '1392861';
-                        log.debug('Creación OV (SS) - beforeSubmit', 'idItemMilla: ' + idItemMilla + ', sumCantidadMillas: ' + sumCantidadMillas + ', sumUnitarioMillas: ' + sumUnitarioMillas + ', sumTotalMillas: ' + sumTotalMillas);
+                    log.debug('Creación OV (SS) - beforeSubmit', 'idItemMilla: ' + idItemMilla + ', sumCantidadMillas: ' + sumCantidadMillas + ', sumUnitarioMillas: ' + sumUnitarioMillas + ', sumTotalMillas: ' + sumTotalMillas);
 
-                        //Verificar que esté completa la informacion de Millas para agregar la línea
-                        if (!utilities.isEmpty(idItemMilla) && !utilities.isEmpty(sumCantidadMillas) && sumCantidadMillas > 0 && !utilities.isEmpty(sumUnitarioMillas) && sumUnitarioMillas > 0 && !utilities.isEmpty(sumTotalMillas) && sumTotalMillas > 0){
+                    //Verificar que esté completa la informacion de Millas para agregar la línea
+                    if (!utilities.isEmpty(idItemMilla) && !utilities.isEmpty(sumCantidadMillas) && sumCantidadMillas > 0 && !utilities.isEmpty(sumUnitarioMillas) && sumUnitarioMillas > 0 && !utilities.isEmpty(sumTotalMillas) && sumTotalMillas > 0) {
 
-                            var lineNum = 0;
-                            cantidadItem = objRecord.getLineCount({sublistId: 'item'});
-                            if (cantidadItem==0)
-                            {
-                                lineNum = 0
-                            } else {
-                                lineNum = parseInt(cantidadItem);
-                            }
-                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'item', line: lineNum,  value: idItemMilla});
-                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'quantity', line: lineNum,  value: sumCantidadMillas});
-                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'rate', line: lineNum,  value: sumUnitarioMillas});
-                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'amount', line: lineNum,  value: sumTotalMillas});
-                            objRecord.setSublistValue({sublistId: 'item',fieldId: 'custcol_3k_importe_bruto_woow', line: lineNum,  value: sumTotalMillas});
+                        var lineNum = 0;
+                        cantidadItem = objRecord.getLineCount({ sublistId: 'item' });
+                        if (cantidadItem == 0) {
+                            lineNum = 0
+                        } else {
+                            lineNum = parseInt(cantidadItem);
                         }
+                        objRecord.setSublistValue({ sublistId: 'item', fieldId: 'item', line: lineNum, value: idItemMilla });
+                        objRecord.setSublistValue({ sublistId: 'item', fieldId: 'quantity', line: lineNum, value: sumCantidadMillas });
+                        objRecord.setSublistValue({ sublistId: 'item', fieldId: 'rate', line: lineNum, value: sumUnitarioMillas });
+                        objRecord.setSublistValue({ sublistId: 'item', fieldId: 'amount', line: lineNum, value: sumTotalMillas });
+                        objRecord.setSublistValue({ sublistId: 'item', fieldId: 'custcol_3k_importe_bruto_woow', line: lineNum, value: sumTotalMillas });
+                    }
                     /************************************ FIN - AGREGAR LINEA DE MILLAS ************************************/
 
                     /***************************INICIO SE CREA ARREGLO DE COMPONENTES PARA LUEGO PASARLO A SS DE BUSQUEDA DE STOCK TERCEROS Y STOCK PROPIO************************************************************/
@@ -463,7 +535,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                                         objRespuestaParcial = new Object();
                                                         objRespuestaParcial.codigo = 'UCOV001';
                                                         objRespuestaParcial.mensaje = 'Item ' + arrayItems[i].articuloDes + ' no posee Stock Propio ni Stock Tercero Vigente, por lo cual no genera Requisición de Compra.';
-                                                        mensajeError = mensajeError + ' ' +  objRespuestaParcial.mensaje.toString();
+                                                        mensajeError = mensajeError + ' ' + objRespuestaParcial.mensaje.toString();
                                                         objRespuesta.detalle.push(objRespuestaParcial);
                                                         log.error('Creación OV (SS) - beforeSubmit', 'UCOV001 - Item ' + arrayItems[i].articuloDes + ' no posee Stock Propio ni Stock Tercero Vigente, por lo cual no genera Requisición de Compra.');
                                                     }
@@ -740,16 +812,16 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         });
 
                         arrayArticulos.push(objJSON);
-    
+
                         var esFidelidad = objRecord.getSublistValue({
                             sublistId: 'item',
                             fieldId: 'custcol_3k_programa_fidelidad',
                             line: i
                         });
-    
+
                         if (esFidelidad == true) {
                             fidelidadOV = true;
-                        }  
+                        }
                     }
 
                     log.debug('Creación OV (SS) - afterSubmit', 'arrayArticulos: ' + JSON.stringify(arrayArticulos));
@@ -1658,7 +1730,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                 log.error('generarAjusteRedondeo', 'UGAR009 - Error generando Ajuste de Redondeo. Excepcion Generando Ajuste por Redondeo - Excepcion : ' + excepcion.message);
             }
 
-            log.audit('generarAjusteRedondeo - LINE 1530', 'FIN');
+            log.audit('generarAjusteRedondeo', 'FIN');
             return objRespuesta;
         }
 
@@ -1787,7 +1859,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             if (!stockPropio)
                                 fechaServidor.setDate(fechaServidor.getDate() + 1);
 
-                            log.debug('calcularFecha - LINE 1665', 'Fecha Serv 2 : ' + fechaServidor);
+                            log.debug('calcularFecha', 'Fecha Serv 2 : ' + fechaServidor);
 
                             // Si la Fecha de Reparto es Superior a la Fecha Actual => Utilizar Fecha de Reparto
                             if (!utilities.isEmpty(arrayProveedor[i].FechaReparto)) {
