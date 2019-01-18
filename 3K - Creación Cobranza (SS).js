@@ -55,12 +55,14 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                     idOV = objRecord.id;
 
+                    log.debug('Creación Cobranza (SS) - afterSubmit', 'ID Orden de Venta: ' + idOV);
+
                     //INICIO - CONSULTA INFORMACION ITEMS
                     var numLines = objRecord.getLineCount({
                         sublistId: 'item'
                     });
 
-                    log.debug('Creación Cobranza (SS) - afterSubmit', 'Cantidad Lineas Items: ' + numLines);
+                    //log.debug('Creación Cobranza (SS) - afterSubmit', 'Cantidad Lineas Items: ' + numLines);
 
                     var impTotalItems = 0;
                     var impTotalMillas = 0;
@@ -175,6 +177,10 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                             fieldId: 'custbody_cseg_3k_sitio_web_o'
                         });
 
+                        objOV.esFidelidad = objRecord.getValue({
+                            fieldId: 'custbody_3k_programa_fidelidad'
+                        });
+
                         arrayOV.push(objOV);
 
                         log.debug('Creación Cobranza (SS) - afterSubmit', 'arrayOV: ' + JSON.stringify(arrayOV) + ', arrayOV.length: ' + arrayOV.length);
@@ -188,7 +194,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                         var arrayFormasPago = new Array();
 
-                        log.debug('Creación Cobranza (SS) - afterSubmit', 'cantidadLineasFormaPago: ' + cantidadLineasFormaPago);
+                        //log.debug('Creación Cobranza (SS) - afterSubmit', 'cantidadLineasFormaPago: ' + cantidadLineasFormaPago);
 
                         if (cantidadLineasFormaPago > 0) {
 
@@ -243,12 +249,10 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                             respuesta = respuestaCrearDepositos;
 
-                            //Si la OV es de Servicio, genera asiento de Deuda a Pagar e Ingreso a Confirmar
-                            if (objOV.esServicio == true && !utilities.isEmpty(impTotalDeudaPagar) && impTotalDeudaPagar > 0 && !utilities.isEmpty(impTotalImporteFacturar) && impTotalImporteFacturar > 0){
+                            //Si la OV es de Servicio y No corresponde a Programa de Fidelidad, genera asiento de Deuda a Pagar e Ingreso a Confirmar
+                            if (objOV.esServicio == true && objOV.esFidelidad == false && !utilities.isEmpty(impTotalDeudaPagar) && impTotalDeudaPagar > 0 && !utilities.isEmpty(impTotalImporteFacturar) && impTotalImporteFacturar > 0){
                                 var asientoDeudaIngreso = crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, objOV.tipoCambioOV, objOV.monedaOV, objOV.subsidiaria, objOV.sistema, objOV.sitioWeb);
                                 log.debug('Creación Cobranza (SS) - afterSubmit', 'asientoDeudaIngreso : ' + asientoDeudaIngreso);
-
-                                //log.debug('Creación Cobranza (SS) - afterSubmit', 'idCobranza : ' + respuestaCrearDepositos.depositos[0].idDeposito);
 
                                 var updCobranza = record.submitFields({
                                     type: record.Type.CUSTOMER_DEPOSIT,
@@ -286,6 +290,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
             
             log.audit('crearAsientoDeudaIngreso', 'INICIO - Crear Asiento Deuda e Ingreso');
+            log.debug('crearAsientoDeudaIngreso', 'Parámetros: tipoCambio: ' + tipoCambio + ', impTotalImporteFacturar: ' + impTotalImporteFacturar +  ', impTotalDeudaPagar: ' + impTotalDeudaPagar + ', moneda: ' + moneda + ', subsidiaria: ' + subsidiaria + ', sistema: ' + sistema + ', sitioWeb: ' + sitioWeb);
 
             var respuesta = new Object();
             respuesta.error = false;
@@ -299,7 +304,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                 var idCuentaIngresoInicial = '';
                 var recordIdLiqConf = '';
 
-                log.debug('crearAsientoDeudaIngreso', 'tipoCambio: ' + tipoCambio + ', importeTotal: ' + importeTotal + ', moneda: ' + moneda);
+                log.debug('crearAsientoDeudaIngreso', 'importeTotal: ' + importeTotal);
 
                 if (!utilities.isEmpty(moneda)) {
                     // INICIO - Obtener Cuentas Contables de Confirmacion
