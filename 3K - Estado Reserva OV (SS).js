@@ -79,6 +79,10 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities'], fu
                         var arregloEstados = arrayResult.objRsponseFunction.array;
                         log.debug('arregloEstados', JSON.stringify(arregloEstados));
 
+                        var arrayResultConfig = utilities.searchSavedPro('customsearch_3k_config_liquidaciones');
+                        var arregloConfig = arrayResultConfig.objRsponseFunction.array;
+                        log.debug('arregloConfig', JSON.stringify(arregloConfig));
+
                         var arrayULID = new Array();
                         for (var k = 0; k < numLines; k++) {
 
@@ -134,6 +138,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities'], fu
 
                         //var marcarFacturado = false;
                         var arrayLineasMarcarFacturadas = new Array();
+                        var taxConfig = parseFloat(arregloConfig[0].custrecord_3k_config_liq_tasa_art)
 
                         for (var i = 0; i < numLines; i++) {
 
@@ -224,6 +229,24 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities'], fu
                                         line: i
                                     });
 
+                                    var comision = soRecord.getSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: 'custcol_3k_comision',
+                                        line: i
+                                    });
+
+                                    var amountOV = soRecord.getSublistValue({
+                                        sublistId: 'item',
+                                        fieldId: 'amount',
+                                        line: i
+                                    });
+
+                                    log.debug('comsion sin parse', comision);
+                                    log.debug('comsion parse', parseFloat(comision).toFixed(2));
+
+
+                                    var ingresoLiqSinIva = parseFloat(amountOV) * (parseFloat(comision) / 100);
+
 
 
                                     log.debug('campos so', 'cliente: ' + clienteLiq + ' - proveedor: ' + proveedorLiq + ' - deuda: ' + deudaLiq + ' - ingreso: ' + ingresoLiq + ' - item: ' + item);
@@ -244,8 +267,9 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities'], fu
                                         var orden = filterEstados[j].custrecord_3k_accionable_orden;
                                         var cuentaPayment = filterEstados[j].custrecord_3k_accionable_paymentacct;
                                         var isvoid = filterEstados[j].custrecord_3k_accionable_void;
-                                        var factFull = filterEstados[j].custrecord_3k_accionable_factfull;
-                                        var formaPago = filterEstados[j].custrecord_3k_accionable_forma_pago;
+                                        //var factFull = filterEstados[j].custrecord_3k_accionable_factfull;
+                                        //var formaPago = filterEstados[j].custrecord_3k_accionable_forma_pago;
+                                        var taxcode = filterEstados[j].custrecord_3k_accionable_taxcode;
 
 
 
@@ -307,122 +331,321 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities'], fu
 
                                         if (devolucion == false && facturado == false) {
 
-                                            //marcarFacturado = true;
 
                                             if (transform == true) {
 
                                                 if (fidelidad == false) {
 
-                                                    var factComision = record.transform({
-                                                        fromType: fromrt.toString(),
-                                                        fromId: soRecord.id,
-                                                        toType: accion.toString(),
-                                                        isDynamic: true
-                                                    });
+                                                    if (unredeem == true && aplicacionDeposito == true) {
 
-                                                    factComision.setValue({
-                                                        fieldId: 'custbody_3k_ulid_servicios',
-                                                        value: ulid
-                                                    });
-
-                                                    if (!utilities.isEmpty(clienteGenerico)) {
-
-                                                        factComision.setValue({
-                                                            fieldId: 'entity',
-                                                            value: clienteGenerico
+                                                        var arrayTranCreatedFilterInv = arrayTranCreated.filter(function (obj) {
+                                                            return obj.accion == 'invoice'
                                                         });
-                                                    } else {
-                                                        factComision.setValue({
-                                                            fieldId: 'entity',
-                                                            value: clienteLiq
-                                                        });
-                                                    }
 
+                                                        var idFact = arrayTranCreatedFilterInv[0].idTran;
 
-
-                                                    var numLinesFact = factComision.getLineCount({
-                                                        sublistId: 'item'
-                                                    });
-
-                                                    for (var l = 0; l < numLinesFact; l++) {
-
-                                                        if (i == l) {
-
-
-
-                                                            factComision.selectLine({
-                                                                sublistId: 'item',
-                                                                line: l
-                                                            });
-
-                                                            factComision.setCurrentSublistValue({
-                                                                sublistId: 'item',
-                                                                fieldId: 'rate',
-                                                                value: 0
-                                                            });
-
-                                                            if (unredeem == false) {
-
-                                                                factComision.setCurrentSublistValue({
-                                                                    sublistId: 'item',
-                                                                    fieldId: 'amount',
-                                                                    value: parseFloat(ingresoLiq).toFixed(2)
-                                                                });
-
-                                                            }
-
-                                                            factComision.commitLine({
-                                                                sublistId: 'item'
-                                                            });
-
-
-                                                        } else {
-
-                                                            factComision.removeLine({
-                                                                sublistId: 'item',
-                                                                line: l
-                                                            });
-
-                                                            numLinesFact--;
-
-                                                        }
-
-                                                    }
-
-                                                    var idTran = factComision.save();
-
-
-                                                    var obj = new Object();
-                                                    obj.idTran = idTran;
-                                                    obj.accion = accion;
-                                                    obj.order = orden;
-                                                    arrayTranCreated.push(obj);
-
-                                                    if (unredeem == true && factFull == true) {
+                                                        log.debug('ID Invoice', idFact)
 
                                                         var recTransform = record.transform({
-                                                            fromType: accion.toString(),
-                                                            fromId: idTran,
-                                                            toType: 'customerpayment',
+                                                            fromType: fromrt,
+                                                            fromId: idFact,
+                                                            toType: accion,
                                                             isDynamic: true
 
                                                         });
 
-                                                        recTransform.setValue({
-                                                            fieldId: 'paymentmethod',
-                                                            value: formaPago
+                                                        var linesPayment = recTransform.getLineCount({
+                                                            sublistId: 'apply'
                                                         });
 
-                                                        var idTran2 = recTransform.save();
+
+
+
+                                                        /*var linePago = recTransform.findSublistLineWithValue({
+                                                            sublistId: 'apply',
+                                                            fieldId: 'internalid',
+                                                            value: idFact
+
+                                                        });*/
+
+                                                        //log.debug('linesPayment apply list', linesPayment)
+
+                                                        for (var z = 0; z < linesPayment; z++) {
+
+                                                            var doc = recTransform.getSublistValue({
+                                                                sublistId: 'apply',
+                                                                fieldId: 'doc',
+                                                                line: z
+                                                            });
+
+                                                            log.debug('doc - idFacr', doc + '-' + idFact)
+
+                                                            if (doc == idFact) {
+
+                                                                log.debug('entro linea apply', 'entro linea apply')
+
+                                                                recTransform.selectLine({
+                                                                    sublistId: 'apply',
+                                                                    line: z
+
+                                                                });
+
+                                                                recTransform.setCurrentSublistValue({
+                                                                    sublistId: 'apply',
+                                                                    fieldId: 'apply',
+                                                                    value: true
+                                                                });
+
+                                                                var apply = recTransform.getCurrentSublistValue({
+                                                                    sublistId: 'apply',
+                                                                    fieldId: 'apply'
+                                                                });
+
+                                                                var amount = recTransform.getCurrentSublistValue({
+                                                                    sublistId: 'apply',
+                                                                    fieldId: 'amount'
+                                                                });
+
+                                                                log.debug('apply', apply)
+                                                                log.debug('amount', amount)
+                                                            }
+
+                                                        }
+
+                                                        //Aplicación Journal
+
+                                                        var linesJE = recTransform.getLineCount({
+                                                            sublistId: 'credit'
+                                                        });
+
+                                                        log.debug('linesJE', linesJE);
+
+
+                                                        log.debug('arrayTranCreated', JSON.stringify(arrayTranCreated));
+
+                                                        var arrayTranCreatedFilter = arrayTranCreated.filter(function (obj) {
+                                                            return obj.accion == 'journalentry'
+                                                        });
+
+                                                        log.debug('arrayTranCreatedFilter', JSON.stringify(arrayTranCreatedFilter));
+
+                                                        if (arrayTranCreatedFilter.length > 0) {
+
+                                                            var idJE = arrayTranCreatedFilter[0].idTran;
+                                                            /*var linePago = recTransform.findSublistLineWithValue({
+                                                                sublistId: 'credit',
+                                                                fieldId: 'internalid',
+                                                                value: idJE
+
+                                                            });*/
+
+                                                            for (var u = 0; u < linesJE; u++) {
+
+                                                                var doc = recTransform.getSublistValue({
+                                                                    sublistId: 'credit',
+                                                                    fieldId: 'doc',
+                                                                    line: u
+                                                                });
+
+                                                                log.debug('doc - idJE', doc + '-' + idJE)
+
+                                                                if (doc == idJE) {
+
+                                                                    log.debug('entro linea credit', 'entro linea credit')
+
+                                                                    recTransform.selectLine({
+                                                                        sublistId: 'credit',
+                                                                        line: u
+
+                                                                    });
+
+                                                                    recTransform.setCurrentSublistValue({
+                                                                        sublistId: 'credit',
+                                                                        fieldId: 'apply',
+                                                                        value: true
+                                                                    });
+
+                                                                    var apply = recTransform.getCurrentSublistValue({
+                                                                        sublistId: 'credit',
+                                                                        fieldId: 'apply'
+                                                                    });
+
+                                                                    var amount = recTransform.getCurrentSublistValue({
+                                                                        sublistId: 'credit',
+                                                                        fieldId: 'amount'
+                                                                    });
+
+                                                                    log.debug('apply', apply)
+                                                                    log.debug('amount', amount)
+
+
+                                                                    var idTran2 = recTransform.save();
+
+                                                                    var obj = new Object();
+                                                                    obj.idTran = idTran2;
+                                                                    obj.accion = accion;
+                                                                    obj.order = orden;
+                                                                    arrayTranCreated.push(obj);
+                                                                }
+
+                                                            }
+
+                                                        }
+
+                                                    } else {
+
+                                                        var factComision = record.transform({
+                                                            fromType: fromrt.toString(),
+                                                            fromId: soRecord.id,
+                                                            toType: accion.toString(),
+                                                            isDynamic: true
+                                                        });
+
+                                                        factComision.setValue({
+                                                            fieldId: 'custbody_3k_ulid_servicios',
+                                                            value: ulid
+                                                        });
+
+                                                        if (!utilities.isEmpty(clienteGenerico)) {
+
+                                                            factComision.setValue({
+                                                                fieldId: 'entity',
+                                                                value: clienteGenerico
+                                                            });
+                                                        } else {
+                                                            factComision.setValue({
+                                                                fieldId: 'entity',
+                                                                value: clienteLiq
+                                                            });
+                                                        }
+
+
+
+                                                        var numLinesFact = factComision.getLineCount({
+                                                            sublistId: 'item'
+                                                        });
+
+                                                        for (var l = 0; l < numLinesFact; l++) {
+
+                                                            if (i == l) {
+
+
+
+                                                                factComision.selectLine({
+                                                                    sublistId: 'item',
+                                                                    line: l
+                                                                });
+
+                                                                if (unredeem == false) {
+
+                                                                    factComision.setCurrentSublistValue({
+                                                                        sublistId: 'item',
+                                                                        fieldId: 'rate',
+                                                                        value: 0
+                                                                    });
+
+
+
+                                                                    factComision.setCurrentSublistValue({
+                                                                        sublistId: 'item',
+                                                                        fieldId: 'amount',
+                                                                        value: parseFloat(ingresoLiqSinIva).toFixed(2)
+                                                                    });
+
+                                                                    factComision.setCurrentSublistValue({
+                                                                        sublistId: 'item',
+                                                                        fieldId: 'taxcode',
+                                                                        value: taxcode
+                                                                    });
+
+                                                                }
+
+                                                                factComision.commitLine({
+                                                                    sublistId: 'item'
+                                                                });
+
+
+                                                            } else {
+
+                                                                factComision.removeLine({
+                                                                    sublistId: 'item',
+                                                                    line: l
+                                                                });
+
+                                                                numLinesFact--;
+
+                                                            }
+
+                                                        }
+
+                                                        var idTran = factComision.save();
+
 
                                                         var obj = new Object();
-                                                        obj.idTran = idTran2;
-                                                        obj.accion = 'customerpayment';
+                                                        obj.idTran = idTran;
+                                                        obj.accion = accion;
                                                         obj.order = orden;
                                                         arrayTranCreated.push(obj);
 
+                                                    }
+                                                } else {
+                                                    // Si es fidelidad se crea la factura por los items de fidelidad al cliente final
+
+                                                    var objRecord = record.transform({
+                                                        fromType: fromrt,
+                                                        fromId: soRecord.id,
+                                                        toType: accion,
+                                                        isDynamic: true
+                                                    });
+
+
+                                                    var numLines = objRecord.getLineCount({
+                                                        sublistId: 'item'
+                                                    });
+
+                                                    log.debug('crearFactura', 'Cantidad Lineas OV: ' + numLines);
+
+                                                    for (var i = 0; i < numLines; i++) {
+
+                                                        var esFidelidad = objRecord.getSublistValue({
+                                                            sublistId: 'item',
+                                                            fieldId: 'custcol_3k_programa_fidelidad',
+                                                            line: i
+                                                        });
+
+
+
+
+                                                        if (esFidelidad) {
+                                                            objRecord.removeLine({
+                                                                sublistId: 'item',
+                                                                line: i
+                                                            });
+                                                            i--;
+                                                            numLines--;
+                                                        }
+
 
                                                     }
+
+                                                    var numLines = objRecord.getLineCount({
+                                                        sublistId: 'item'
+                                                    });
+
+                                                    log.debug('crearFactura', 'Cantidad Lineas FC: ' + numLines);
+
+
+
+                                                    var saveID = objRecord.save();
+                                                    log.debug('crearFactura', 'Registro Factura: ' + saveID);
+
+                                                    var obj = new Object();
+                                                    obj.idTran = saveID;
+                                                    obj.accion = accion;
+                                                    obj.order = orden;
+                                                    arrayTranCreated.push(obj);
+
+
                                                 }
 
 
@@ -1023,6 +1246,25 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities'], fu
 
                             }
 
+
+                        }
+
+                    }
+
+                    if(!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0){
+
+                        var filterTran = arrayTranCreated.filter(function(obj){
+                            return obj.accion == 'invoice' || obj.accion == 'creditmemo'
+                        })
+
+                        if(!utilities.isEmpty(filterTran) && filterTran.length > 0){
+
+                            var arrayCAE = new Array();
+
+                            for(var e = 0; e < filterTran.length; e++){
+                                
+
+                            }
 
                         }
 
