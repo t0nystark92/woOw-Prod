@@ -7,18 +7,19 @@
 /*require.config({
     paths: {
         '3K/utilities': './3K - Utilities',
-        '3K/funcionalidadesOV': './3K - Funcionalidades OV'
+        '3K/funcionalidadesOV': './3K - Funcionalidades OV',
+        '3K/funcionalidadesURU': './3K - Funcionalidades URU'
     }
 });*/
 
-define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funcionalidadesOV'],
+define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funcionalidadesOV', '3K/funcionalidadesURU'],
     /**
      * @param {error} error
      * @param {record} record
      * @param {search} search
      */
 
-    function (error, record, search, format, utilities, funcionalidades) {
+    function (error, record, search, format, utilities, funcionalidades, funcionalidadesURU) {
 
         /**
          * Function definition to be triggered before record is loaded.
@@ -47,6 +48,8 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     var recId = scriptContext.newRecord.id;
                     var recType = scriptContext.newRecord.type;
 
+                    log.debug('Programa Fidelidad (SS) - afterSubmit', 'ID Orden de Venta: ' + recId);
+
                     var objOV = record.load({
                         type: recType,
                         id: recId,
@@ -61,7 +64,11 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         fieldId: 'custbody_3k_ov_servicio'
                     });
 
-                    log.debug('Programa Fidelidad (SS) - afterSubmit', 'servicioOV: ' + servicioOV + ', fidelidadOV: ' + fidelidadOV);
+                    var travelOV = objOV.getValue({
+                        fieldId: 'custbody_3k_ov_travel'
+                    });
+
+                    log.debug('Programa Fidelidad (SS) - afterSubmit', 'servicioOV: ' + servicioOV + ', fidelidadOV: ' + fidelidadOV + ', travelOV: ' + travelOV);
 
                     //La OV corresponde a Programa de Fidelidad
                     if (fidelidadOV == true) {
@@ -69,7 +76,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                         if (servicioOV == true) {
                             var fcCliente = crearFactura(recId, 'CLIENTE');
-                            //var generarOC = crearOrdenCompra();
+                            if (travelOV == false) {
+                                var generarOC = crearOrdenCompra(objOV);
+                            }
                         }
 
                     }
@@ -106,12 +115,13 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     isDynamic: true
                 });
 
+                var beforeSubmit = funcionalidadesURU.beforeSubmit('create', objRecord);
 
                 var numLines = objRecord.getLineCount({
                     sublistId: 'item'
                 });
 
-                log.debug('crearFactura', 'Cantidad Lineas OV: ' + numLines);
+                //log.debug('crearFactura', 'Cantidad Lineas OV: ' + numLines);
 
                 for (var i = 0; i < numLines; i++) {
 
@@ -121,14 +131,14 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         line: i
                     });
 
-                    var clienteFidelidad = objRecord.getSublistValue({
+                    var esRedondeo = objRecord.getSublistValue({
                         sublistId: 'item',
-                        fieldId: 'custcol_3k_cl_fact_fidelidad',
+                        fieldId: 'custcol_3k_es_redondeo',
                         line: i
                     });
 
                     if (tipo == 'CLIENTE') {
-                        if (esFidelidad) {
+                        if (esFidelidad || esRedondeo) {
                             objRecord.removeLine({
                                 sublistId: 'item',
                                 line: i
@@ -144,6 +154,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                             });
                             i--;
                             numLines--;
+                        } else {
+                            var clienteFidelidad = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_cl_fact_fidelidad',
+                                line: i
+                            });
                         }
                     }
 
@@ -158,7 +174,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                 if (tipo == 'BANCO') {
 
-                    log.debug('crearFactura', 'clienteFidelidad: ' + clienteFidelidad);
+                    //log.debug('crearFactura', 'clienteFidelidad: ' + clienteFidelidad);
 
                     objRecord.setValue({
                         fieldId: 'entity',
@@ -167,47 +183,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                 }
 
-                /*custbody_l598_codigo_serie: 'A'
-                custbody_l598_caja: "1"
-                custbody_l598_codigo_sucursal: "1"
-                custbody_l598_cae_serie: "A"
-                custbody_l598_serie_comprobante: "1"
-                custbody_l598_sucursal: "1"
-                custbody_l598_tipo_comprobante: "4"*/
-
-                /*objRecord.setValue({
-                    fieldId: 'custbody_l598_tipo_comprobante',
-                    value: 4
-                });
-
-                objRecord.setValue({
-                    fieldId: 'custbody_l598_serie_comprobante',
-                    value: 1
-                });
-
-                objRecord.setValue({
-                    fieldId: 'custbody_l598_cae_serie',
-                    value: 'A'
-                });
-
-                objRecord.setValue({
-                    fieldId: 'custbody_l598_codigo_serie',
-                    value: 'A'
-                });
-
-                objRecord.setValue({
-                    fieldId: 'custbody_l598_sucursal',
-                    value: 1
-                });
-
-                objRecord.setValue({
-                    fieldId: 'custbody_l598_caja',
-                    value: 1
-                });*/
-
-
                 var saveID = objRecord.save();
                 log.debug('crearFactura', 'Registro Factura: ' + saveID);
+                var afterSubmit = funcionalidadesURU.afterSubmit('invoice', saveID);
 
                 arrayFacturas.push(saveID);
 
@@ -300,8 +278,8 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
 
                 objRespuesta.resultCae = funcionalidades.generarCAE(arrayFacturas, subsidiaria);
-                
-                log.debug('callGenerarCAE', 'objRespuesta.resultCae: ' + JSON.stringify(objRespuesta.resultCae));
+
+                //log.debug('callGenerarCAE', 'objRespuesta.resultCae: ' + JSON.stringify(objRespuesta.resultCae));
 
                 if (objRespuesta.resultCae.error) {
                     //return objRespuesta.resultCae;
@@ -359,6 +337,194 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
             log.audit('callGenerarCAE', 'FIN - Generar CAE ');
 
         }
+
+        function crearOrdenCompra(objOV) {
+
+            var respuesta = new Object();
+            respuesta.error = false;
+            respuesta.detalle = new Array();
+
+            try {
+
+                log.audit('crearOrdenCompra', 'INICIO - Crear Orden de Compra');
+
+                //Consultar Configuracion Liquidaciones - TASA ARTICULO LIQUIDACION
+
+                var searchConfigLiq = utilities.searchSaved('customsearch_3k_config_liquidaciones');
+
+                if (!utilities.isEmpty(searchConfigLiq) && searchConfigLiq.error == false) {
+                    if (!utilities.isEmpty(searchConfigLiq.objRsponseFunction.result) && searchConfigLiq.objRsponseFunction.result.length > 0) {
+
+                        var resultSet = searchConfigLiq.objRsponseFunction.result;
+                        var resultSearch = searchConfigLiq.objRsponseFunction.search;
+
+                        var tasaArticuloLiq = '';
+
+                        for (var i = 0; !utilities.isEmpty(resultSet) && i < resultSet.length; i++) {
+                            tasaArticuloLiq = resultSet[i].getValue({
+                                name: resultSearch.columns[15]
+                            });
+                        }
+
+                        if (!utilities.isEmpty(tasaArticuloLiq)) {
+                            tasaArticuloLiq = (parseFloat(tasaArticuloLiq, 10));
+                        }
+                    } else {
+                        respuesta.error = true;
+                        respuestaParcial = new Object();
+                        respuestaParcial.codigo = 'UCOV020';
+                        respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones.';
+                        respuesta.detalle.push(respuestaParcial);
+                    }
+                } else {
+                    if (utilities.isEmpty(searchConfigLiq)) {
+                        respuesta.error = true;
+                        respuestaParcial = new Object();
+                        respuestaParcial.codigo = 'UCOV020';
+                        respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones.';
+                        respuesta.detalle.push(respuestaParcial);
+                    } else {
+                        respuesta.error = true;
+                        respuestaParcial = new Object();
+                        respuestaParcial.codigo = 'UCOV020';
+                        respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones - Tipo Error : ' + searchConfigProg.tipoError + ' - Descripcion : ' + searchConfigProg.descripcion;
+                        respuesta.detalle.push(respuestaParcial);
+                    }
+                }
+
+                var idMoneda = objOV.getValue({
+                    fieldId: 'currency'
+                });
+
+                var numLines = objOV.getLineCount({
+                    sublistId: 'item'
+                });
+
+                //log.debug('crearOrdenCompra', 'Cantidad Lineas OV: ' + numLines);
+
+                for (var i = 0; i < numLines; i++) {
+
+                    var impTotalOC = 0;
+                    var impFacturarMillas = 0;
+                    var deudaPagarMillas = 0;
+                    var deudaPagarServicio = 0;
+
+                    var lineUniqueKey = objOV.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'lineuniquekey',
+                        line: i
+                    });
+
+                    var desServicio = objOV.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'description',
+                        line: i
+                    });
+
+                    deudaPagarServicio = objOV.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_3k_deuda_pagar',
+                        line: i
+                    });
+
+                    deudaPagarMillas = objOV.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_3k_deuda_pagar_millas',
+                        line: i
+                    });
+
+                    log.debug('crearOrdenCompra', 'deudaPagarServicio: ' + deudaPagarServicio + ', deudaPagarMillas: ' + deudaPagarMillas);
+
+                    if (!utilities.isEmpty(deudaPagarServicio) && deudaPagarServicio > 0 && !utilities.isEmpty(deudaPagarMillas) && deudaPagarMillas > 0) {
+                        impTotalOC = parseFloat(deudaPagarServicio, 10) + parseFloat(deudaPagarMillas, 10);
+                    }
+
+                    var provLiquidacion = objOV.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_3k_proveedor_liquidacion',
+                        line: i
+                    });
+
+                    var esFidelidad = objOV.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_3k_programa_fidelidad',
+                        line: i
+                    });
+
+                    var idItem = '312235';
+
+                    if (!esFidelidad && !utilities.isEmpty(impTotalOC) && impTotalOC) {
+                        // INICIO GENERAR ORDEN DE COMPRA
+                        // Setear Campos Cabecera
+                        var registroOC = record.create({
+                            type: 'purchaseorder',
+                            isDynamic: true
+                        });
+
+                        registroOC.setValue({
+                            fieldId: 'custbody_3k_ulid_servicios',
+                            value: lineUniqueKey
+                        });
+
+                        registroOC.setValue({
+                            fieldId: 'currency',
+                            value: idMoneda
+                        });
+
+                        registroOC.setValue({
+                            fieldId: 'entity',
+                            value: provLiquidacion
+                        });
+
+                        //Inicio Agregar Linea Item Generico
+                        registroOC.selectNewLine({
+                            sublistId: 'item'
+                        });
+
+                        registroOC.setCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item',
+                            value: idItem
+                        });
+
+                        registroOC.setCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'description',
+                            value: desServicio
+                        });
+
+                        registroOC.setCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'rate',
+                            value: impTotalOC
+                        });
+
+                        registroOC.commitLine({
+                            sublistId: 'item'
+                        });
+                        //Fin Agregar Linea Item Generico
+
+                        idOrdenCompra = registroOC.save();
+
+                        log.debug('crearOrdenCompra', 'ID Orden de Compra: ' + idOrdenCompra);
+                        // FIN GENERAR ORDEN DE COMPRA
+
+                    }
+
+                }
+
+            } catch (excepcion) {
+                respuesta.error = true;
+                respuestaParcial = new Object();
+                respuestaParcial.codigo = 'UCOC001';
+                respuestaParcial.mensaje += excepcion;
+                respuesta.detalle.push(respuestaParcial);
+                log.error('crearOrdenCompra', 'UCOC001 - Excepcion : ' + excepcion);
+            }
+
+            log.audit('crearOrdenCompra', 'FIN - Crear Orden de Compra');
+        }
+
 
         return {
             afterSubmit: afterSubmit
