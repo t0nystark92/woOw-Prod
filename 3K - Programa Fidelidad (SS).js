@@ -507,6 +507,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                         registroOC.setCurrentSublistValue({
                             sublistId: 'item',
+                            fieldId: 'rate',
+                            value: ''
+                        });
+
+                        registroOC.setCurrentSublistValue({
+                            sublistId: 'item',
                             fieldId: 'amount',
                             value: impTotalOC
                         });
