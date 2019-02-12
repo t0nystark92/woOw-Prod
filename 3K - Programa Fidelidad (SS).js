@@ -1,6 +1,6 @@
 /**
  * @NApiVersion 2.x
- * @NAmdConfig ./configuration.json
+ * @NAmdConfig /SuiteBundles/Bundle 158453/configuration.json
  * @NScriptType UserEventScript
  * @NModuleScope Public
  */
@@ -74,11 +74,15 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     if (fidelidadOV == true) {
                         var fcBanco = crearFactura(recId, 'BANCO');
 
-                        if (servicioOV == true) {
+                        /*if (servicioOV == true) {
                             var fcCliente = crearFactura(recId, 'CLIENTE');
                             if (travelOV == false) {
                                 var generarOC = crearOrdenCompra(objOV);
                             }
+                        }*/
+
+                        if (servicioOV == true && travelOV == false) {
+                            var generarOC = crearOrdenCompra(objOV);
                         }
 
                     }
@@ -117,11 +121,17 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                 var beforeSubmit = funcionalidadesURU.beforeSubmit('create', objRecord);
 
+                if (funcionalidadesURU.l598esOneworld()) {
+                    var subsidiaria = objRecord.getValue({
+                        fieldId: 'subsidiary'
+                    });
+                } else {
+                    var subsidiaria = null;
+                }
+
                 var numLines = objRecord.getLineCount({
                     sublistId: 'item'
                 });
-
-                //log.debug('crearFactura', 'Cantidad Lineas OV: ' + numLines);
 
                 for (var i = 0; i < numLines; i++) {
 
@@ -137,16 +147,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         line: i
                     });
 
-                    if (tipo == 'CLIENTE') {
-                        if (esFidelidad || esRedondeo) {
-                            objRecord.removeLine({
-                                sublistId: 'item',
-                                line: i
-                            });
-                            i--;
-                            numLines--;
-                        }
-                    } else {
+                    if (tipo == 'BANCO') {
                         if (!esFidelidad) {
                             objRecord.removeLine({
                                 sublistId: 'item',
@@ -171,10 +172,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                 log.debug('crearFactura', 'Cantidad Lineas FC: ' + numLines);
 
-
                 if (tipo == 'BANCO') {
-
-                    //log.debug('crearFactura', 'clienteFidelidad: ' + clienteFidelidad);
 
                     objRecord.setValue({
                         fieldId: 'entity',
@@ -183,15 +181,19 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                 }
 
+                var total = objRecord.getValue({
+                    fieldId: 'total'
+                });
+
                 var saveID = objRecord.save();
+
                 log.debug('crearFactura', 'Registro Factura: ' + saveID);
-                var afterSubmit = funcionalidadesURU.afterSubmit('invoice', saveID);
+
+                var afterSubmit = funcionalidadesURU.afterSubmitWithMonto('invoice', saveID, subsidiaria, total);
 
                 arrayFacturas.push(saveID);
 
                 var generarCAE = callGenerarCAE(arrayFacturas);
-
-                log.debug('crearFactura', 'generarCAE: ' + generarCAE);
 
                 log.audit('crearFactura', 'FIN - Crear Factura ' + tipo);
 
@@ -209,12 +211,13 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
         function callGenerarCAE(arrayFacturas) {
 
-            var objRespuesta = new Object({});
-            objRespuesta.error = false;
-            objRespuesta.detalle = new Array();
-            objRespuesta.idFactura = '';
-            objRespuesta.carrito = '';
+            var objRespuestaN = new Object({});
+            objRespuestaN.error = false;
+            objRespuestaN.detalle = new Array();
+            objRespuestaN.idFactura = '';
             var arrayRespuesta = new Array();
+
+            var objRespuesta = new Object({});
 
             log.audit('callGenerarCAE', 'INICIO - Generar CAE ');
 
@@ -309,11 +312,11 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
             } catch (excepcion) {
                 objRespuestaParcial = new Object();
                 objRespuestaParcial.codigo = 'UCGC001';
-                objRespuestaParcial.mensaje = 'function doPost: ' + e.message;
+                objRespuestaParcial.mensaje = 'function doPost: ' + excepcion.message;
                 //objRespuesta.detalle.push(objRespuestaParcial);
                 //objRespuesta.tipoError = 'RFAC002';
                 //objRespuesta.descripcion = 'function doPost: ' + e.message;
-                log.error('UCGC001', 'funtion doPost: ' + e.message + ' request:' + JSON.stringify(objOrden));
+                log.error('UCGC001', 'funtion doPost: ' + excepcion.message);
 
                 if (arrayRespuesta.length > 0) {
                     for (var qq = 0; qq < arrayRespuesta.length; qq++) {
@@ -331,6 +334,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                 }
 
                 //arrayRespuesta.push(objRespuesta);
+                log.debug('callGenerarCAE', 'arrayRespuesta: ' + JSON.stringify(arrayRespuesta));
                 return JSON.stringify(arrayRespuesta);
             }
 
@@ -400,8 +404,6 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     sublistId: 'item'
                 });
 
-                //log.debug('crearOrdenCompra', 'Cantidad Lineas OV: ' + numLines);
-
                 for (var i = 0; i < numLines; i++) {
 
                     var impTotalOC = 0;
@@ -412,6 +414,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     var lineUniqueKey = objOV.getSublistValue({
                         sublistId: 'item',
                         fieldId: 'lineuniquekey',
+                        line: i
+                    });
+
+                    var cantidadItem = objOV.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'quantity',
                         line: i
                     });
 
@@ -435,9 +443,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                     log.debug('crearOrdenCompra', 'deudaPagarServicio: ' + deudaPagarServicio + ', deudaPagarMillas: ' + deudaPagarMillas);
 
-                    if (!utilities.isEmpty(deudaPagarServicio) && deudaPagarServicio > 0 && !utilities.isEmpty(deudaPagarMillas) && deudaPagarMillas > 0) {
-                        impTotalOC = parseFloat(deudaPagarServicio, 10) + parseFloat(deudaPagarMillas, 10);
-                    }
+                    impTotalOC = parseFloat(deudaPagarServicio, 10) + parseFloat(deudaPagarMillas, 10);
 
                     var provLiquidacion = objOV.getSublistValue({
                         sublistId: 'item',
@@ -451,9 +457,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         line: i
                     });
 
-                    var idItem = '312235';
+                    var idItem = '1392886'; //Item de prueba, mientras se define el item a utilizar
 
-                    if (!esFidelidad && !utilities.isEmpty(impTotalOC) && impTotalOC) {
+                    if (!esFidelidad && !utilities.isEmpty(impTotalOC) && impTotalOC > 0) {
                         // INICIO GENERAR ORDEN DE COMPRA
                         // Setear Campos Cabecera
                         var registroOC = record.create({
@@ -467,13 +473,13 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         });
 
                         registroOC.setValue({
-                            fieldId: 'currency',
-                            value: idMoneda
+                            fieldId: 'entity',
+                            value: provLiquidacion
                         });
 
                         registroOC.setValue({
-                            fieldId: 'entity',
-                            value: provLiquidacion
+                            fieldId: 'currency',
+                            value: idMoneda
                         });
 
                         //Inicio Agregar Linea Item Generico
@@ -489,6 +495,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                         registroOC.setCurrentSublistValue({
                             sublistId: 'item',
+                            fieldId: 'quantity',
+                            value: cantidadItem
+                        });
+
+                        registroOC.setCurrentSublistValue({
+                            sublistId: 'item',
                             fieldId: 'description',
                             value: desServicio
                         });
@@ -496,6 +508,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         registroOC.setCurrentSublistValue({
                             sublistId: 'item',
                             fieldId: 'rate',
+                            value: ''
+                        });
+
+                        registroOC.setCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'amount',
                             value: impTotalOC
                         });
 
@@ -524,7 +542,6 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
             log.audit('crearOrdenCompra', 'FIN - Crear Orden de Compra');
         }
-
 
         return {
             afterSubmit: afterSubmit

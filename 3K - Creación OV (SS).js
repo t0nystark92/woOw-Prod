@@ -76,11 +76,22 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         fieldId: 'custbody_3k_netsuite_ov'
                     });
 
-                    log.debug('Creación OV (SS) - beforeSubmit', ' id: ' + id + ', ubicacion: ' + ubicacion + ', sitio: ' + sitio + ', logNS: ' + logNS);
+                    var moneda = objRecord.getValue({
+                        fieldId: 'currency'
+                    });
+
+                    log.debug('Creación OV (SS) - beforeSubmit', ' id: ' + id + ', ubicacion: ' + ubicacion + ', sitio: ' + sitio + ', logNS: ' + logNS + ', moneda: ' + moneda);
 
                     //Consultar Item Programa Fidelidad
+                    var filtrosMoneda = new Array();
+                    
+                    var filtroMon = new Object();
+                    filtroMon.name = 'custrecord_3k_conf_prog_fidelidad_moneda';
+                    filtroMon.operator = 'IS';
+                    filtroMon.values = moneda;
+                    filtrosMoneda.push(filtroMon);
 
-                    var searchConfigProg = utilities.searchSaved('customsearch_3k_conf_prog_fidelidad');
+                    var searchConfigProg = utilities.searchSavedPro('customsearch_3k_conf_prog_fidelidad', filtrosMoneda);
 
                     if (!utilities.isEmpty(searchConfigProg) && searchConfigProg.error == false) {
                         if (!utilities.isEmpty(searchConfigProg.objRsponseFunction.result) && searchConfigProg.objRsponseFunction.result.length > 0) {
@@ -352,7 +363,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         objRecord.setSublistValue({ sublistId: 'item', fieldId: 'quantity', line: lineNum, value: sumCantidadMillas });
                         objRecord.setSublistValue({ sublistId: 'item', fieldId: 'rate', line: lineNum, value: sumUnitarioMillas });
                         objRecord.setSublistValue({ sublistId: 'item', fieldId: 'amount', line: lineNum, value: sumTotalMillas });
-                        objRecord.setSublistValue({ sublistId: 'item', fieldId: 'custcol_3k_importe_bruto_woow', line: lineNum, value: sumTotalMillas });
+                        //objRecord.setSublistValue({ sublistId: 'item', fieldId: 'custcol_3k_importe_bruto_woow', line: lineNum, value: sumTotalMillas });
                     }
                     /************************************ FIN - AGREGAR LINEA DE MILLAS ************************************/
 
@@ -927,16 +938,16 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                         // INICIO GENERAR AJUSTE POR REDONDEO
 
-                        var respuestaAjusteRedondeo = generarAjusteRedondeo(null, objRecord);
+                        //var respuestaAjusteRedondeo = generarAjusteRedondeo(null, objRecord);
 
-                        log.debug('Creación OV (SS) - afterSubmit', 'respuestaAjusteRedondeo: ' + JSON.stringify(respuestaAjusteRedondeo));
-                        // FIN GENERAR AJUSTE POR REDONDEO
-                        if (respuestaAjusteRedondeo.error == true) {
+                        //log.debug('Creación OV (SS) - afterSubmit', 'respuestaAjusteRedondeo: ' + JSON.stringify(respuestaAjusteRedondeo));
+                        
+                        /*if (respuestaAjusteRedondeo.error == true) {
                             error = true;
                             mensajeError = mensajeError + ' ' + respuestaAjusteRedondeo.mensajeError;
                             respuesta = respuestaAjusteRedondeo;
-                        }
-                        //objRecord = respuestaAjusteRedondeo.registro;
+                        }*/
+                        // FIN GENERAR AJUSTE POR REDONDEO
                         //log.debug('Creación OV (SS) - afterSubmit - LINE 702', 'objRecord: ' + JSON.stringify(objRecord));
                         if (!utilities.isEmpty(objRecord)) {
                             var cantidadLineasOV = objRecord.getLineCount({
