@@ -16,7 +16,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
      * @param {record} record
      * @param {search} search
      */
-    function(error, record, search, utilities) {
+    function (error, record, search, utilities) {
 
         /**
          * Function called upon sending a POST request to the RESTlet.
@@ -317,7 +317,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
             if (n < 10000000000 && n >= 1000000) {
 
                 mldata = letras(cm, dm, um);
-                log.debug('letras','mldata: '+ mldata);
+                log.debug('letras', 'mldata: ' + mldata);
                 hlp = mldata.replace("UN", "*");
                 if (hlp.indexOf("*") < 0 || hlp.indexOf("*") > 3) {
 
@@ -328,8 +328,8 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
 
                 mdata = letras(cmi, dmi, umi);
                 cdata = letras(ce, de, un);
-                log.debug('letras','mdata1: '+ mdata);
-                log.debug('letras','cdata1: '+ cdata);
+                log.debug('letras', 'mdata1: ' + mdata);
+                log.debug('letras', 'cdata1: ' + cdata);
                 if (mdata != "  ") {
                     if (n == 1000000)
                         mdata = mdata.replace("UNO", "UN") + "DE";
@@ -343,8 +343,8 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
 
                 mdata = letras(cmi, dmi, umi);
                 cdata = letras(ce, de, un);
-                log.debug('letras','mdata2: '+ mdata);
-                log.debug('letras','cdata2: '+ cdata);
+                log.debug('letras', 'mdata2: ' + mdata);
+                log.debug('letras', 'cdata2: ' + cdata);
                 hlp = mdata.replace("UN", "*");
                 if (hlp.indexOf("*") < 0 || hlp.indexOf("*") > 3) {
 
@@ -444,11 +444,11 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
 
                     return numeroEnLetras;
                 } else { //hay que usar decimales
-                    numero = parseFloat(numero,10);
+                    numero = parseFloat(numero, 10);
                     numero = numero.toFixed(2);
                     var partes = numero.split('.');
-                    log.debug('getNumeroEnLetras', 'numero: '+ numero);
-                    log.debug('getNumeroEnLetras', 'partes: '+ JSON.stringify(partes));
+                    log.debug('getNumeroEnLetras', 'numero: ' + numero);
+                    log.debug('getNumeroEnLetras', 'partes: ' + JSON.stringify(partes));
                     var parteEntera = partes[0];
                     var parteDecimal = partes[1];
                     var parteEnteraLetras = '';
@@ -483,7 +483,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
             if (!utilities.isEmpty(tipoTransNS)) {
 
                 var idTipoTransNS = obtenerIDTipoTransNS(tipoTransNS);
-                log.debug('obtenerTipoTransaccionLocal', 'idTipoTransNS: '+ JSON.stringify(idTipoTransNS));
+                log.debug('obtenerTipoTransaccionLocal', 'idTipoTransNS: ' + JSON.stringify(idTipoTransNS));
 
                 if (!utilities.isEmpty(idTipoTransNS)) {
 
@@ -1159,7 +1159,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                     var resultadosImpuestos = null;
                     //var transCodImpuesto = nlapiGetLineItemValue('item', 'taxcode',i);
                     var transCodImpuesto = objTransaccion.getSublistValue({ sublistId: 'item', fieldId: 'taxcode', line: i });
-                    log.debug('beforeSubmit', 'transCodImpuesto: '+ transCodImpuesto);
+                    log.debug('beforeSubmit', 'transCodImpuesto: ' + transCodImpuesto);
                     //var transCodImpuestoStr = nlapiGetLineItemText('item', 'taxcode',i);
                     var transCodImpuestoStr = objTransaccion.getSublistText({ sublistId: 'item', fieldId: 'taxcode', line: i });
 
@@ -1173,11 +1173,11 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                         });
                         //resultadosImpuestos = nlapiLookupField('salestaxitem', transCodImpuesto, camposImpuestos);
                         var resultadosImpuestos = objFieldLookUpResulImpuestos;
-                        log.debug('beforeSubmit', 'resultadosImpuestos: '+ JSON.stringify(resultadosImpuestos));
+                        log.debug('beforeSubmit', 'resultadosImpuestos: ' + JSON.stringify(resultadosImpuestos));
                         if (!utilities.isEmpty(resultadosImpuestos)) {
                             var esPercepcionRetencion = false;
                             var indicadorFacturacion = resultadosImpuestos.custrecordcustitem_l598_ind_facturacion[0].value;
-                            log.debug('beforeSubmit', 'indicadorFacturacion: '+ JSON.stringify(indicadorFacturacion));
+                            log.debug('beforeSubmit', 'indicadorFacturacion: ' + JSON.stringify(indicadorFacturacion));
                             var codigoPercRetCred = resultadosImpuestos.custrecord_l598_codigo_percepcion;
                             var esIndicadorExportacion = false;
                             if (!utilities.isEmpty(indicadorFacturacion)) {
@@ -1192,7 +1192,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                                 });
                                 //infoIndFact=nlapiLookupField('customrecord_l598_ind_fact_det', indicadorFacturacion, ['custrecord_l598_ind_fact_det_exp_asim','custrecord_l598_ind_fact_det_perc_ret']);
                                 infoIndFact = objFieldLookUpIndFact;
-                                log.debug('beforeSubmit', 'infoIndFact: '+ JSON.stringify(infoIndFact));
+                                log.debug('beforeSubmit', 'infoIndFact: ' + JSON.stringify(infoIndFact));
                                 esIndExp = "";
                                 esPercRet = "";
                                 if (!utilities.isEmpty(infoIndFact)) {
@@ -1319,16 +1319,16 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                     log.error('SURU006', objRespuestaParcial.mensaje);
                 }
 
-                log.debug('beforeSubmit', 'tipoTransStr: '+ tipoTransStr + ' esND: '+esND+ ' subsidiaria: '+ subsidiaria);
+                log.debug('beforeSubmit', 'tipoTransStr: ' + tipoTransStr + ' esND: ' + esND + ' subsidiaria: ' + subsidiaria);
 
                 var tipoTransLocal = obtenerTipoTransaccionLocal(tipoTransStr, esND, subsidiaria);
 
-                log.debug('beforeSubmit', 'tipoTransLocal: '+ JSON.stringify(tipoTransLocal));
+                log.debug('beforeSubmit', 'tipoTransLocal: ' + JSON.stringify(tipoTransLocal));
 
                 if (tipoTransLocal != null && tipoTransLocal.error != true) {
-                    log.debug('beforeSubmit', 'tipoTransStr: '+ tipoTransStr + ' esExportacion: '+esExportacion+  ' comprobanteContingencia: '+ comprobanteContingencia + ' esETicket: '+ esETicket);
+                    log.debug('beforeSubmit', 'tipoTransStr: ' + tipoTransStr + ' esExportacion: ' + esExportacion + ' comprobanteContingencia: ' + comprobanteContingencia + ' esETicket: ' + esETicket);
                     var tipoComprobanteFE = obtenerTipoComprobanteFE(tipoTransLocal.tipoTransaccionLocal, esExportacion, comprobanteContingencia, comprobanteCuentaAjena, esETicket);
-                    log.debug('beforeSubmit', 'tipoComprobanteFE: '+ JSON.stringify(tipoComprobanteFE));
+                    log.debug('beforeSubmit', 'tipoComprobanteFE: ' + JSON.stringify(tipoComprobanteFE));
                     if (tipoComprobanteFE != null && tipoComprobanteFE.error != true) {
                         // Configurar el Tipo de Comprobante de Factura Electronica
                         //nlapiSetFieldValue('custbody_l598_tipo_comprobante',tipoComprobanteFE.tipoComprobanteFE);
@@ -1402,9 +1402,67 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
             return objRespuesta;
         }
 
+        function afterSubmitWithMonto(tipoTransaccion, idTransaccion, subsidiaria, total) {
+
+            var objRespuesta = new Object();
+            objRespuesta.error = false;
+            objRespuesta.detalle = new Array();
+
+            try {
+
+                log.audit('afterSubmitWithMonto', 'INICIO');
+
+                var numeroEnLetras = getNumeroEnLetras(total.toString(), subsidiaria);
+
+                if (!utilities.isEmpty(numeroEnLetras)) {
+                    numeroEnLetras = numeroEnLetras;
+                } else {
+                    numeroEnLetras = '';
+                    objRespuesta.error = true;
+                    objRespuestaParcial = new Object();
+                    objRespuestaParcial.codigo = 'SURU009';
+                    objRespuestaParcial.mensaje = 'Error grabando Transaccion (' + idTransaccion + ') - Error Generando MontoEscrito';
+                    objRespuesta.detalle.push(objRespuestaParcial);
+                    log.error('SURU009', objRespuestaParcial);
+                }
+
+                if (!utilities.isEmpty(idTransaccion) && !utilities.isEmpty(tipoTransaccion)) {
+
+                    record.submitFields({
+                        type: tipoTransaccion,
+                        id: idTransaccion,
+                        values: {
+                            custbody_l598_nro_comprobante: idTransaccion,
+                            custbody_l598_monto_escrito: numeroEnLetras
+                        },
+                        options: {
+                            enableSourcing: false,
+                            ignoreMandatoryFields: true
+                        }
+                    });
+                }
+
+
+                log.audit('afterSubmitWithMonto', 'FIN');
+
+            } catch (excepcion) {
+                objRespuesta.error = true;
+                objRespuestaParcial = new Object();
+                objRespuestaParcial.codigo = 'SURU010';
+                objRespuestaParcial.mensaje += excepcion;
+                objRespuesta.detalle.push(objRespuestaParcial);
+                log.error('afterSubmitWithMonto', 'SURU010 - Excepcion : ' + excepcion);
+            }
+
+            return objRespuesta;
+
+        }
+
         return {
             beforeSubmit: l598beforeSubmitTransaction,
-            afterSubmit: l598afterSubmitTransaction
+            afterSubmit: l598afterSubmitTransaction,
+            afterSubmitWithMonto: afterSubmitWithMonto,
+            l598esOneworld: l598esOneworld
         };
 
     });

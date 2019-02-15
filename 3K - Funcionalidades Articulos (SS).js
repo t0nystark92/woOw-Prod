@@ -17,7 +17,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
      * @param {search} search
      */
 
-    function(error, record, search, utilities) {
+    function (error, record, search, utilities) {
 
         /**
          * Function definition to be triggered before record is loaded.
@@ -282,6 +282,15 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                         }
                     }
                     // FIN - Configurar Tipo de Articulo
+
+                    var plantillaMatriz = scriptContext.newRecord.getValue({ fieldId: 'matrixitemnametemplate' });
+                    
+                    log.debug('BeforeSubmit', 'plantillaMatriz: ' + plantillaMatriz);
+
+                    if (!utilities.isEmpty(plantillaMatriz)) {
+                        scriptContext.newRecord.setValue({ fieldId: 'custitem_3k_regla_nombre_matriz', value: plantillaMatriz, ignoreFieldChange: false, fireSlavingSync: true });
+                    }
+
                 }
 
                 log.audit('Fin Grabar Articulo', 'BeforeSubmit - Tipo : Servidor');
@@ -289,7 +298,6 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                 log.error('Grabar Articulo', 'BeforeSubmit - Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
                 throw utilities.crearError('SART007', 'Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
             }
-            afterConvertido(scriptContext);
         }
 
         /**
@@ -301,202 +309,189 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
          * @param {string} scriptContext.type - Trigger type
          * @Since 2015.2
          */
-        function afterConvertido(scriptContext) {
+        function afterSubmit(scriptContext) {
             try {
-                log.audit('Inicio Grabar Articulo', 'AftereSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
+                log.audit('Inicio Grabar Articulo', 'AfterSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
                 if (scriptContext.type == 'create' || scriptContext.type == 'edit') {
                     var cuentaIngresos = '';
                     var baseNumeracion = 0;
-                    //var idArticulo = scriptContext.newRecord.id;
+                    var idArticulo = scriptContext.newRecord.id;
                     var tipoArticulo = scriptContext.newRecord.type;
-                    if (/*!utilities.isEmpty(idArticulo) &&*/ !utilities.isEmpty(tipoArticulo)) {
-                        // INICIO - Obtener Ultimo nivel de Rubro del Articulo
-                        var rubro1 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_1' });
-                        var rubro2 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_2' });
-                        var rubro3 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_3' });
-                        var rubro4 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_4' });
-                        var rubro5 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_5' });
-                        var nombreArticuloOriginal = scriptContext.newRecord.getValue({ fieldId: 'itemid' });
-                        var idRubroArticulo = '';
-                        if (!utilities.isEmpty(rubro1)) {
-                            idRubroArticulo = rubro1;
-                            // INICIO - Obtener Cuenta Contable Ingresos
-                            var cuentaIngresos = scriptContext.newRecord.getValue({ fieldId: 'incomeaccount' });
+                    log.debug('Grabar Articulo', 'idArticulo: ' + idArticulo + ', tipoArticulo: ' + tipoArticulo);
+                    if (!utilities.isEmpty(idArticulo)) {
+                        if (!utilities.isEmpty(tipoArticulo)) {
+                            // INICIO - Obtener Ultimo nivel de Rubro del Articulo
+                            var rubro1 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_1' });
+                            var rubro2 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_2' });
+                            var rubro3 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_3' });
+                            var rubro4 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_4' });
+                            var rubro5 = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_rubro_nivel_5' });
+                            var nombreArticuloOriginal = scriptContext.newRecord.getValue({ fieldId: 'itemid' });
+                            var idRubroArticulo = '';
+                            if (!utilities.isEmpty(rubro1)) {
+                                idRubroArticulo = rubro1;
+                                // INICIO - Obtener Cuenta Contable Ingresos
+                                var cuentaIngresos = scriptContext.newRecord.getValue({ fieldId: 'incomeaccount' });
 
-                            var CuentaIngresosObj = search.lookupFields({
-                                type: 'customrecord_3k_rubros',
-                                id: idRubroArticulo,
-                                columns: ['custrecord_3k_rubros_cta_ing']
-                            });
+                                var CuentaIngresosObj = search.lookupFields({
+                                    type: 'customrecord_3k_rubros',
+                                    id: idRubroArticulo,
+                                    columns: ['custrecord_3k_rubros_cta_ing']
+                                });
 
-                            if (!utilities.isEmpty(CuentaIngresosObj) && !utilities.isEmpty(CuentaIngresosObj.custrecord_3k_rubros_cta_ing) && CuentaIngresosObj.custrecord_3k_rubros_cta_ing.length > 0) {
-                                cuentaIngresos = CuentaIngresosObj.custrecord_3k_rubros_cta_ing[0].value;
-                            }
-                            // FIN - Obtener Cuenta Contable Ingresos
-                            if (!utilities.isEmpty(rubro2)) {
-                                idRubroArticulo = rubro2;
-                                if (!utilities.isEmpty(rubro3)) {
-                                    idRubroArticulo = rubro3;
-                                    if (!utilities.isEmpty(rubro4)) {
-                                        idRubroArticulo = rubro4;
-                                        if (!utilities.isEmpty(rubro5)) {
-                                            idRubroArticulo = rubro5;
+                                if (!utilities.isEmpty(CuentaIngresosObj) && !utilities.isEmpty(CuentaIngresosObj.custrecord_3k_rubros_cta_ing) && CuentaIngresosObj.custrecord_3k_rubros_cta_ing.length > 0) {
+                                    cuentaIngresos = CuentaIngresosObj.custrecord_3k_rubros_cta_ing[0].value;
+                                }
+                                // FIN - Obtener Cuenta Contable Ingresos
+                                if (!utilities.isEmpty(rubro2)) {
+                                    idRubroArticulo = rubro2;
+                                    if (!utilities.isEmpty(rubro3)) {
+                                        idRubroArticulo = rubro3;
+                                        if (!utilities.isEmpty(rubro4)) {
+                                            idRubroArticulo = rubro4;
+                                            if (!utilities.isEmpty(rubro5)) {
+                                                idRubroArticulo = rubro5;
+                                            }
                                         }
                                     }
                                 }
+                            } else {
+                                // No se Configuro el Rubro del Articulo
+                                log.error('Grabar Articulo', 'AfterSubmit - No se realizo la configuracion de los Rubros del Articulo');
+                                throw utilities.crearError('SART008', 'No se realizo la configuracion de los Rubros del Articulo');
                             }
-                        } else {
-                            // No se Configuro el Rubro del Articulo
-                            log.error('Grabar Articulo', 'AftereSubmit - No se realizo la configuracion de los Rubros del Articulo');
-                            throw utilities.crearError('SART008', 'No se realizo la configuracion de los Rubros del Articulo');
-                        }
-                        // FIN - Obtener Ultimo nivel de Rubro del Articulo
-                        // INICIO - Obtener SKU del Rubro
-                        var SKURubro = '';
-                        if (!utilities.isEmpty(idRubroArticulo)) {
-                            var SKURubroObj = search.lookupFields({
-                                type: 'customrecord_3k_rubros',
-                                id: idRubroArticulo,
-                                columns: ['custrecord_3k_rubros_nom_sku']
-                            });
-                            if (!utilities.isEmpty(SKURubroObj) && !utilities.isEmpty(SKURubroObj.custrecord_3k_rubros_nom_sku)) {
-                                SKURubro = SKURubroObj.custrecord_3k_rubros_nom_sku;
-                            }
-                        }
-                        // FIN - Obtener SKU del Rubro
-                        var utilizarBaseNumeracion = false;
-                        if (!utilities.isEmpty(SKURubro)) {
-                            var numeroArticulo = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_numero_art' });
-                            if (utilities.isEmpty(numeroArticulo)) {
-                                numeroArticulo = scriptContext.newRecord.id;
-                                utilizarBaseNumeracion = true;
-                            }
-                            if (utilizarBaseNumeracion == true) {
-                                // INICIO - Obtener Numerador Base de Articulo
-                                var mySearch = search.load({
-                                    id: 'customsearch_3k_configuracion_articulos'
+                            // FIN - Obtener Ultimo nivel de Rubro del Articulo
+                            // INICIO - Obtener SKU del Rubro
+                            var SKURubro = '';
+                            if (!utilities.isEmpty(idRubroArticulo)) {
+                                var SKURubroObj = search.lookupFields({
+                                    type: 'customrecord_3k_rubros',
+                                    id: idRubroArticulo,
+                                    columns: ['custrecord_3k_rubros_nom_sku']
                                 });
-
-                                var resultSet = mySearch.run();
-                                var searchResult = resultSet.getRange({
-                                    start: 0,
-                                    end: 1
-                                });
-
-                                if (!utilities.isEmpty(searchResult) && searchResult.length > 0) {
-                                    baseNumeracion = searchResult[0].getValue({
-                                        name: resultSet.columns[1]
+                                if (!utilities.isEmpty(SKURubroObj) && !utilities.isEmpty(SKURubroObj.custrecord_3k_rubros_nom_sku)) {
+                                    SKURubro = SKURubroObj.custrecord_3k_rubros_nom_sku;
+                                }
+                            }
+                            // FIN - Obtener SKU del Rubro
+                            var utilizarBaseNumeracion = false;
+                            if (!utilities.isEmpty(SKURubro)) {
+                                var numeroArticulo = scriptContext.newRecord.getValue({ fieldId: 'custitem_3k_numero_art' });
+                                if (utilities.isEmpty(numeroArticulo)) {
+                                    numeroArticulo = scriptContext.newRecord.id;
+                                    log.debug('Grabar Articulo', 'numeroArticulo: ' + numeroArticulo);
+                                    utilizarBaseNumeracion = true;
+                                }
+                                if (utilizarBaseNumeracion == true) {
+                                    // INICIO - Obtener Numerador Base de Articulo
+                                    var mySearch = search.load({
+                                        id: 'customsearch_3k_configuracion_articulos'
                                     });
-                                    if (!utilities.isEmpty(baseNumeracion) && !isNaN(parseInt(baseNumeracion, 10))) {
-                                        baseNumeracion = parseInt(baseNumeracion, 10);
+
+                                    var resultSet = mySearch.run();
+                                    var searchResult = resultSet.getRange({
+                                        start: 0,
+                                        end: 1
+                                    });
+
+                                    if (!utilities.isEmpty(searchResult) && searchResult.length > 0) {
+                                        baseNumeracion = searchResult[0].getValue({
+                                            name: resultSet.columns[1]
+                                        });
+                                        if (!utilities.isEmpty(baseNumeracion) && !isNaN(parseInt(baseNumeracion, 10))) {
+                                            baseNumeracion = parseInt(baseNumeracion, 10);
+                                        } else {
+                                            baseNumeracion = '';
+                                            log.error('Grabar Articulo', 'AfterSubmit - No se encuentra configurada la Base de Numeracion de los Articulos en la Configuracion de Articulos');
+                                            throw utilities.crearError('SART009', 'No se encuentra configurada la Base de Numeracion de los Articulos en la Configuracion de Articulos');
+                                        }
                                     } else {
+                                        // No se encuentra Definida la Numeracion de los Articulos
                                         baseNumeracion = '';
-                                        log.error('Grabar Articulo', 'AfterSubmitConvertido - No se encuentra configurada la Base de Numeracion de los Articulos en la Configuracion de Articulos');
-                                        throw utilities.crearError('SART009', 'No se encuentra configurada la Base de Numeracion de los Articulos en la Configuracion de Articulos');
+                                        log.error('Grabar Articulo', 'AfterSubmit - No se encuentra definida la Configuracion de Articulos');
+                                        throw utilities.crearError('SART003', 'No se encuentra definida la Configuracion de Articulos');
+                                    }
+                                    // FIN - Obtener Numerador Base de Articulo
+                                }
+                                if (!utilities.isEmpty(numeroArticulo) && !utilities.isEmpty(baseNumeracion) && !utilities.isEmpty(SKURubro)) {
+                                    var NumeroArticuloCompleto = (parseInt(baseNumeracion, 10) + parseInt(numeroArticulo, 10));
+                                    var NombreArticulo = SKURubro + NumeroArticuloCompleto.toString();
+                                    log.debug('Grabar Articulo', 'NumeroArticuloCompleto: ' + NumeroArticuloCompleto + ', NombreArticulo: ' + NombreArticulo);
+                                    if (scriptContext.type == 'edit') {
+                                        NombreArticulo = nombreArticuloOriginal;
+                                    }
+
+                                    try {
+                                        var idRecord = record.submitFields({
+                                            type: tipoArticulo,
+                                            id: idArticulo,
+                                            values: {
+                                                itemid: NombreArticulo,
+                                                externalid: NombreArticulo,
+                                                custitem_3k_numero_art: NumeroArticuloCompleto,
+                                                custitem_3k_rubro: idRubroArticulo,
+                                                incomeaccount: cuentaIngresos
+                                            },
+                                            options: {
+                                                enableSourcing: true,
+                                                ignoreMandatoryFields: false
+                                            }
+                                        });
+                                        if (utilities.isEmpty(idRecord)) {
+                                            log.error('Grabar Articulo', 'AfterSubmit - Error Grabando Campos de Articulo - Error : No se recibio ID de Articulo Grabado');
+                                            throw utilities.crearError('SART010', 'Error Grabando Campos de Articulo - Error : No se recibio ID de Articulo Grabado');
+                                        }
+                                    } catch (exepcionSubmit) {
+                                        log.error('Grabar Articulo', 'AfterSubmit - Excepcion Grabando Campos de Articulo - Excepcion : ' + exepcionSubmit.message);
+                                        throw utilities.crearError('SART011', 'Excepcion Grabando Campos de Articulo - Excepcion : ' + exepcionSubmit.message);
                                     }
                                 } else {
-                                    // No se encuentra Definida la Numeracion de los Articulos
-                                    baseNumeracion = '';
-                                    log.error('Grabar Articulo', 'AfterSubmitConvertido - No se encuentra definida la Configuracion de Articulos');
-                                    throw utilities.crearError('SART003', 'No se encuentra definida la Configuracion de Articulos');
-                                }
-                                // FIN - Obtener Numerador Base de Articulo
-                            }
-                            if (!utilities.isEmpty(numeroArticulo) && !utilities.isEmpty(baseNumeracion) && !utilities.isEmpty(SKURubro)) {
-                                var NumeroArticuloCompleto = (parseInt(baseNumeracion, 10) + parseInt(numeroArticulo, 10));
-                                var NombreArticulo = SKURubro + NumeroArticuloCompleto.toString();
-                                if(scriptContext.type == 'edit'){
-                                    NombreArticulo = nombreArticuloOriginal;
-                                }
-                                try {
-                                    // var idRecord = record.submitFields({
-                                        // type: tipoArticulo,
-                                        // id: idArticulo,
-                                        // values: {
-                                            // itemid: NombreArticulo,
-                                            // externalid: NombreArticulo,
-                                            // custitem_3k_numero_art: NumeroArticuloCompleto,
-                                            // custitem_3k_rubro: idRubroArticulo,
-                                            // incomeaccount: cuentaIngresos
-                                        // },
-                                        // options: {
-                                            // enableSourcing: true,
-                                            // ignoreMandatoryFields: false
-                                        // }
-                                    // });
-                                    scriptContext.newRecord.setValue({
-                                      fieldId: 'itemid',
-                                      value: NombreArticulo
-                                    });
-                                    scriptContext.newRecord.setValue({
-                                      fieldId: 'externalid',
-                                      value: NombreArticulo
-                                    });
-                                    scriptContext.newRecord.setValue({
-                                      fieldId: 'custitem_3k_numero_art',
-                                      value: NumeroArticuloCompleto
-                                    });
-                                    scriptContext.newRecord.setValue({
-                                      fieldId: 'custitem_3k_rubro',
-                                      value: idRubroArticulo
-                                    });
-                                    scriptContext.newRecord.setValue({
-                                      fieldId: 'incomeaccount',
-                                      value: cuentaIngresos
-                                    });
-                                    // if (utilities.isEmpty(idRecord)) {
-                                        // log.error('Grabar Articulo', 'AfterSubmitConvertido - Error Grabando Campos de Articulo - Error : No se recibio ID de Articulo Grabado');
-                                        // throw utilities.crearError('SART010', 'Error Grabando Campos de Articulo - Error : No se recibio ID de Articulo Grabado');
-                                    // }
-                                } catch (exepcionSubmit) {
-                                    log.error('Grabar Articulo', 'AfterSubmitConvertido - Excepcion Grabando Campos de Articulo - Excepcion : ' + exepcionSubmit.message);
-                                    throw utilities.crearError('SART011', 'Excepcion Grabando Campos de Articulo - Excepcion : ' + exepcionSubmit.message);
+                                    // Error Generando Numeracion de Articulo
+                                    var mensaje = "Error Obteniendo la siguiente Informacion : ";
+                                    if (utilities.isEmpty(numeroArticulo)) {
+                                        mensaje = mensaje + " Numero de Articulo /";
+                                    }
+                                    if (utilities.isEmpty(baseNumeracion)) {
+                                        mensaje = mensaje + " Base de Numeracion de Articulo /";
+                                    }
+                                    if (utilities.isEmpty(SKURubro)) {
+                                        mensaje = mensaje + " SKU Rubro de Articulo /";
+                                    }
+                                    log.error('Grabar Articulo', 'BeforeSubmit - Error Grabando Articulo - Error: ' + mensaje);
+                                    throw utilities.crearError('SART012', 'Error Grabando Articulo - Error : ' + mensaje);
                                 }
                             } else {
-                                // Error Generando Numeracion de Articulo
-                                var mensaje = "Error Obteniendo la siguiente Informacion : ";
-                                if (utilities.isEmpty(numeroArticulo)) {
-                                    mensaje = mensaje + " Numero de Articulo /";
-                                }
-                                if (utilities.isEmpty(baseNumeracion)) {
-                                    mensaje = mensaje + " Base de Numeracion de Articulo /";
-                                }
-                                if (utilities.isEmpty(SKURubro)) {
-                                    mensaje = mensaje + " SKU Rubro de Articulo /";
-                                }
-                                log.error('Grabar Articulo', 'BeforeSubmit - Error Grabando Articulo - Error: ' + mensaje);
-                                throw utilities.crearError('SART012', 'Error Grabando Articulo - Error : ' + mensaje);
+                                // El Rubro No Posee Nomenclatura SKU
+                                log.error('Grabar Articulo', 'AfterSubmit - El Rubro con ID Interno : ' + idRubroArticulo + ' No posee Nomneclatura SKU');
+                                throw utilities.crearError('SART013', 'El Rubro con ID Interno : ' + idRubroArticulo + ' No posee Nomneclatura SKU');
                             }
                         } else {
-                            // El Rubro No Posee Nomenclatura SKU
-                            log.error('Grabar Articulo', 'AfterSubmitConvertido - El Rubro con ID Interno : ' + idRubroArticulo + ' No posee Nomneclatura SKU');
-                            throw utilities.crearError('SART013', 'El Rubro con ID Interno : ' + idRubroArticulo + ' No posee Nomneclatura SKU');
+                            // Error Obteniendo ID/ Tipo de Articulo
+                            var mensaje = "Error Obteniendo la siguiente Informacion del Articulo : ";
+                            /*if (utilities.isEmpty(idArticulo)) {
+                                mensaje = mensaje + " ID Interno de Articulo /";
+                            }*/
+                            if (utilities.isEmpty(tipoArticulo)) {
+                                mensaje = mensaje + " Tipo de Articulo /";
+                            }
+                            log.error('Grabar Articulo', 'AfterSubmit - Error Grando Articulo - Error : ' + mensaje);
+                            throw utilities.crearError('SART014', 'Error Grando Articulo - Error : ' + mensaje);
                         }
-                    } else {
-                        // Error Obteniendo ID/ Tipo de Articulo
-                        var mensaje = "Error Obteniendo la siguiente Informacion del Articulo : ";
-                        if (utilities.isEmpty(idArticulo)) {
-                            mensaje = mensaje + " ID Interno de Articulo /";
-                        }
-                        if (utilities.isEmpty(tipoArticulo)) {
-                            mensaje = mensaje + " Tipo de Articulo /";
-                        }
-                        log.error('Grabar Articulo', 'BeforeSubmit - Error Grando Articulo - Error : ' + mensaje);
-                        throw utilities.crearError('SART014', 'Error Grando Articulo - Error : ' + mensaje);
+
                     }
                 }
             } catch (excepcion) {
-                log.error('Grabar Articulo', 'AfterSubmitConvertido - Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
+                log.error('Grabar Articulo', 'AfterSubmit - Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
                 throw utilities.crearError('SART015', 'Excepcion Grabando Articulo - Excepcion : ' + excepcion.message);
             }
-            log.audit('Fin Grabar Articulo', 'AftereSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
+            log.audit('Fin Grabar Articulo', 'AfterSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
 
         }
 
         return {
             beforeLoad: beforeLoad,
-            beforeSubmit: beforeSubmit
-            //afterSubmit: afterSubmit
+            beforeSubmit: beforeSubmit,
+            afterSubmit: afterSubmit
         };
 
     });
