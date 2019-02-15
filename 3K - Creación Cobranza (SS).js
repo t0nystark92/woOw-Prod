@@ -134,6 +134,8 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     if (generaCobranza == true) {
                         var objOV = new Object({});
                         var arrayOV = new Array();
+                        var objFormasPago = new Object({});
+                        var arrayFormasPago = new Array();
 
                         objOV.idOV = idOV;
 
@@ -156,9 +158,21 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         objOV.tipoCambioPago = objRecord.getValue({
                             fieldId: 'custbody_3k_tc_woow_ov'
                         });
-
+                        
                         objOV.monedaPago = objRecord.getValue({
                             fieldId: 'custbody_3k_moneda_pago_ov'
+                        });
+
+                        objFormasPago.formaPago = objRecord.getValue({
+                            fieldId: 'custbody_3k_forma_pago'
+                        });
+
+                        objFormasPago.cantidadCuotas = objRecord.getValue({
+                            fieldId: 'custbody_3k_cant_cuotas'
+                        });
+
+                        objFormasPago.importePago = objRecord.getValue({
+                            fieldId: 'custbody_3k_importe_pago'
                         });
 
                         objOV.esServicio = objRecord.getValue({
@@ -182,21 +196,22 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         });
 
                         arrayOV.push(objOV);
+                        arrayFormasPago.push(objFormasPago);
 
                         log.debug('Creación Cobranza (SS) - afterSubmit', 'arrayOV: ' + JSON.stringify(arrayOV) + ', arrayOV.length: ' + arrayOV.length);
-
+                        log.debug('Creación Cobranza (SS) - afterSubmit', 'arrayFormasPago: ' + JSON.stringify(arrayFormasPago) + ', arrayFormasPago.length: ' + arrayFormasPago.length);
 
                         //INICIO - CONSULTAR/LLENAR ARRAY DE FORMAS DE PAGO
 
-                        var cantidadLineasFormaPago = objRecord.getLineCount({
+                        /*var cantidadLineasFormaPago = objRecord.getLineCount({
                             sublistId: 'recmachcustrecord_3k_formas_de_pago_ov'
                         });
 
-                        var arrayFormasPago = new Array();
+                        var arrayFormasPago = new Array();*/
 
                         //log.debug('Creación Cobranza (SS) - afterSubmit', 'cantidadLineasFormaPago: ' + cantidadLineasFormaPago);
 
-                        if (cantidadLineasFormaPago > 0) {
+                        /*if (cantidadLineasFormaPago > 0) {
 
                             for (var i = 0; i < cantidadLineasFormaPago; i++) {
                                 var objFormasPago = new Object({});
@@ -231,10 +246,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                             log.debug('Creación Cobranza (SS) - afterSubmit', 'arrayFormasPago: ' + JSON.stringify(arrayFormasPago) + ', arrayFormasPago.length: ' + arrayFormasPago.length);
 
-                        }
+                        }*/
 
                         //FIN - CONSULTAR/LLENAR ARRAY DE FORMAS DE PAGO
-
 
                         if (!utilities.isEmpty(arrayOV) && arrayOV.length > 0 && !utilities.isEmpty(arrayFormasPago) && arrayFormasPago.length) {
 
