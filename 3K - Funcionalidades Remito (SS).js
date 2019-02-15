@@ -9,14 +9,14 @@
         '3K/utilities': './3K - Utilities'
     }
 });*/
-define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
+define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funcionalidadesURU', '3K/funcionalidadesOV'],
   /**
    * @param {error} error
    * @param {record} record
    * @param {search} search
    */
 
-  function (error, record, search, format, utilities) {
+  function (error, record, search, format, utilities, funcionalidadesURU, funcionalidadesOV) {
 
     /**
      * Function definition to be triggered before record is loaded.
@@ -311,8 +311,19 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                     }
                   }
                   log.audit('Todos los datos completados', 'Guardando Factura para el remito con ID Interno: ' + idRemito);
+                  
+                  log.debug('beforeSubmit - FC', 'beforeSubmit - FC - INICIO');
+                  funcionalidadesURU.beforeSubmit('create', factRecord);
+                  log.debug('beforeSubmit - FC', 'beforeSubmit - FC - FIN');
+                  
                   var idFactGenerada = factRecord.save();
+                
+
                   if (!utilities.isEmpty(idFactGenerada)) {
+                    log.debug('afterSubmit - FC', 'afterSubmit - FC - INICIO');
+                    funcionalidadesURU.afterSubmit('invoice', idFactGenerada);
+                    log.debug('afterSubmit - FC', 'afterSubmit - FC - FIN');
+                    
                     log.debug('Seteando ID de Factura')
                     remRecord.setValue({
                       fieldId: 'custbody_3k_factura_generada',
@@ -328,7 +339,10 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities'],
                         enableSourcing: false,
                         ignoreMandatoryFields: false
                       }
-                    })
+                    });
+                    log.debug('GenerarCAE - FC', 'GenerarCAE - FC - INICIO');
+                    funcionalidadesOV.generarCAE([idFactGenerada], factRecord.getValue('subsidiary'));
+                    log.debug('GenerarCAE - FC', 'GenerarCAE - FC - FIN');
                   }
                   log.audit('Factura Guardada', 'Generada Factura con ID Interno: ' + idFactGenerada + '. Para el Remito con ID Interno: ' + idRemito);
                 }
