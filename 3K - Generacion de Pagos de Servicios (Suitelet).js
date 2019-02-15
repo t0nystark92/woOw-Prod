@@ -96,6 +96,10 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           container: 'filtros'
         });
 
+        if (!utilities.isEmpty(context.request) && !utilities.isEmpty(context.request.parameters.sitioweb)) {
+          sitioWeb.defaultValue = context.request.parameters.sitioweb;
+        }
+
         var empresa = form.addField({
           id: 'empresa',
           label: 'Empresa Proveedor',
@@ -103,6 +107,10 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           source: 'vendor',
           container: 'filtros'
         });
+
+        if (!utilities.isEmpty(context.request) && !utilities.isEmpty(context.request.parameters.sitioweb)) {
+          empresa.defaultValue = context.request.parameters.empresa;
+        }
 
         var fechaInicio = form.addField({
           id: 'fechainicio',
@@ -207,6 +215,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           }
 
           // INICIO CARGAR COMBO CUENTAS CONTABLES
+          log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR COMBO CUENTAS CONTABLES - INICIO');
           var cuentasContables = search.load({
             id: 'customsearch_3k_cuentas_proc_pago_liq'
           });
@@ -282,6 +291,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           } else {
             log.error('Generacion Pagos Servicios', 'Suitelet Generacion Pantalla - Error : No se Encontraron Cuentas Contables');
           }
+          log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR COMBO CUENTAS CONTABLES - FIN');
           // FIN CARGAR COMBO CUENTAS CONTABLES
 
           if (!utilities.isEmpty(context.request.parameters.cuentabanco)) {
@@ -325,6 +335,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           ////////////////////////////////////////////////////////////////
 
           // INICIO CARGAR DATOS BANCARIOS PROVEEDORES
+          log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - INICIO');
           var informacionBancariaProveedores = new Array();
 
           var datosBancariosProveedores = search.load({
@@ -390,6 +401,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             bancoProv.defaultValue = context.request.parameters.bancoprov;
           }
 
+          log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - FIN');
           //var bancoEmisorPago = form.addField({
           //id: 'bancoemisorpago',
           //label: 'Banco Emisor Pago',
@@ -657,13 +669,20 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
         if (!utilities.isEmpty(request.parameters.empresa)) {
           var empresasSeleccionadas = request.parameters.empresa.split(separadorMultiSelect);
           if (!utilities.isEmpty(empresasSeleccionadas) && empresasSeleccionadas.length > 0) {
-            var filtroEmpresa = search.createFilter({
+            var clientesRelacionados = obtenerClientesRelacionados(empresasSeleccionadas);
+            var filtroEmpresaP = search.createFilter({
               name: 'entity',
               operator: 'ANYOF',
               values: empresasSeleccionadas
             });
+            var filtroEmpresaC = search.createFilter({
+              name: 'entity',
+              operator: 'ANYOF',
+              values: clientesRelacionados
+            });
 
-            ssParams.push(filtroEmpresa);
+            comisionesPendientesCobrarSearch.filters.push(filtroEmpresaC);
+            comisionesPendientesPagarSearch.filters.push(filtroEmpresaP);
 
           }
         }
@@ -700,11 +719,11 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
         var ssComCobrar = correrSearch(comisionesPendientesCobrarSearch);
 
         var ssComPagar = correrSearch(comisionesPendientesPagarSearch);
-
         log.debug('Generacion Pagos Servicios', 'FIN Consulta Busqueda Comisiones Pendientes');
-
+        var lineasVenta = (ssComCobrar.result == null) ? 0 : ssComCobrar.result.length;
+        var lineasCompra = (ssComPagar.result == null) ? 0 : ssComPagar.result.length;
         if (!utilities.isEmpty(ssComCobrar.result) || !utilities.isEmpty(ssComPagar.result)) {
-          log.debug('Generacion Pagos Servicios', 'FIN Consulta Busqueda Comisiones Pendientes - Cantidad Registros Encontrados : ' + ((ssComCobrar.result.length || 0) + (ssComPagar.result.length || 0)));
+          log.debug('Generacion Pagos Servicios', 'FIN Consulta Busqueda Comisiones Pendientes - Cantidad Registros Encontrados : ' + (lineasVenta + lineasCompra));
 
           var indiceSublista = {
             custinvc: 0,
@@ -712,11 +731,9 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             vendbill: 0,
             vendcred: 0
           };
-
-          for (var i = 0, j = 0;
-            ((ssComCobrar.result.length || 0) + (ssComPagar.result.length || 0)) > 0 && i < (ssComCobrar.result.length + ssComPagar.result.length); i++) {
-            if (i >= (ssComCobrar.result.length || 0)) {
-              if (i == (ssComCobrar.result.length || 0)) {
+          for (var i = 0, j = 0; (lineasCompra + lineasVenta) > 0 && i < (lineasCompra + lineasVenta); i++) {
+            if (i >= lineasVenta) {
+              if (i == lineasVenta) {
                 j = 0;
               }
               var ss = ssComPagar;
@@ -833,13 +850,14 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
 
         // FIN - Consulta Comisiones Pendientes
 
-        if (utilities.isEmpty(ssComCobrar.result) && utilities.isEmpty(ssComPagar.result)) {
+        if (lineasVenta == 0 && lineasCompra == 0) {
           respuesta.error = true;
           respuesta.mensaje = "No se encontraron Comisiones Pendientes";
           log.audit('Generacion Pagos Servicios', 'FIN Consulta Busqueda Comisiones Pendientes - No se encontraron Comisiones Pendientes');
         }
 
       } catch (excepcion) {
+        log.error('Excepcion Consultando Comisiones Pendientes',excepcion);
         respuesta.error = true;
         respuesta.mensaje = "Excepcion Consultando Comisiones Pendientes - Excepcion : " + excepcion.message;
         log.error('Generacion Pagos Servicios', 'Consulta Busqueda Comisiones Pendientes - Excepcion Consultando Comisiones - Excepcion : ' + excepcion.message);
@@ -941,16 +959,16 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                           respuesta.mensaje = "No se pudo Obtener el ID Interno de las Comisiones a procesar: " + nombreSublista[n];
                         }
                       }
-                    } else {
-                      //Error Obteniendo Columnas de Sublista
-                      respuesta.error = true;
-                      respuesta.mensaje = "No se pudo Obtener las columnas de la sublista de Comisiones a procesar: " + nombreSublista[n];
-                    }
-                  } else {
-                    //Error Obteniendo Contenido de Sublista
-                    respuesta.error = true;
-                    respuesta.mensaje = "No se pudo Obtener el contenido de la sublista de Comisiones a procesar: " + nombreSublista[n];
-                  }
+                    } //else {
+                      ////Error Obteniendo Columnas de Sublista
+                      //respuesta.error = true;
+                      //respuesta.mensaje = "No se pudo Obtener las columnas de la sublista de Comisiones a procesar: " + nombreSublista[n];
+                    //}
+                  } //else {
+                    ////Error Obteniendo Contenido de Sublista
+                    //respuesta.error = true;
+                    //respuesta.mensaje = "No se pudo Obtener el contenido de la sublista de Comisiones a procesar: " + nombreSublista[n];
+                  //}
 
                 }
 
@@ -959,9 +977,9 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                 respuesta.mensaje = "No se pudo obtener registros de la sublista de Comisiones a procesar";
               }
             }
-          } else if (n == nombreSublista.length - 1) {
+          } else if ((n == (nombreSublista.length - 1)) && existenDocumentosSeleccionados == false) {
             respuesta.error = true;
-            respuesta.mensaje = "No se obtuvieron sublistas a procesar";
+            respuesta.mensaje = "No se obtuvieron los elementos a procesar";
           }
         }
         if (respuesta.error == false && existenDocumentosSeleccionados == false) {
@@ -1009,7 +1027,33 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
       log.audit('Generacion Pagos Servicios', 'FIN Consulta Comisiones A Procesar');
       return respuesta;
     }
-
+    function obtenerClientesRelacionados(empresasSeleccionadas){
+      var clientesRelacionados = [];
+      var ss = search.create({
+        type: 'customer',
+        filters: [
+          search.createFilter({
+            name: 'custentity_3k_prov_asociado',
+            operator:'ANYOF',
+            values: empresasSeleccionadas
+          })
+        ],
+        columns: [
+          search.createColumn({name: 'internalid'})
+        ]
+      });
+      var ssClientes = correrSearch(ss);
+      for(var z = 0; z < ssClientes.result.length; z++){
+        var coincidencias = clientesRelacionados.filter(function(ids){
+          return ids == ssClientes.result[z].getValue('internalid');
+        });
+        if (coincidencias.length == 0){
+          clientesRelacionados.push(ssClientes.result[z].getValue('internalid'));
+        }
+      }
+      return clientesRelacionados;
+      
+    }
     function createAndSubmitMapReduceJob(idScript, parametros) {
       log.audit('Generacion Pagos Servicios REST', 'INICIO Invocacion Script MAP/REDUCE');
       var respuesta = new Object();
