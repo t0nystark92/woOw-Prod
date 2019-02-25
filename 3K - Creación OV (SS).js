@@ -152,25 +152,25 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             }
 
                         } else {
-                            respuesta.error = true;
-                            respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV020';
-                            respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones.';
-                            respuesta.detalle.push(respuestaParcial);
+                            objRespuesta.error = true;
+                            objRespuestaParcial = new Object();
+                            objRespuestaParcial.codigo = 'UCOV020';
+                            objRespuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones.';
+                            objRespuesta.detalle.push(objRespuestaParcial);
                         }
                     } else {
                         if (utilities.isEmpty(searchConfigLiq)) {
-                            respuesta.error = true;
-                            respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV020';
-                            respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones.';
-                            respuesta.detalle.push(respuestaParcial);
+                            objRespuesta.error = true;
+                            objRespuestaParcial = new Object();
+                            objRespuestaParcial.codigo = 'UCOV020';
+                            objRespuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones.';
+                            objRespuesta.detalle.push(objRespuestaParcial);
                         } else {
-                            respuesta.error = true;
-                            respuestaParcial = new Object();
-                            respuestaParcial.codigo = 'UCOV020';
-                            respuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones - Tipo Error : ' + searchConfigProg.tipoError + ' - Descripcion : ' + searchConfigProg.descripcion;
-                            respuesta.detalle.push(respuestaParcial);
+                            objRespuesta.error = true;
+                            objRespuestaParcial = new Object();
+                            objRespuestaParcial.codigo = 'UCOV020';
+                            objRespuestaParcial.mensaje = 'Error Consultando Configuracion Liquidaciones - Tipo Error : ' + searchConfigProg.tipoError + ' - Descripcion : ' + searchConfigProg.descripcion;
+                            objRespuesta.detalle.push(objRespuestaParcial);
                         }
                     }
 
