@@ -27,7 +27,8 @@ define(['N/error', 'N/record', 'N/search', 'N/http', '3K/utilities', '3K/funcion
          * @since 2015.2
          */
         function doPost(requestBody) {
-            return funcionalidades.generarFacturas(requestBody);
+            //return funcionalidades.generarFacturas(requestBody);
+            return funcionalidades.generarFacturaTravel(requestBody);
         }
 
         return {
