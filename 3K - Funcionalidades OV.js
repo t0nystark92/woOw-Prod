@@ -1636,34 +1636,20 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             objRespuesta.error = false;
             objRespuesta.message = "";
             objRespuesta.detalle = new Array();
+            log.debug('crearOrdenVenta', 'informacion: ' + JSON.stringify(informacion));
+
             try {
                 /************************************INICIO SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
                 var arrayArticulos = [];
-                var arrayValidaRepetidos = [];
 
                 for (var k = 0; k < informacion.orden.length; k++) {
                     var o = new Object({})
-                    o.campanaJSON = informacion.orden[k].campana;
                     o.articuloJSON = informacion.orden[k].articulo;
 
-                    var filterRepetidos = arrayValidaRepetidos.filter(function (obj) {
-                        return (obj.articuloJSON == informacion.orden[k].articulo && obj.campanaJSON == informacion.orden[k].campana);
-                    });
-                    if (!utilities.isEmpty(filterRepetidos) && filterRepetidos.length > 0) {
-                        objRespuesta.error = true;
-                        objRespuestaParcial = new Object();
-                        objRespuestaParcial.codigo = 'RORV017';
-                        objRespuestaParcial.mensaje += 'No se pudo crear Orden de Venta debido a que se encuentra repetido el articulo ' + informacion.orden[k].articulo + ' para la campaña: ' + informacion.orden[k].campana;
-                        objRespuesta.detalle.push(objRespuestaParcial);
-                        //objRespuesta.tipoError = 'RORV017';
-                        //objRespuesta.message += 'No se pudo crear Orden de Venta debido a que se encuentra repetido el articulo ' + informacion.orden[k].articulo + ' para la campaña: ' + informacion.orden[k].campana;
-                        return objRespuesta;
-                    } else {
-                        arrayValidaRepetidos.push(JSON.parse(JSON.stringify(o)));
-                        arrayArticulos.push(informacion.orden[k].articulo);
-                    }
+                    arrayArticulos.push(informacion.orden[k].articulo);
 
                 }
+
                 var arraySearchParams = new Array();
                 var objParam = new Object();
                 objParam.name = 'internalid';
@@ -1719,15 +1705,6 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
                 /************************************FIN SE CREA ARREGLO DE ARTICULOS DE LA ORDEN DE VENTA PARA LUEGO PASARLO A SS************************************************************/
 
-                /************************************INICO BUSQUEDA DE CONFIGURACIONES DE VOUCHERS EN SS************************************************************/
-                var objResultSet = utilities.searchSavedPro('customsearch_3k_configuracion_voucher_ss');
-                if (objResultSet.error) {
-                    return objResultSet;
-                }
-
-                var searchConfig = objResultSet.objRsponseFunction.array
-                /************************************FIN BUSQUEDA DE CONFIGURACIONES DE VOUCHERS EN SS************************************************************/
-
                 /******************************* INICIO  DE TRANSFORMAR FECHA EN FORMATO DE URU Y FORMATO NETSUITE****************************************************/
                 var fechaServidor = new Date();
                 var fechaString = format.format({
@@ -1742,109 +1719,15 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                 /******************************* FIN DE TRANSFORMAR FECHA EN FORMATO DE URU Y FORMATO NETSUITE****************************************************/
 
                 /********************************INICIO DECLARACIONES ARRAYS QUE ARMAN LAS LINEAS DE LA OV******************************************************************************************/
-                var arrayLineaPila = new Array();
-                var arrayVoucher = new Array();
-                var arrayVoucherLinea = new Array();
                 var arrayOV = new Array();
 
                 /********************************FIN DECLARACIONES ARRAYS******************************************************************************************/
 
                 /***************************INICIO SE CREA ARREGLO DE COMPONENTES PARA LUEGO PASARLO A SS DE BUSQUEDA DE STOCK TERCEROS Y STOCK PROPIO************************************************************/
 
-                var arrayComponentes = new Array();
-
-                for (var j = 0; j < articulo.length; j++) {
-                    arrayComponentes.push(articulo[j]["ID Articulo Componente"]);
-                }
-
-                var arraySearchParams = new Array();
-                var objParam = new Object();
-                objParam.name = 'custrecord_3k_stock_terc_articulo';
-                objParam.operator = 'ANYOF';
-                objParam.values = arrayComponentes;
-                arraySearchParams.push(objParam);
-
-                var objParam1 = new Object();
-                objParam1.name = 'custrecord_3k_stock_terc_sitio';
-                objParam1.operator = 'ANYOF';
-                objParam1.values = [informacion.sitio];
-                arraySearchParams.push(objParam1)
-
-                var objResultSet = utilities.searchSavedPro('customsearch_3k_stock_terceros', arraySearchParams);
-                if (objResultSet.error) {
-                    return objResultSet;
-                }
-
-                var stockTerceros = objResultSet.objRsponseFunction.array;
-
-
-                var arraySearchParams = new Array();
-                var objParam = new Object();
-                objParam.name = 'internalid';
-                objParam.operator = 'ANYOF';
-                objParam.values = arrayComponentes;
-                arraySearchParams.push(objParam);
-
-                var objParam1 = new Object();
-                objParam1.name = 'inventorylocation';
-                objParam1.operator = 'IS';
-                objParam1.values = [informacion.ubicacion];
-                arraySearchParams.push(objParam1)
-
-                var objResultSet = utilities.searchSavedPro('customsearch_3k_articulo_disponible', arraySearchParams);
-                if (objResultSet.error) {
-                    return objResultSet;
-                }
-
-                var stockComponentes = objResultSet.objRsponseFunction.array;
-
-
-                //INICIO BUSQUEDA DE TASA DE IMPUESTO DE ENVIO EN LA CONFIGURACION
-                var arraySearchParams = new Array();
-                var objParam = new Object();
-                objParam.name = 'custrecord_170_cseg_3k_sitio_web_o';
-                objParam.operator = 'IS';
-                objParam.values = [informacion.sitio];
-                arraySearchParams.push(objParam)
-
-                var objResultSet = utilities.searchSavedPro('customsearch_3k_config_tasa_envio', arraySearchParams);
-                if (objResultSet.error) {
-                    return objResultSet;
-                }
-
-                var configTasaEnvio = objResultSet.objRsponseFunction.array;
-
-                //FIN BUSQUEDA DE TASA DE IMPUESTO DE ENVIO EN LA CONFIGURACION
-
-                //TRAER SHIPPINCOST Y PREGUNTAR SI TIENE VALOR. SI TIENE VALOR LA VARIABLE costoEnvio se inicializa con ese valor
-                //sino se entiende que la OV  es nueva o no tenia envio y queda con valor 0
-                var shippingCost = rec.getValue({
-                    fieldId: 'shippingcost'
-                });
-
-                var costoEnvio = 0;
-
-                if (!utilities.isEmpty(costoEnvio)) {
-                    costoEnvio = parseFloat(shippingCost, 10);
-                }
-
-                //NUEVO!!!   TRAE EL HANDLINGCOST---------------------------------------------------------------------------------------------
-                var handlingCost = rec.getValue({
-                    fieldId: 'handlingcost'
-                });
-
-                var costoManejo = 0;
-
-                if (!utilities.isEmpty(costoManejo)) {
-                    costoManejo = parseFloat(handlingCost, 10);
-                }
-
-                costoManejo += parseFloat(informacion.handlingCost, 10);
-                //-------------------------------------------------------------------------------------------------------------------
-
                 /*****************************************INCIO FOR QUE RECORRE TODOS LOS ARTICULOS ENVIADOS EN EL JSON E INSERTA LAS LINEAS EN OV ************************************************************************/
                 for (var i = 0; i < informacion.orden.length; i++) {
-                    if (!utilities.isEmpty(informacion.orden[i].articulo) && !utilities.isEmpty(informacion.orden[i].campana) && !utilities.isEmpty(informacion.orden[i].cantidadTotalCupones) && !utilities.isEmpty(informacion.orden[i].importe)) {
+                    if (!utilities.isEmpty(informacion.orden[i].articulo) && !utilities.isEmpty(informacion.orden[i].importe)) {
 
                         var arrayLinea = new Array();
                         var articuloFilter = articulo.filter(function (obj) {
@@ -1854,36 +1737,21 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
                         var diferenciaStock = 0;
 
-                        /*var horaInicioNS = format.parse({
-                            value: informacion.orden[i].horaInicio,
-                            type: format.Type.TIME
-                        });
-
-                        var horaInicio = format.format({
-                            value: horaInicioNS,
-                            type: format.Type.TIME,
-                            timezone: format.Timezone.AMERICA_MONTEVIDEO // Montevideo - Uruguay
-                        });*/
-
-                        //log.debug('crearOrdenVenta', 'informacion.orden[i].importeBruto: '+ informacion.orden[i].importeBruto);
-
                         var objLinea = new Object();
                         objLinea.articulo = informacion.orden[i].articulo;
-                        objLinea.campana = informacion.orden[i].campana;
-                        objLinea.cantidadCupon = informacion.orden[i].cantidadTotalCupones.toString();
                         objLinea.moneda = informacion.orden[i].moneda;
-                        objLinea.impEnvio = informacion.orden[i].impEnvio;
-                        costoEnvio += parseFloat(informacion.orden[i].impEnvio, 10);
+                        //objLinea.impEnvio = informacion.orden[i].impEnvio;
+                        //costoEnvio += parseFloat(informacion.orden[i].impEnvio, 10);
                         objLinea.estado = informacion.orden[i].estado;
                         objLinea.lugarRetiro = informacion.orden[i].lugarRetiro;
                         //objLinea.ciudad = informacion.orden[i].ciudad;
                         objLinea.barrio = informacion.orden[i].barrio;
                         objLinea.direccion = informacion.orden[i].direccion;
                         objLinea.fechaUtilizacion = informacion.orden[i].fechaUtilizacion;
-                        objLinea.comison = informacion.orden[i].comision;
-                        objLinea.voucher = informacion.orden[i].voucher;
+                        //objLinea.comison = informacion.orden[i].comision;
+                        objLinea.comisionServicio = informacion.orden[i].comision;
                         objLinea.fechaCreacion = fecha;
-                        objLinea.cantidadCuotas = informacion.orden[i].cantidadCuotas.toString();
+                        //objLinea.cantidadCuotas = informacion.orden[i].cantidadCuotas.toString();
                         objLinea.importe = informacion.orden[i].importe;
                         objLinea.apartamento = informacion.orden[i].apartamento;
                         objLinea.horaInicio = informacion.orden[i].horaInicio;
@@ -1899,8 +1767,6 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                         objLinea.telQuienRecibe = informacion.orden[i].telQuienRecibe;
                         objLinea.oficinaDestino = informacion.orden[i].oficinaDestino;
                         objLinea.turno = informacion.orden[i].turno;
-                        objLinea.pila = null;
-                        objLinea.isStockPropio = false;
                         objLinea.ubicacion = informacion.ubicacion;
                         objLinea.isService = false;
                         objLinea.isChange = false;
@@ -1909,199 +1775,22 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                         objLinea.impBruto = informacion.orden[i].impBruto;
                         objLinea.millasUtilizadas = informacion.orden[i].millasUtilizadas;
                         objLinea.importeMillas = informacion.orden[i].importeMillas;
-                        objLinea.importeCupon = informacion.orden[i].importeCupon;
+                        objLinea.impUnitarioMillas = informacion.orden[i].impUnitarioMillas;
                         objLinea.impBrutoMillas = informacion.orden[i].impBrutoMillas;
                         objLinea.idDetalleOrdenMisBeneficios = informacion.orden[i].idDetalleOrdenMisBeneficios;
                         objLinea.tipoServicioUES = informacion.orden[i].tipoServicioUES;
+                        objLinea.cantidad = informacion.orden[i].cantidad;
 
                         if (tipoOperacion == "CC")
                             objLinea.isChange = true;
 
-                        //log.audit('crearOrdenVenta', 'excepcion');
-                        //log.audit('crearOrdenVenta', 'articuloFilter cantidad: ' + articuloFilter.length);
-                        log.debug('crearOrdenVenta', 'articuloFilter cantidad: ' + articuloFilter.length);
-                        if (articuloFilter.length > 0 && !utilities.isEmpty(articuloFilter)) {
-                            log.debug('crearOrdenVenta', 'articuloFilter[0]["Articulo Principal Tipo Servicio"]: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"]);
-                            if (articuloFilter[0]["Articulo Principal Tipo Servicio"] == "N") {
-                                //informacion.orden[j].articulo = articuloFilter;
-                                var mainCategory = articuloFilter[0]["Main Category"];
-                                log.debug('crearOrdenVenta', 'mainCategory: ' + mainCategory + ' articuloFilter array: ' + JSON.stringify(articuloFilter));
-                                objLinea.mainCategory = mainCategory;
-                                for (var j = 0; j < articuloFilter.length; j++) {
-                                    var cantidadStock = 0;
-
-                                    objLinea.componente = articuloFilter[j]["ID Articulo Componente"];
-
-                                    if (articuloFilter[j]["Articulo Componente Tipo Servicio"] == "N") {
-
-
-                                        var componenteFilter = stockComponentes.filter(function (obj) {
-                                            return (obj.internalid == articuloFilter[j]["ID Articulo Componente"]);
-                                        });
-                                        log.debug('crearOrdenVenta', 'idComponente: ' + articuloFilter[j]["ID Articulo Componente"]);
-                                        log.debug('crearOrdenVenta', 'componenteFilter array: ' + JSON.stringify(componenteFilter));
-
-                                        log.debug('crearOrdenVenta', 'componenteFilter[0].quantityavailable: ' + componenteFilter[0].locationquantityavailable);
-                                        if (componenteFilter[0].locationquantityavailable >= informacion.orden[i].cantidadTotalCupones * articuloFilter[j]["Cantidad Componente"]) {
-                                            //NO PILA
-                                            //cantidadStock = informacion.orden[i].cantidadTotalCupones.toString();
-                                            objLinea.cantidad = informacion.orden[i].cantidadTotalCupones.toString();
-                                            objLinea.isStockPropio = true;
-                                            var lineaFilter = arrayLinea.filter(function (obj) {
-                                                return (obj.articulo == informacion.orden[i].articulo);
-                                            });
-                                            if (utilities.isEmpty(lineaFilter) || lineaFilter.length <= 0) {
-                                                //objLinea.pilas = pilas;
-                                                arrayLinea.push(JSON.parse(JSON.stringify(objLinea)));
-                                                arrayOV.push(JSON.parse(JSON.stringify(objLinea)));
-                                            }
-                                            objLinea.cantidad = (informacion.orden[i].cantidadTotalCupones * articuloFilter[j]["Cantidad Componente"]).toString();
-                                            objLinea.cantidadComponente = articuloFilter[j]["Cantidad Componente"];
-                                            arrayLineaPila.push(JSON.parse(JSON.stringify(objLinea)));
-                                            cantidadStock = stockComponentes[componenteFilter[0].indice].locationquantityavailable - (informacion.orden[i].cantidadTotalCupones * articuloFilter[j]["Cantidad Componente"]);
-                                            stockComponentes[componenteFilter[0].indice].locationquantityavailable = cantidadStock;
-                                        } else {
-                                            //PILA
-                                            if (componenteFilter[0].locationquantityavailable > 0) {
-
-                                                objRespuesta.error = true;
-                                                objRespuestaParcial = new Object();
-                                                objRespuestaParcial.codigo = 'RORV010';
-                                                objRespuestaParcial.mensaje += 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid;
-                                                objRespuesta.detalle.push(objRespuestaParcial);
-                                                //objRespuesta.tipoError = 'RORV010';
-                                                //objRespuesta.message += 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid;
-                                                return objRespuesta;
-
-                                            } else {
-                                                diferenciaStock = (informacion.orden[i].cantidadTotalCupones * articuloFilter[j]["Cantidad Componente"]) - componenteFilter[0].locationquantityavailable;
-                                                /*log.audit('crearOrdenVenta', 'diferenciaStock= (cantidadTotalCupones: ' + informacion.orden[i].cantidadTotalCupones + ' * cantidadComponente: ' + articuloFilter[j].cantidadComponente + ') - cantidadDisponible: ' + articuloFilter[j].cantidadDisponible);
-                                                log.audit('crearOrdenVenta', 'diferenciaStock: ' + diferenciaStock + 'idArticulo: ' + articuloFilter[j].idComponente);*/
-                                                var indice = 0;
-                                                var stockFilter = stockTerceros.filter(function (obj) {
-                                                    return (obj["ID interno"] == articuloFilter[j]["ID Articulo Componente"]);
-                                                });
-                                                log.debug('crearOrdenVenta', 'stockFilter: ' + JSON.stringify(stockFilter));
-                                                do {
-                                                    if (!utilities.isEmpty(stockFilter) && stockFilter.length > 0) {
-                                                        var insertarPila = true;
-                                                        if (stockFilter[indice]["Stock Disponible"] >= diferenciaStock) {
-                                                            objLinea.cantidad = diferenciaStock;
-                                                            //cantidadStock = diferenciaStock;
-                                                            stockTerceros[stockFilter[indice].indice]["Stock Disponible"] = stockTerceros[stockFilter[indice].indice]["Stock Disponible"] - diferenciaStock;
-                                                            diferenciaStock = 0;
-                                                        } else {
-                                                            if (stockFilter[indice]["Stock Disponible"] > 0) {
-                                                                objRespuesta.error = true;
-                                                                //objRespuesta.tipoError = 'RORV010';
-                                                                //objRespuesta.message += 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid;
-                                                                objRespuestaParcial = new Object();
-                                                                objRespuestaParcial.codigo = 'RORV010';
-                                                                objRespuestaParcial.mensaje += 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid;
-                                                                objRespuesta.detalle.push(objRespuestaParcial);
-                                                                return objRespuesta;
-                                                                /*objLinea.cantidad =stockFilter[indice].stockDisponible;
-                                                                                    stockTerceros[stockFilter[indice].indice].stockDisponible=stockTerceros[stockFilter[indice].indice].stockDisponible-stockFilter[indice].stockDisponible;*/
-                                                            } else {
-                                                                insertarPila = false;
-                                                            }
-                                                        }
-                                                        if (insertarPila) {
-                                                            objLinea.isStockPropio = false;
-                                                            objLinea.pila = stockFilter[indice].internalid;
-                                                            var lineaFilter = arrayLinea.filter(function (obj) {
-                                                                return (obj.articulo == informacion.orden[i].articulo);
-                                                            });
-                                                            objLinea.cantidad = informacion.orden[i].cantidadTotalCupones.toString();
-                                                            if (utilities.isEmpty(lineaFilter) || lineaFilter.length <= 0) {
-                                                                //objLinea.pilas = pilas;
-                                                                arrayLinea.push(JSON.parse(JSON.stringify(objLinea)));
-                                                                arrayOV.push(JSON.parse(JSON.stringify(objLinea)));
-                                                            }
-                                                            objLinea.cantidad = informacion.orden[i].cantidadTotalCupones * articuloFilter[j]["Cantidad Componente"];
-                                                            objLinea.cantidadComponente = articuloFilter[j]["Cantidad Componente"];
-                                                            arrayLineaPila.push(JSON.parse(JSON.stringify(objLinea)));
-                                                            log.debug('crearOrdenVenta', 'stock insuficiente id Articulo: ' + articuloFilter[j].internalid + 'cantidadDisponible: ' + stockFilter[indice]["Stock Disponible"]);
-                                                            //diferenciaStock = diferenciaStock - stockFilter[indice].stockDisponible;
-                                                        }
-                                                        indice++;
-                                                    }
-                                                } while (diferenciaStock > 0 && stockFilter.length > indice && !utilities.isEmpty(stockFilter) && !insertarPila)
-                                                if (diferenciaStock > 0) {
-                                                    objRespuesta.error = true;
-                                                    objRespuestaParcial = new Object();
-                                                    objRespuestaParcial.codigo = 'RORV010';
-                                                    objRespuestaParcial.mensaje += 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid;
-                                                    objRespuesta.detalle.push(objRespuestaParcial);
-                                                    //objRespuesta.tipoError = 'RORV010';
-                                                    //objRespuesta.message += 'No se pudo crear Orden de Venta por stock insuficiente para el articulo: ' + articuloFilter[j].internalid;
-                                                    log.error('crearOrdenVenta', 'stock insuficiente id Articulo: ' + articuloFilter[j].idArticulo + 'cantidadDisponible');
-                                                    return objRespuesta;
-                                                }
-                                            } // end else pila
-                                        } // end else cantidad stock propio < requerido -> posible pila 
-                                    } else {
-                                        if (articuloFilter[j]["Articulo Componente Tipo Servicio"] == "S") {
-                                            objLinea.isStockPropio = true;
-                                            objLinea.componente = articuloFilter[j]["ID Articulo Componente"];
-                                            //objLinea.cantidad = informacion.orden[i].cantidadTotalCupones.toString();
-                                            objLinea.cantidad = (informacion.orden[i].cantidadTotalCupones * articuloFilter[j]["Cantidad Componente"]).toString();
-                                            objLinea.cantidadComponente = articuloFilter[j]["Cantidad Componente"];
-                                            //objLinea.isService = true;
-                                            arrayLineaPila.push(JSON.parse(JSON.stringify(objLinea)));
-
-
-                                        } else {
-                                            objRespuesta.error = true;
-                                            objRespuestaParcial = new Object();
-                                            objRespuestaParcial.codigo = 'RORV011';
-                                            objRespuestaParcial.mensaje += 'Tipo de Articulo desconocido: ' + articuloFilter[j]["Articulo Componente Tipo Servicio"] + ' en el articulo: ' + articuloFilter[j].internalid + ' en el articulol componente: ' + articuloFilter[j]["ID Articulo Componente"];
-                                            objRespuesta.detalle.push(objRespuestaParcial);
-                                            //objRespuesta.tipoError = 'RORV011';
-                                            //objRespuesta.message += 'Tipo de Articulo desconocido: ' + articuloFilter[j]["Articulo Componente Tipo Servicio"] + ' en el articulo: ' + articuloFilter[j].internalid + ' en el articulol componente: ' + articuloFilter[j]["ID Articulo Componente"];
-                                            log.error('crearOrdenVenta', 'stock insuficiente id Articulo: ' + articuloFilter[j].idArticulo + 'cantidadDisponible');
-                                            return objRespuesta;
-                                        }
-                                    }
-                                } //end for
-                            } else {
-                                if (articuloFilter[0]["Articulo Principal Tipo Servicio"] == "S") {
-                                    objLinea.isStockPropio = true;
-                                    objLinea.isService = true;
-                                    objLinea.componente = articuloFilter[0]["ID Articulo Componente"];
-                                    objLinea.cantidad = informacion.orden[i].cantidadTotalCupones.toString();
-
-                                    var lineaFilter = arrayLinea.filter(function (obj) {
-                                        return (obj.articulo == informacion.orden[i].articulo);
-                                    });
-                                    if (utilities.isEmpty(lineaFilter) || lineaFilter.length <= 0) {
-                                        //objLinea.pilas = pilas;
-                                        arrayLinea.push(JSON.parse(JSON.stringify(objLinea)));
-                                        arrayOV.push(JSON.parse(JSON.stringify(objLinea)));
-                                    }
-
-                                    objLinea.cantidadComponente = articuloFilter[0]["Cantidad Componente"];
-                                    arrayLineaPila.push(JSON.parse(JSON.stringify(objLinea)));
-
-                                } else {
-                                    objRespuesta.error = true;
-                                    objRespuestaParcial = new Object();
-                                    objRespuestaParcial.codigo = 'RORV011';
-                                    objRespuestaParcial.mensaje += 'Tipo de Articulo desconocido: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"] + ' en el articulo: ' + articuloFilter[0].internalid;
-                                    objRespuesta.detalle.push(objRespuestaParcial);
-                                    //objRespuesta.tipoError = 'RORV011';
-                                    //objRespuesta.message += 'Tipo de Articulo desconocido: ' + articuloFilter[0]["Articulo Principal Tipo Servicio"] + ' en el articulo: ' + articuloFilter[0].internalid;
-                                    log.error('crearOrdenVenta', 'stock insuficiente id Articulo: ' + articuloFilter[j].idArticulo + 'cantidadDisponible');
-                                    return objRespuesta;
-                                }
-                            }
-                        } // end if articuloFilter >0
-
+                        arrayLinea.push(JSON.parse(JSON.stringify(objLinea)));
+                        arrayOV.push(JSON.parse(JSON.stringify(objLinea)));
 
                         var sumAjustes = 0;
                         /******************************************INICIO ARMAR LINEAS DE OV CON EL ARRAY DE LINEAS DE OV  ARMADO ANTERIORMENTE**********************************/
                         for (var m = 0; m < arrayLinea.length; m++) {
-                            //log.audit('crearOrdenVenta','arrayLinea.cantidad: '+arrayLinea[m].cantidad.toString());
+                            log.debug('crearOrdenVenta', 'arrayLinea[m]: ' + JSON.stringify(arrayLinea[m]));
                             //log.audit('crearOrdenVenta','arrayLinea.cantidad: '+arrayLinea[m].cantidad.toString());
                             rec.selectNewLine({
                                 sublistId: 'item'
@@ -2121,33 +1810,26 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 fieldId: 'custcol_3k_cantidad_ov',
                                 value: arrayLinea[m].cantidad.toString()
                             });
-                            rec.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_campana',
-                                value: arrayLinea[m].campana
-                            });
-                            if (!utilities.isEmpty(arrayLinea[m].comison)) {
+                            //Sustituido por comision servicio
+                            /*if (!utilities.isEmpty(arrayLinea[m].comison)) {
                                 rec.setCurrentSublistValue({
                                     sublistId: 'item',
                                     fieldId: 'custcol_3k_porcentaje_comision',
                                     value: arrayLinea[m].comison.toString()
                                 });
-                            }
-                            rec.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_cant_total_cupones',
-                                value: arrayLinea[m].cantidadCupon
-                            });
+                            }*/
                             rec.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_moneda',
                                 value: arrayLinea[m].moneda
                             });
-                            rec.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_imp_envio',
-                                value: arrayLinea[m].impEnvio.toString()
-                            });
+                            if (!utilities.isEmpty(arrayLinea[m].impEnvio)) {
+                                rec.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_imp_envio',
+                                    value: arrayLinea[m].impEnvio.toString()
+                                });
+                            }
                             rec.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_apartamento',
@@ -2228,7 +1910,6 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 fieldId: 'custcol_3k_calle',
                                 value: arrayLinea[m].calle
                             });
-
                             rec.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_fecha_creacion',
@@ -2244,37 +1925,24 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 fieldId: 'rate',
                                 value: arrayLinea[m].importe.toString()
                             });
-                            rec.setCurrentSublistValue({
+                            /*rec.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_cant_cuotas',
                                 value: arrayLinea[m].cantidadCuotas
-                            });
-                            rec.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_stock_propio',
-                                value: arrayLinea[m].isStockPropio
-                            });
-                            rec.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_servicio',
-                                value: arrayLinea[m].isService
-                            });
-
+                            });*/
                             rec.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_nombre_quien_recibe',
                                 value: arrayLinea[m].nombreQuienRecibe
                             });
-
                             rec.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_tel_quien_recibe',
                                 value: arrayLinea[m].telQuienRecibe
                             });
-
                             rec.setCurrentSublistValue({
                                 sublistId: 'item',
-                                fieldId: 'custcol_3k_importe_bruto_woow',//crearOrdenVenta
+                                fieldId: 'custcol_3k_importe_bruto_woow',
                                 value: arrayLinea[m].impBruto.toString()
                             });
 
@@ -2293,49 +1961,6 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                     value: arrayLinea[m].tipoServicioUES
                                 });
                             }
-
-                            if (!utilities.isEmpty(arrayLinea[m].voucher)) {
-                                rec.setCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'custcol_3k_voucher',
-                                    value: arrayLinea[m].voucher.idVoucher
-                                });
-
-                                if (parseFloat(arrayLinea[m].impBruto) < parseFloat(arrayLinea[m].voucher.montoVoucher)) {
-                                    rec.setCurrentSublistValue({
-                                        sublistId: 'item',
-                                        fieldId: 'custcol_3k_importe_voucher',
-                                        value: arrayLinea[m].impBruto.toString()
-                                    });
-                                } else {
-                                    rec.setCurrentSublistValue({
-                                        sublistId: 'item',
-                                        fieldId: 'custcol_3k_importe_voucher',
-                                        value: arrayLinea[m].voucher.montoVoucher.toString()
-                                    });
-                                }
-
-                                var accionVoucher = rec.getCurrentSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'custcol_3k_cod_accion_voucher'
-                                });
-
-
-                            }
-
-                            /*var grossamt = rec.getCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'grossamt'
-                            });
-
-                            log.debug('crearOrdenVenta', 'grossamt: ' + grossamt);
-                            log.debug('crearOrdenVenta', 'arrayLinea[m].importeBruto: ' + arrayLinea[m].importeBruto);
-
-                            var difGrossamt = grossamt - arrayLinea[m].importeBruto;
-
-                            if (difGrossamt != 0.00) {
-                                sumAjustes += difGrossamt;
-                            }*/
 
                             if (!utilities.isEmpty(arrayLinea[m].fechaTravel)) {
                                 rec.setCurrentSublistText({
@@ -2361,11 +1986,11 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 });
                             }
 
-                            if (!utilities.isEmpty(arrayLinea[m].importeCupon)) {
+                            if (!utilities.isEmpty(arrayLinea[m].impUnitarioMillas)) {
                                 rec.setCurrentSublistValue({
                                     sublistId: 'item',
-                                    fieldId: 'custcol_3k_importe_cupon',
-                                    value: parseFloat(arrayLinea[m].importeCupon, 10).toFixed(2).toString()
+                                    fieldId: 'custcol_3k_importe_unitario_millas',
+                                    value: parseFloat(arrayLinea[m].impUnitarioMillas, 10).toFixed(2).toString()
                                 });
                             }
 
@@ -2391,6 +2016,14 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 value: arrayLinea[m].idDetalleOrdenMisBeneficios
                             });
 
+                            if (!utilities.isEmpty(arrayLinea[m].comisionServicio)) {
+                                rec.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_comision',
+                                    value: arrayLinea[m].comisionServicio.toString()
+                                });
+                            }
+
                             var taxcode = rec.getCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'taxcode'
@@ -2401,52 +2034,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 sublistId: 'item'
                             });
 
-                            /******************************************INICIO ARMAR ARRAY DE LINEAS DE VOUCHER**************************************************************************/
-
-
-                            if (!utilities.isEmpty(accionVoucher) && accionVoucher == '1') {
-                                if (!utilities.isEmpty(objLinea.voucher) && !utilities.isEmpty(objLinea.voucher.idVoucher) && objLinea.voucher.montoVoucher > 0) {
-                                    //log.audit('crearOrdenVenta', 'entro voucher');
-                                    var objVoucherLinea = new Object();
-                                    objVoucherLinea.idVoucher = objLinea.voucher.idVoucher;
-                                    objVoucherLinea.taxcode = taxcode;
-
-                                    if (parseFloat(arrayLinea[m].impBruto) < parseFloat(objLinea.voucher.montoVoucher)) {
-                                        objVoucherLinea.montoVoucher = parseFloat(arrayLinea[m].impBruto);
-                                    } else {
-                                        objVoucherLinea.montoVoucher = parseFloat(objLinea.voucher.montoVoucher);
-                                    }
-
-                                    objVoucherLinea.fecha = fecha;
-                                    //objVoucherLinea.idOrden = objLinea.idOrden;
-                                    if (searchConfig.length > 0) {
-                                        objVoucherLinea.articuloDescuento = searchConfig[0].custrecord_3k_configvou_articulo;
-                                        //objVoucherLinea.cantidadDescuento = searchConfig[0].custrecord_3k_configvou_cantidad;
-
-                                    }
-                                    log.debug('crearOrdenVenta', 'searchConfig voucher: ' + JSON.stringify(searchConfig));
-                                    arrayVoucherLinea.push(objVoucherLinea);
-                                    arrayVoucher.push(objVoucherLinea);
-                                    /*var filterArray = new Array();
-                                    filterArray = arrayVoucher.filter(function(obj) {
-                                        return (obj.idVoucher == objLinea.voucher.idVoucher);
-                                    });
-                                    if (filterArray.length > 0 && !utilities.isEmpty(filterArray)) {
-                                        filterArray[0].montoVoucher = parseFloat(filterArray[0].montoVoucher) + parseFloat(objLinea.voucher.montoVoucher);
-                                    } else {
-                                        arrayVoucher.push(objVoucherLinea);
-                                    }*/
-                                }
-                            }
-                            log.debug('crearOrdenVenta', 'arrayLinea lineas OV: ' + JSON.stringify(arrayLinea));
-                            log.debug('crearOrdenVenta', 'arrayLineaPila lineas requi: ' + JSON.stringify(arrayLineaPila));
-                            log.debug('crearOrdenVenta', 'arrayOV lineas detalle: ' + JSON.stringify(arrayOV));
-                            log.debug('crearOrdenVenta', 'arrayVoucher lineas voucher: ' + JSON.stringify(arrayVoucher));
-
-                            //return objRespuesta;
-                            /******************************************FIN ARMAR ARRAY DE LINEAS DE VOUCHER**************************************************************************/
                         }
-                        log.audit('crearOrdenVenta', 'FIN insertar linea OV lineacod: 1598');
+                        log.audit('crearOrdenVenta', 'FIN insertar linea OV lineacod: 2083');
                         /******************************************FIN ARMAR LINEAS DE OV CON EL ARRAY DE LINEAS DE OV  ARMADO ANTERIORMENTE**********************************/
                     } else {
                         if (utilities.isEmpty(informacion.orden[i].articulo)) {
@@ -2457,33 +2046,6 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             objRespuesta.detalle.push(objRespuestaParcial);
                             //objRespuesta.tipoError = 'RORV005';
                             //objRespuesta.message += 'Campo Articulo vacío en la linea: ' + i.toString();
-                        }
-                        if (utilities.isEmpty(informacion.orden[i].campana)) {
-                            objRespuesta.error = true;
-                            objRespuestaParcial = new Object();
-                            objRespuestaParcial.codigo = 'RORV005';
-                            objRespuestaParcial.mensaje += 'Campo Campaña vacío en la linea: ' + i.toString();
-                            objRespuesta.detalle.push(objRespuestaParcial);
-                            //objRespuesta.tipoError = 'RORV005';
-                            //objRespuesta.message += 'Campo Campaña vacío en la linea: ' + i.toString();
-                        }
-                        if (utilities.isEmpty(informacion.orden[i].cantidadTotalCupones)) {
-                            objRespuesta.error = true;
-                            objRespuestaParcial = new Object();
-                            objRespuestaParcial.codigo = 'RORV005';
-                            objRespuestaParcial.mensaje += 'Campo Cantidad vacío en la linea:' + i.toString();
-                            objRespuesta.detalle.push(objRespuestaParcial);
-                            //objRespuesta.tipoError = 'RORV005';
-                            //objRespuesta.message += 'Campo Cantidad vacío en la linea:' + i.toString();
-                        }
-                        if (utilities.isEmpty(informacion.orden[i].cupon)) {
-                            objRespuesta.error = true;
-                            objRespuestaParcial = new Object();
-                            objRespuestaParcial.codigo = 'RORV005';
-                            objRespuestaParcial.mensaje += 'Campo Cupon vacío en la linea:' + i.toString();
-                            objRespuesta.detalle.push(objRespuestaParcial);
-                            //objRespuesta.tipoError = 'RORV005';
-                            //objRespuesta.message += 'Campo Cupon vacío en la linea:' + i.toString();
                         }
                         if (utilities.isEmpty(informacion.orden[i].importe)) {
                             objRespuesta.error = true;
@@ -2499,221 +2061,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                 }
                 /*****************************************FIN FOR QUE RECORRE TODOS LOS ARTICULOS ENVIADOS EN EL JSON E INSERTA LAS LINEAS EN OV ************************************************************************/
 
-                /******************************************INICIO ARMAR LINEAS DE OV CON EL ARRAY DE VOUCHER ARMADO ANTERIORMENTE**********************************/
-                for (var x = 0; x < arrayVoucher.length; x++) {
-                    var importeDescuento = Math.abs(arrayVoucher[x].montoVoucher) * (-1);
-                    rec.selectNewLine({
-                        sublistId: 'item'
-                    });
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'item',
-                        value: arrayVoucher[x].articuloDescuento
-                    });
-                    /*rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'quantity',
-                        value: arrayVoucher[x].cantidadDescuento.toString()
-                    });*/
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_3k_voucher',
-                        value: arrayVoucher[x].idVoucher
-                    });
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_3k_importe_voucher',
-                        value: arrayVoucher[x].montoVoucher.toString()
-                    });
-                    /*rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'rate',
-                        value: importeDescuento.toString()
-                    });*/
-
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'taxcode',
-                        value: arrayVoucher[x].taxcode
-                    });
-
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'grossamt',
-                        value: importeDescuento.toString()
-                    });
-
-
-
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_3k_fecha_creacion',
-                        value: fecha
-                    });
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_3k_fecha_modificacion',
-                        value: fecha
-                    });
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'custcol_3k_linea_voucher',
-                        value: true
-                    });
-
-                    var amount = rec.getCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'amount'
-                    });
-
-                    rec.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'rate',
-                        value: amount.toString()
-                    });
-
-                    var grossamtVocherAfterRate = rec.getCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'grossamt'
-                    });
-
-                    log.debug('crearOrdenVenta', 'grossamtVocherAfterRate: ' + grossamtVocherAfterRate.toString());
-
-                    if (parseFloat(grossamtVocherAfterRate) != parseFloat(importeDescuento)) {
-
-                        rec.setCurrentSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'grossamt',
-                            value: importeDescuento.toString()
-                        });
-                    }
-
-                    rec.commitLine({
-                        sublistId: 'item'
-                    });
-                }
-
-                log.audit('crearOrdenVenta', 'FIN insertar lineas vouchers lineacod: 1682');
-                /******************************************FIN ARMAR LINEAS DE OV CON EL ARRAY DE LINEAS DE OV  ARMADO ANTERIORMENTE**********************************/
-
-                /******************************************INICIO ARMAR LINEA DE AJUSTE DE REDONDEO OV ***************************************************************/
-                //log.debug('crearOrdenVenta', 'sumAjustes: ' + sumAjustes);
-                /*if (sumAjustes != 0) {
-                    var resultConfigAjustes = utilities.searchSavedPro('customsearch_3k_config_ajuste_redondeo');
-                    if (resultConfigAjustes.error) {
-                        return resultConfigAjustes;
-                    }
-
-                    var configAjustes = resultConfigAjustes.objRsponseFunction.array;
-
-                    if (!utilities.isEmpty(configAjustes) && configAjustes.length > 0) {
-
-                        var articuloAjuste = configAjustes[0].custrecord_3k_configajuste_articulo;
-                        var topeMaximo = configAjustes[0].custrecord_3k_configajuste_tope_max;
-
-                        if (Math.abs(sumAjustes) < topeMaximo) {
-
-                            rec.selectNewLine({
-                                sublistId: 'item'
-                            });
-
-                            rec.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'item',
-                                value: articuloAjuste
-                            });
-
-                            rec.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'quantity',
-                                value: 1
-                            });
-
-                            rec.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'rate',
-                                value: sumAjustes.toFixed(2).toString()
-                            });
-
-                            rec.commitLine({
-                                sublistId: 'item'
-                            });
-
-                        } else {
-                            //error
-
-                            objRespuesta.error = true;
-                            objRespuestaParcial = new Object({});
-                            objRespuestaParcial.codigo = 'RORV020';
-                            objRespuestaParcial.mensaje = 'function crearOrdenVenta Error: los ajustes por redondeo es mayor al tope maximo permitido ' + topeMaximo;
-                            objRespuesta.detalle.push(objRespuestaParcial);
-                            //objRespuesta.tipoError = 'RORV004';
-                            //objRespuesta.descripcion = 'function crearOrdenVenta: ' + e.message;
-                            log.error('RORV020', 'function crearOrdenVenta Error: los ajustes por redondeo es mayor al tope maximo permitido ' + topeMaximo);
-                        }
-                    }
-                }*/
-
-                /******************************************FIN ARMAR LINEA DE AJUSTE DE REDONDEO OV ***************************************************************/
-
-                //NUEVO!!!   SETEO VALOR DE COSTO DE HANDLING ANTES DE GUARDAR LA ORDEN DE VENTA
-                rec.setValue({
-                    fieldId: 'handlingcost',
-                    value: parseFloat(costoManejo, 10).toFixed(2).toString()
-                });
-                //SETEO TASA DE ENVIO ANTES DE GUARDAR LA ORDEN DE VENTA
-                log.debug('Crear Orden de Venta', 'costoManejo: ' + costoManejo + ' typeof: ' + typeof (costoManejo))
-                log.debug('Crear Orden de Venta', 'configTasaManejo: ' + JSON.stringify(configTasaEnvio));
-                if (!utilities.isEmpty(costoManejo) && costoManejo > 0) {
-                    rec.setValue({
-                        fieldId: 'handlingtaxcode',
-                        value: configTasaEnvio[0].custrecord_3k_configtasa_tasa
-                    });
-                }
-                //--------------------------------------------------------------------
-
-                /******************************************INICIO LLAMA FUNCION QUE GENERAR RECMACH PARA DETALLE OV Y REQUISICIONES***********************************/
-                var ob = beforeSubmitOV(rec, arrayLineaPila, arrayOV, fecha);
-                if (ob.error) {
-                    return ob;
-                } else {
-                    rec = ob.rec;
-                }
-
-                /******************************************FIN LLAMADA FUNCION QUE GENERAR RECMACH PARA DETALLE OV Y REQUISICIONES************************************/
                 /******************************************INICIO GUARDAR RECORD OV*************************************************************************************/
                 if (!objRespuesta.error) {
-                    //SETEO VALOR DE COSTO DE ENVIO ANTES DE GUARDAR LA ORDEN DE VENTA
-                    rec.setValue({
-                        fieldId: 'shippingcost',
-                        value: parseFloat(costoEnvio, 10).toFixed(2).toString()
-                    });
-
-                    //SETEO TASA DE ENVIO ANTES DE GUARDAR LA ORDEN DE VENTA
-                    log.debug('Crear Orden de Venta', 'costoEnvio: ' + costoEnvio + ' typeof: ' + typeof (costoEnvio))
-                    log.debug('Crear Orden de Venta', 'configTasaEnvio: ' + JSON.stringify(configTasaEnvio));
-                    if (!utilities.isEmpty(costoEnvio) && costoEnvio > 0) {
-                        rec.setValue({
-                            fieldId: 'shippingtaxcode',
-                            value: configTasaEnvio[0].custrecord_3k_configtasa_tasa
-                        });
-                    }
-
-                    //NUEVO!!!   SETEO VALOR DE COSTO DE HANDLING ANTES DE GUARDAR LA ORDEN DE VENTA
-                    /*rec.setValue({
-                        fieldId: 'handlingcost',
-                        value: parseFloat(costoManejo, 10).toFixed(2).toString()
-                    });*/
-                    //SETEO TASA DE ENVIO ANTES DE GUARDAR LA ORDEN DE VENTA
-                    /*log.debug('Crear Orden de Venta', 'costoManejo: ' + costoManejo + ' typeof: ' + typeof (costoManejo))
-                    log.debug('Crear Orden de Venta', 'configTasaManejo: ' + JSON.stringify(configTasaEnvio));
-                    if (!utilities.isEmpty(costoManejo) && costoManejo > 0) {
-                        rec.setValue({
-                            fieldId: 'handlingtaxcode',
-                            value: configTasaEnvio[0].custrecord_3k_configtasa_tasa
-                        });
-                    }*/
-                    //--------------------------------------------------------------------
 
                     objRespuesta.idRec = rec.save();
 
@@ -2751,6 +2100,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                         ciudadUtilizar = informacion.ciudadFactura;
                     }
 
+                    log.audit('crearOrdenVenta', 'razonSocialUtilizar: ' + razonSocialUtilizar + ', direccionUtilizar: ' + direccionUtilizar + ', ciudadUtilizar: ' + ciudadUtilizar);
+
                     var idOVActualizada = record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: objRespuesta.idRec,
@@ -2765,34 +2116,8 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                         }
                     });
 
-                    var ob = afterSubmitOV(objRespuesta.idRec);
+                    log.audit('crearOrdenVenta', 'idOVActualizada: ' + idOVActualizada);
 
-                    if (ob.error) {
-
-                        /*record.delete({
-                            type: record.Type.SALES_ORDER,
-                            id: objRespuesta.idRec,
-                        });*/
-
-                        var idOvSubmitted = record.submitFields({
-                            type: record.Type.SALES_ORDER,
-                            id: objRespuesta.idRec,
-                            values: {
-                                orderstatus: 'A'
-                            },
-                            options: {
-                                enableSourcing: true,
-                                ignoreMandatoryFields: false
-                            }
-                        });
-
-                        ob.idOv = idOvSubmitted;
-
-                        return ob;
-                    }
-
-                    respuesta.detalleOV = ob.ordenes;
-                    respuesta.cupones = ob.cupones;
                 }
 
             } catch (e) {
@@ -3472,7 +2797,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                         if (!utilities.isEmpty(tipoCambioOficial)) {
                             tipoCambioOficial = parseFloat(tipoCambioOficial, 10);
                         }*/
-                       // var transactionID = pago[i].transactionID;
+                        // var transactionID = pago[i].transactionID;
                         var cantidadCuotasPago = pago[i].cantidadCuotas;
 
 
@@ -3677,7 +3002,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                             if (monedaPago != monedaPrincipalSubsidiaria) {
 
                                                 importeGanancia = (parseFloat(importePago, 10) * (Math.abs(parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10))));
-                                                
+
                                                 importeGananciaPpal = (parseFloat(importePago, 10) * (parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10)));
 
                                                 importePago = parseFloat(importePago, 10) * parseFloat(tipoCambioPago, 10);
@@ -3686,10 +3011,10 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 importePago = parseFloat(importePago, 10) / parseFloat(tipoCambioPago, 10);
 
                                                 importeGanancia = (parseFloat(importePago, 10) * (Math.abs(parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10))));
-                                                
+
                                                 importeGananciaPpal = (parseFloat(importePago, 10) * (parseFloat(tipoCambioPago, 10) - parseFloat(tipoCambioOficial, 10)));
                                             }
-                                            log.audit('Cobranza Cliente', 'tipoCambioOficial : ' +tipoCambioOficial);
+                                            log.audit('Cobranza Cliente', 'tipoCambioOficial : ' + tipoCambioOficial);
 
                                             objRecordDeposit.setValue({
                                                 fieldId: 'custbody_3k_tipo_cambio_woow',
@@ -3698,11 +3023,11 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 fireSlavingSync: true
                                             });
 
-                                            log.audit('Cobranza Cliente', 'importeGanancia : ' +importeGanancia + ', importeGananciaPpal : ' +importeGananciaPpal);
+                                            log.audit('Cobranza Cliente', 'importeGanancia : ' + importeGanancia + ', importeGananciaPpal : ' + importeGananciaPpal);
 
                                             objRecordDeposit.setValue({
                                                 fieldId: 'custbody_3k_ganancia_tipo_cambio',
-                                                value: importeGananciaPpal.toFixed(2).toString(),                                                
+                                                value: importeGananciaPpal.toFixed(2).toString(),
                                                 ignoreFieldChange: false,
                                                 fireSlavingSync: true
                                             });
@@ -3877,27 +3202,27 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 type: record.Type.CUSTOMER_DEPOSIT,
                                                 id: recordId,
                                             });*/
-                                            // Fin Eliminar Deposito
-                                            /*respuesta.error = true;
+                                        // Fin Eliminar Deposito
+                                        /*respuesta.error = true;
+                                        respuestaParcial = new Object();
+                                        respuestaParcial.codigo = 'RDEP030';
+                                        respuestaParcial.mensaje = JSON.stringify(respuestaAfterDep);
+                                        respuesta.detalle.push(respuestaParcial);
+
+                                        log.error('Error Grabando la Cobranza del Cliente', JSON.stringify(respuestaAfterDep));
+
+                                        var respuestaEliminacion = eliminarRegistrosDependientes(respuestaAfterDep, recordId);
+
+                                        if (!utilities.isEmpty(respuestaEliminacion) && respuestaEliminacion.error == true) {
+                                            respuesta.error = true;
                                             respuestaParcial = new Object();
                                             respuestaParcial.codigo = 'RDEP030';
-                                            respuestaParcial.mensaje = JSON.stringify(respuestaAfterDep);
+                                            respuestaParcial.mensaje = JSON.stringify(respuestaEliminacion);
                                             respuesta.detalle.push(respuestaParcial);
+                                        }
 
-                                            log.error('Error Grabando la Cobranza del Cliente', JSON.stringify(respuestaAfterDep));
-
-                                            var respuestaEliminacion = eliminarRegistrosDependientes(respuestaAfterDep, recordId);
-
-                                            if (!utilities.isEmpty(respuestaEliminacion) && respuestaEliminacion.error == true) {
-                                                respuesta.error = true;
-                                                respuestaParcial = new Object();
-                                                respuestaParcial.codigo = 'RDEP030';
-                                                respuestaParcial.mensaje = JSON.stringify(respuestaEliminacion);
-                                                respuesta.detalle.push(respuestaParcial);
-                                            }
-
-                                            return respuesta;
-                                        }*/
+                                        return respuesta;
+                                    }*/
                                         var objRespuestaAfter = new Object({})
                                         objRespuestaAfter.idDeposito = respuestaAfterDep.idDeposito;
                                         objRespuestaAfter.formaPago = formaPago;
@@ -3956,7 +3281,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
         function afterSubmitDep(idDep, arrayOV, pago, idMedioPagoFinal) {
             //function afterSubmitDep(idDep, idOV, idCliente, pago, idMedioPagoFinal) {
-            
+
             var recordId = '';
             var arrayCuponesProcesar = new Array();
             var arrayCuponesProcesados = new Array();
@@ -5665,15 +4990,15 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                                 value: idCampania
                                             });
                                             //log.debug('generarCupones', 'idCampania : ' + idCampania + ' - j : ' + j);                                            
-                                            if (j === 0){
-                                            //log.debug('generarCupones', 'Dentro del IF - LINE 5660' + j);      
+                                            if (j === 0) {
+                                                //log.debug('generarCupones', 'Dentro del IF - LINE 5660' + j);      
                                                 var objFieldLookUpIsTravel = search.lookupFields({
                                                     type: 'customrecord_3k_campanas',
                                                     id: idCampania,
                                                     columns: [
                                                         'custrecord_3k_campanas_travel'
                                                     ]
-                                                });                     
+                                                });
 
                                                 var isTravel = objFieldLookUpIsTravel.custrecord_3k_campanas_travel;
 
@@ -6672,7 +5997,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
                         if (pagoEnDiferenteMoneda == true) {
 
-                             //Inicio - Consulta Cta Clearing Vs Clearing
+                            //Inicio - Consulta Cta Clearing Vs Clearing
 
                             var filtroCtaCobranza = new Array();
                             var filtroCuentaVs = new Object();
@@ -6687,12 +6012,12 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 if (!utilities.isEmpty(searchCtaClearingVs.objRsponseFunction.result) && searchCtaClearingVs.objRsponseFunction.result.length > 0) {
                                     var resultSet = searchCtaClearingVs.objRsponseFunction.result;
                                     var resultSearch = searchCtaClearingVs.objRsponseFunction.search;
-                                    
+
                                     for (var i = 0; i < resultSet.length; i++) {
-                                            var cuentaClearingImpacto = resultSet[i].getValue({
-                                                name: resultSearch.columns[1]
-                                            });
-                                     }
+                                        var cuentaClearingImpacto = resultSet[i].getValue({
+                                            name: resultSearch.columns[1]
+                                        });
+                                    }
                                 }
                             } else {
                                 respuesta.error = true;
@@ -6740,7 +6065,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 monedaUtilizar = monedaPago;
                                 importeUtilizar = parseFloat(importePago, 10) * parseFloat(tipoCambio, 10);
                                 importeIn = parseFloat(importePago, 10);
-                                importeUtilizarMedioPago = parseFloat(importeUtilizar, 10);                            
+                                importeUtilizarMedioPago = parseFloat(importeUtilizar, 10);
                                 /*monedaUtilizar = moneda;
                                 importeUtilizarMedioPago = parseFloat(importePago, 10) * parseFloat(tipoCambio, 10);
                                 importeIn = parseFloat(importeUtilizarMedioPago, 10);
@@ -6759,10 +6084,10 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             log.debug('Cobranza', 'Cuenta Deposito : ' + cuenta + ' - Cuenta Final : ' + cuentaContableFinal);
 
                             if (!utilities.isEmpty(importeUtilizar) && !isNaN(parseFloat(importeUtilizar, 10)) && parseFloat(importeUtilizar, 10) > 0.00) {
-                                var tipoCustomTransaction = 'customtransaction_3k_conc_pagos';                                
+                                var tipoCustomTransaction = 'customtransaction_3k_conc_pagos';
 
                                 //respuesta = generarCustomTransactionConciliacion(subsidiaria, fecha, monedaUtilizar, tipoCambio, idCobranza, idRegistroConciliacion, cuenta, cuentaContableFinal, importeUtilizar, sitioWeb, sistema, tipoCustomTransaction);
-                                respuesta = generarCustomTransactionConciliacion(subsidiaria, fecha, monedaUtilizar, tipoCambio, idCobranza, idRegistroConciliacion, cuentaContableFinal, cuenta, importeUtilizar, sitioWeb, sistema, tipoCustomTransaction);                                
+                                respuesta = generarCustomTransactionConciliacion(subsidiaria, fecha, monedaUtilizar, tipoCambio, idCobranza, idRegistroConciliacion, cuentaContableFinal, cuenta, importeUtilizar, sitioWeb, sistema, tipoCustomTransaction);
                                 log.debug('Cobranza', 'RESPUESTA CONCILIACION : ' + JSON.stringify(respuesta));
                                 if (respuesta.error == false && !utilities.isEmpty(respuesta.idConciliacion)) {
                                     objRecordCobranza.setValue({
@@ -6792,7 +6117,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                         if (respuesta.error == false) {
                             log.debug('Cobranza', 'CONCILIACION IMPACTO - importeDifCambio : ' + JSON.stringify(importeDifCambio));
                             /////////////////////////////
-                            if (!utilities.isEmpty(importeDifCambio) && importeDifCambio != 0.00 && esServicio && isTravel==false) {
+                            if (!utilities.isEmpty(importeDifCambio) && importeDifCambio != 0.00 && esServicio && isTravel == false) {
 
                                 // INICIO - Realizar Movimiento de Cuenta Estandard de NetSuite a Cuenta woOw
                                 var searchConfig = search.load({
@@ -6831,7 +6156,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                     var importeUtilizarImpacto = '';
                                     importeUtilizarImpacto = parseFloat(importeIn, 10);
 
-                                    if (importeDifCambio > 0.00){
+                                    if (importeDifCambio > 0.00) {
                                         //La cuenta de ganancia va en el credito
                                         var respuesta = generarCustomTransactionCuentaImpactoCobranza(subsidiaria, fecha, monedaPrincipalSubsidiaria, tipoCambioNS, idCobranza, idRegistroCuentaImpacto, idCuentaIngresoNS, idCuentaIngreso, importeUtilizarImpacto, idCuentaDifTipoCambio, importeDifCambio, sitioWeb, sistema);
                                     } else {
@@ -11503,6 +10828,534 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             return objRespuesta;
         }
 
+        function generarFacturaTravel(request, envioEmail, envioLogistico) {
+            var objRespuesta = new Object({});
+            objRespuesta.error = false;
+            objRespuesta.detalle = new Array();
+            objRespuesta.idFactura = '';
+            objRespuesta.carrito = '';
+            var arrayRespuesta = new Array();
+            var arrayFacturas = new Array();
+
+            envioEmail = typeof envioEmail !== 'undefined' ? envioEmail : false;
+            envioLogistico = typeof envioLogistico !== 'undefined' ? envioLogistico : false;
+
+            var inforamcionAplicarNC = new Array();
+
+            if (!utilities.isEmpty(request)) {
+                try {
+                    log.debug('generarFacturaTravel', 'INICIO Proceso');
+
+                    var informacion = JSON.parse(request);
+
+                    log.debug('generarFacturaTravel', 'informacion: ' + JSON.stringify(informacion));
+                    log.debug('generarFacturaTravel', 'informacion.length: ' + informacion.length);
+                    //var array
+
+                    for (var i = 0; i < informacion.length; i++) {
+
+                        var objOrden = new Object({});
+                        //log.debug('generarFacturaTravel', 'informacion posicion i: ' + JSON.stringify(informacion[i]));
+                        objOrden = informacion[i];
+
+                        var objRespuestaN = new Object({});
+                        objRespuestaN.error = false;
+                        objRespuestaN.detalle = new Array();
+                        objRespuestaN.idFactura = '';
+                        objRespuestaN.carrito = objOrden.carrito;
+
+                        /*var objFieldLookUpDireccion = search.lookupFields({
+                            type: search.Type.SALES_ORDER,
+                            id: objOrden.carrito,
+                            columns: [
+                                'exchangerate'
+                            ]
+                        });*/
+
+                        //var tipoCambioOV = objFieldLookUpDireccion.exchangerate;
+
+                        var objRecord = record.transform({
+                            fromType: record.Type.SALES_ORDER,
+                            fromId: objOrden.carrito,
+                            toType: record.Type.INVOICE,
+                            isDynamic: true,
+                        });
+
+                        var facturaCompleta = objOrden.facturaCompleta;
+                        var fechaRemito = objOrden.fechaRemito;
+
+                        /*objRecord.setValue({
+                            fieldId: 'exchangerate',
+                            value: tipoCambioOV
+                        });*/
+
+                        if (facturaCompleta == "N") {
+                            var numLines = objRecord.getLineCount({
+                                sublistId: 'item'
+                            });
+
+                            //Eliminada sección referente a recorrer la informacion de "ordenes"
+                            //Debido a que correspondía a información de la solapa "Ordenes Detalle"
+                            //la cual con Kraken, ya no se está utilizando
+
+                            var informacionOV = new Array();
+                            for (var k = 0; k < numLines; k++) {
+                                var isVoucher = objRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_linea_voucher',
+                                    line: k
+                                });
+
+                                var esRedondeo = objRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_es_redondeo',
+                                    line: k
+                                });
+
+                                //Se agrega, para verificar si hay línea de Millas-Fidelidad
+                                var esFidelidad = objRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_programa_fidelidad',
+                                    line: k
+                                });
+
+                                //Al no estar utilizando lo del ID Orden que era con la solapa de "Ordenes Detalle"
+                                //Se modifica la instrucción para eliminar las lineas de voucher, redondeo y fidelidad
+                                if (isVoucher || esRedondeo || esFidelidad) {
+                                    objRecord.removeLine({
+                                        sublistId: 'item',
+                                        line: k
+                                    });
+                                    k--;
+                                    numLines--;
+                                }
+
+                            }
+
+
+                            //Eliminada sección referente a recorrer la informacion.ordenes
+                            //Debido a que correspondía a información de la solapa "Ordenes Detalle"
+                            //la cual con Kraken, ya no se está utilizando
+
+                            //Eliminada sección referente a actualizarEstadoCupon
+
+                            //Eliminada sección referente a Ingresar linea de Voucher
+                        } //else {
+
+                        //Eliminada sección referente a cupones
+
+                        //Eliminada sección referente a Vouchers de Devolucion
+                        //}
+
+
+                        // INICIO - Consultar y Grabar Unidad Indexada
+
+                        var unidadIndexada = '';
+                        var tasaMinima = '';
+                        var tasaBasica = '';
+
+                        var searchConfig = utilities.searchSaved('customsearch_3k_config_ui');
+
+                        if (!utilities.isEmpty(searchConfig) && !searchConfig.error) {
+                            if (!utilities.isEmpty(searchConfig.objRsponseFunction.result) && searchConfig.objRsponseFunction.result.length > 0) {
+                                unidadIndexada = searchConfig.objRsponseFunction.result[0].getValue({
+                                    name: searchConfig.objRsponseFunction.search.columns[1]
+                                });
+                                tasaMinima = searchConfig.objRsponseFunction.result[0].getValue({
+                                    name: searchConfig.objRsponseFunction.search.columns[2]
+                                });
+                                tasaBasica = searchConfig.objRsponseFunction.result[0].getValue({
+                                    name: searchConfig.objRsponseFunction.search.columns[3]
+                                });
+
+                                if (utilities.isEmpty(unidadIndexada) || utilities.isEmpty(tasaMinima) || utilities.isEmpty(tasaBasica)) {
+                                    objRespuestaN.error = true;
+                                    var mensaje = 'No se encuentra configurada la siguiente informacion del panel de configuracion de Unidad Indexada : ';
+                                    if (utilities.isEmpty(unidadIndexada)) {
+                                        mensaje = mensaje + ' Valor Unidad Indexada / ';
+                                    }
+                                    if (utilities.isEmpty(tasaMinima)) {
+                                        mensaje = mensaje + ' Tasa Minima / ';
+                                    }
+                                    if (utilities.isEmpty(tasaBasica)) {
+                                        mensaje = mensaje + ' Tasa Basica / ';
+                                    }
+
+                                    objRespuestaParcial = new Object();
+                                    objRespuestaParcial.codigo = 'RFAC020';
+                                    objRespuestaParcial.mensaje = mensaje;
+                                    objRespuestaN.detalle.push(objRespuestaParcial);
+                                    arrayRespuesta.push(objRespuestaN);
+                                    continue;
+                                }
+                            } else {
+                                objRespuestaN.error = true;
+                                var mensaje = 'No se encuentra realizada la configuracion de Configuracion de Unidad Indexada : ';
+
+                                objRespuestaParcial = new Object();
+                                objRespuestaParcial.codigo = 'RFAC021';
+                                objRespuestaParcial.mensaje = mensaje;
+                                objRespuestaN.detalle.push(objRespuestaParcial);
+                                arrayRespuesta.push(objRespuestaN);
+                                continue;
+                            }
+                        } else {
+                            objRespuestaN.error = true;
+                            var mensaje = 'Error Consultando Configuracion de Unidad Indexada - Tipo Error : ' + searchConfig.tipoError + ' - Descripcion : ' + searchConfig.descripcion;
+
+                            objRespuestaParcial = new Object();
+                            objRespuestaParcial.codigo = 'RFAC022';
+                            objRespuestaParcial.mensaje = mensaje;
+                            objRespuestaN.detalle.push(objRespuestaParcial);
+                            arrayRespuesta.push(objRespuestaN);
+                            continue;
+                        }
+
+                        if (!utilities.isEmpty(unidadIndexada)) {
+                            objRecord.setValue({
+                                fieldId: 'custbody_l598_valor_unidad_indexada',
+                                value: unidadIndexada
+                            });
+                        }
+                        if (!utilities.isEmpty(tasaMinima)) {
+                            objRecord.setValue({
+                                fieldId: 'custbody_l598_imp_tasa_minima',
+                                value: tasaMinima
+                            });
+                        }
+                        if (!utilities.isEmpty(tasaBasica)) {
+                            objRecord.setValue({
+                                fieldId: 'custbody_l598_imp_tasa_basica',
+                                value: tasaBasica
+                            });
+                        }
+                        // FIN - Consultar y Grabar Unidad Indexada
+
+                        // INICIO - Grabar Informacion de Cliente Facturacion
+                        if (!utilities.isEmpty(objOrden.informacionCliente) && !utilities.isEmpty(objOrden.informacionCliente.tipoDocumento)) {
+                            objRecord.setValue({
+                                fieldId: 'custbody_l598_tipo_documento',
+                                value: objOrden.informacionCliente.tipoDocumento
+                            });
+                        }
+
+                        if (!utilities.isEmpty(objOrden.informacionCliente) && !utilities.isEmpty(objOrden.informacionCliente.numeroDocumento)) {
+                            objRecord.setValue({
+                                fieldId: 'custbody_l598_nro_documento',
+                                value: objOrden.informacionCliente.numeroDocumento
+                            });
+                        }
+
+                        var RazonsocialCliente = '';
+
+                        if (!utilities.isEmpty(objOrden.informacionCliente) && !utilities.isEmpty(objOrden.informacionCliente.razonSocial)) {
+                            objRecord.setValue({
+                                fieldId: 'custbody_l598_razon_social_cliente',
+                                value: objOrden.informacionCliente.razonSocial
+                            });
+                            RazonsocialCliente = objOrden.informacionCliente.razonSocial;
+
+                        } else {
+                            RazonsocialCliente = objRecord.getValue({
+                                fieldId: 'custbody_l598_razon_social_cliente'
+                            });
+                        }
+
+                        var tipodocRUT = objRecord.getValue({
+                            fieldId: 'custbody_l598_es_rut'
+                        });
+
+                        var tipodocCI = objRecord.getValue({
+                            fieldId: 'custbody_l598_es_ci'
+                        });
+
+                        var tipodocDOCTransaccion = objRecord.getValue({
+                            fieldId: 'custbody_l598_tipo_documento'
+                        });
+
+                        var numeroDOCTransaccion = objRecord.getValue({
+                            fieldId: 'custbody_l598_nro_documento'
+                        });
+
+                        var razonSocialTransaccion = objRecord.getValue({
+                            fieldId: 'custbody_l598_razon_social_cliente'
+                        });
+
+
+                        if (utilities.isEmpty(tipodocRUT) || (!utilities.isEmpty(tipodocRUT) && tipodocRUT == false)) {
+                            objRecord.setValue({
+                                fieldId: 'custbody_l598_trans_eticket',
+                                value: true
+                            });
+                        }
+
+                        //Falta configurar email en el json
+                        /*if (!utilities.isEmpty(objOrden.informacionCliente) && !utilities.isEmpty(objOrden.informacionCliente.email)) {
+                            objRecord.setValue({
+                                fieldId: 'custbody_l598_email_cliente',
+                                value: objOrden.informacionCliente.email
+                            });
+                        }*/
+
+
+                        objRecord.setValue({
+                            fieldId: 'custbody_3k_enviar_email',
+                            value: envioEmail
+                        });
+
+                        //Falta configurar fechaRemito en el json
+                        /*if (envioEmail) {
+        
+                            var fechaRemitoNS = format.parse({
+                                value: fechaRemito,
+                                type: format.Type.DATE
+                            });
+        
+                            objRecord.setValue({
+                                fieldId: 'trandate',
+                                value: fechaRemitoNS
+                            });
+                        }*/
+
+                        var fechaServidor = new Date();
+
+                        var fechaLocalString = format.format({
+                            value: fechaServidor,
+                            type: format.Type.DATETIME,
+                            timezone: format.Timezone.AMERICA_MONTEVIDEO // Montevideo - Uruguay
+                        });
+
+                        var fechaLocal = format.parse({
+                            value: fechaLocalString,
+                            type: format.Type.DATETIME,
+                            timezone: format.Timezone.AMERICA_MONTEVIDEO // Montevideo - Uruguay
+                        });
+
+                        objRecord.setValue({
+                            fieldId: 'custbody_3k_fecha_creacion',
+                            value: fechaLocal
+                        });
+
+
+                        // FIN - Grabar Informacion de Cliente Facturacion
+
+                        var recId = objRecord.save();
+                        log.debug('generarFacturaTravel', 'idRec: ' + recId + ', carrito: ' + objOrden.carrito);
+                        objRespuestaN.idFactura = recId;
+                        objRespuestaN.carrito = objOrden.carrito;
+                        arrayFacturas.push(recId);
+                        //arrayRespuesta.push(objRespuesta);
+
+                        if (!utilities.isEmpty(recId)) {
+
+                            var searchConfDomicilio = utilities.searchSavedPro('customsearch_3k_conf_dom_fact');
+
+                            if (!utilities.isEmpty(searchConfDomicilio) && searchConfDomicilio.error == false) {
+                                if (!utilities.isEmpty(searchConfDomicilio.objRsponseFunction.result) && searchConfDomicilio.objRsponseFunction.result.length > 0) {
+
+                                    var resultSet = searchConfDomicilio.objRsponseFunction.result;
+                                    var resultSearch = searchConfDomicilio.objRsponseFunction.search;
+
+                                    var direccionGenerica = resultSet[0].getValue({
+                                        name: resultSearch.columns[1]
+                                    });
+
+                                    log.error('Crear Orden de Venta', 'informacion.direccionFactura: ' + informacion.direccionFactura);
+
+                                    if (utilities.isEmpty(objOrden.informacionCliente.direccion) && !utilities.isEmpty(direccionGenerica)) {
+
+                                        objOrden.informacionCliente.direccion = direccionGenerica;
+
+                                    }
+
+                                    var ciudadGenerica = resultSet[0].getValue({
+                                        name: resultSearch.columns[2]
+                                    });
+
+                                    log.error('Crear Orden de Venta', 'informacion.ciudadFactura: ' + informacion.direccionFactura);
+
+                                    if (utilities.isEmpty(objOrden.informacionCliente.ciudad) && !utilities.isEmpty(ciudadGenerica)) {
+
+                                        objOrden.informacionCliente.ciudad = ciudadGenerica;
+
+                                    }
+
+                                } else {
+                                    objetoRespuesta.error = true;
+                                    objetoRespuesta.mensaje.tipo = 'RFAC025';
+                                    objetoRespuesta.mensaje.descripcion = 'Error Consultando Domicilio Generico de Facturacion - Error : No se encontro la Configuracion Generica de Domicilio de Facturacion';
+                                    objRespuesta.detalle.push(objRespuestaParcial);
+                                    log.error(objetoRespuesta.mensaje.tipo, objetoRespuesta.mensaje.descripcion);
+                                    return JSON.stringify(objRespuesta);
+                                }
+                            } else {
+                                if (utilities.isEmpty(searchConfDomicilio)) {
+                                    objetoRespuesta.error = true;
+                                    objetoRespuesta.mensaje.tipo = 'RFAC023';
+                                    objetoRespuesta.mensaje.descripcion = 'Error Consultando Domicilio Generico de Facturacion - Error : No se recibio Respuesta del Proceso de Busqueda del Domicilio Generico de Facturacion';
+                                    objRespuesta.detalle.push(objRespuestaParcial);
+                                    log.error(objetoRespuesta.mensaje.tipo, objetoRespuesta.mensaje.descripcion);
+                                    return JSON.stringify(objRespuesta);
+                                } else {
+                                    objetoRespuesta.error = true;
+                                    objetoRespuesta.mensaje.tipo = 'RFAC024';
+                                    objetoRespuesta.mensaje.descripcion = 'Error Consultando Domicilio Generico de Facturacion - Error : ' + searchConfDomicilio.tipoError + ' - Descripcion : ' + searchConfDomicilio.descripcion;
+                                    objRespuesta.detalle.push(objRespuestaParcial);
+                                    log.error(objetoRespuesta.mensaje.tipo, objetoRespuesta.mensaje.descripcion);
+                                    return JSON.stringify(objRespuesta);
+                                }
+                            }
+
+                            log.debug('generarFacturaTravel', 'RazonsocialCliente: ' + RazonsocialCliente + ', objOrden.informacionCliente.direccion: ' + objOrden.informacionCliente.direccion + ', objOrden.informacionCliente.ciudad: ' + objOrden.informacionCliente.ciudad);
+
+                            var idFactActualizada = record.submitFields({
+                                type: record.Type.INVOICE,
+                                id: recId,
+                                values: {
+                                    billattention: RazonsocialCliente,
+                                    billaddr1: objOrden.informacionCliente.direccion,
+                                    billcity: objOrden.informacionCliente.ciudad
+                                },
+                                options: {
+                                    enableSourcing: false,
+                                    ignoreMandatoryFields: true
+                                }
+                            });
+
+                            log.debug('generarFacturaTravel', 'idFactActualizada: ' + idFactActualizada);
+
+                        }
+
+                        //Eliminada sección referente a Asociar Facturas A Notas de Credito
+                        //Debido a que ese proceso se realiza con el array inforamcionAplicarNC
+                        //el cual se completa con información de voucher y voucher ya no va
+
+                        // INICIO - Consultar Subsidiaria Facturacion Electronica
+                        var subsidiaria = '';
+
+                        var searchConfig = utilities.searchSaved('customsearch_3k_config_sub_fact');
+
+                        if (!utilities.isEmpty(searchConfig) && !searchConfig.error) {
+                            if (!utilities.isEmpty(searchConfig.objRsponseFunction.result) && searchConfig.objRsponseFunction.result.length > 0) {
+                                subsidiaria = searchConfig.objRsponseFunction.result[0].getValue({
+                                    name: searchConfig.objRsponseFunction.search.columns[1]
+                                });
+
+                                if (utilities.isEmpty(subsidiaria)) {
+                                    objRespuestaN.error = true;
+                                    var mensaje = 'No se encuentra configurada la siguiente informacion del panel de configuracion de Subsidiaria Facturacion : ';
+                                    if (utilities.isEmpty(subsidiaria)) {
+                                        mensaje = mensaje + ' Subsidiaria / ';
+                                    }
+
+                                    objRespuestaParcial = new Object();
+                                    objRespuestaParcial.codigo = 'RFAC017';
+                                    objRespuestaParcial.mensaje = mensaje;
+                                    objRespuestaN.detalle.push(objRespuestaParcial);
+                                    /*log.error('RFAC017', mensaje);
+                                    return JSON.stringify(objRespuesta);*/
+                                    arrayRespuesta.push(objRespuestaN);
+                                    continue;
+                                }
+                            } else {
+                                objRespuestaN.error = true;
+                                var mensaje = 'No se encuentra realizada la configuracion de Subsidiaria Facturacion : ';
+
+                                objRespuestaParcial = new Object();
+                                objRespuestaParcial.codigo = 'RFAC018';
+                                objRespuestaParcial.mensaje = mensaje;
+                                objRespuestaN.detalle.push(objRespuestaParcial);
+                                /*log.error('RFAC018', mensaje);
+                                return JSON.stringify(objRespuesta);*/
+                                arrayRespuesta.push(objRespuestaN);
+                                continue;
+                            }
+                        } else {
+                            objRespuestaN.error = true;
+                            var mensaje = 'Error Consultando Configuracion de Subsidiaria de Facturacion - Tipo Error : ' + searchConfig.tipoError + ' - Descripcion : ' + searchConfig.descripcion;
+
+                            objRespuestaParcial = new Object();
+                            objRespuestaParcial.codigo = 'RFAC019';
+                            objRespuestaParcial.mensaje = mensaje;
+                            objRespuestaN.detalle.push(objRespuestaParcial);
+                            /*log.error('RFAC019', mensaje);
+                            return JSON.stringify(objRespuesta);*/
+                            arrayRespuesta.push(objRespuestaN);
+                            continue;
+                        }
+
+                        // FIN - Consultar Subsidiaria Facturacion Electronica 
+
+                        arrayRespuesta.push(objRespuestaN);
+
+                    } // END FOR FACTURAS
+
+                    if (!envioLogistico) {
+
+                        log.debug('generarFacturaTravel', 'arrayFacturas a generar CAE:' + JSON.stringify(arrayFacturas));
+
+                        objRespuesta.resultCae = generarCAE(arrayFacturas, subsidiaria);
+                        if (objRespuesta.resultCae.error) {
+                            objRespuestaParcial = new Object();
+                            objRespuestaParcial.codigo = objRespuesta.resultCae.codigo;
+                            objRespuestaParcial.mensaje = objRespuesta.resultCae.mensaje;
+
+                            if (arrayRespuesta.length > 0) {
+                                for (var qq = 0; qq < arrayRespuesta.length; qq++) {
+                                    arrayRespuesta[qq].error = true;
+                                    arrayRespuesta[qq].detalle.push(objRespuestaParcial);
+                                }
+                            } else {
+                                var objetoRespuestaN = new Object();
+                                objetoRespuestaN.error = true;
+                                objetoRespuestaN.idFactura = '';
+                                objetoRespuestaN.idCarrito = '';
+                                objetoRespuestaN.detalle = new Array();
+                                objetoRespuestaN.detalle.push(objRespuestaParcial);
+                                arrayRespuesta.push(objetoRespuestaN);
+                            }
+                        }
+                    }
+
+                    log.debug('generarFacturaTravel', 'FIN Proceso');
+
+                } catch (e) {
+                    //objRespuesta.error = true;
+                    objRespuestaParcial = new Object();
+                    objRespuestaParcial.codigo = 'RFAC002';
+                    objRespuestaParcial.mensaje = 'function doPost: ' + e.message;
+                    log.error('RFAC002', 'funtion doPost: ' + e.message + ' request:' + JSON.stringify(objOrden));
+
+                    if (arrayRespuesta.length > 0) {
+                        for (var qq = 0; qq < arrayRespuesta.length; qq++) {
+                            arrayRespuesta[qq].error = true;
+                            arrayRespuesta[qq].detalle.push(objRespuestaParcial);
+                        }
+                    } else {
+                        var objetoRespuestaN = new Object();
+                        objetoRespuestaN.error = true;
+                        objetoRespuestaN.idFactura = '';
+                        objetoRespuestaN.idCarrito = '';
+                        objetoRespuestaN.detalle = new Array();
+                        objetoRespuestaN.detalle.push(objRespuestaParcial);
+                        arrayRespuesta.push(objetoRespuestaN);
+                    }
+
+                    return JSON.stringify(arrayRespuesta);
+
+                }
+
+            } else {
+                objRespuesta.error = true;
+                objRespuestaParcial = new Object();
+                objRespuestaParcial.codigo = 'RFAC001';
+                objRespuestaParcial.mensaje = 'No se recibio parametro con informacion a realizar';
+                objRespuesta.detalle.push(objRespuestaParcial);
+                log.error('RFAC001', 'No se recibio parametro con informacion a realizar');
+                arrayRespuesta.push(objRespuesta);
+            }
+            return JSON.stringify(arrayRespuesta);
+        }
 
 
         return {
@@ -11523,6 +11376,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             consultarRemito: consultarRemito,
             eliminarRegistrosDependientes: eliminarRegistrosDependientes,
             generarAjusteRedondeo: generarAjusteRedondeo,
-            obtenerInformacionProveedores: obtenerInformacionProveedores
+            obtenerInformacionProveedores: obtenerInformacionProveedores,
+            generarFacturaTravel: generarFacturaTravel
         };
     });
