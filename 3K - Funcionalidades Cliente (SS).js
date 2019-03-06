@@ -18,7 +18,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
      * @param {search} search
      */
 
-    function(error, record, search, utilities) {
+    function (error, record, search, utilities) {
 
 
         function afterSubmit(scriptContext) {
@@ -26,7 +26,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                 log.audit('Inicio Grabar Cliente', 'AftereSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
                 if (scriptContext.type == 'create' || scriptContext.type == 'edit') {
                     var idCliente = scriptContext.newRecord.id;
-                    if(scriptContext.type == 'edit'){
+                    if (scriptContext.type == 'edit') {
                         idCliente = scriptContext.oldRecord.id;
                     }
                     log.audit('Inicio Grabar Cliente', 'AftereSubmit - ID Cliente : ' + idCliente);
@@ -55,10 +55,10 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
 
                             if (!utilities.isEmpty(objRecordCliente)) {
                                 objRecordProveedor.setValue({ fieldId: 'companyname', value: objRecordCliente.getValue({ fieldId: 'companyname' }) });
-                                objRecordProveedor.setValue({ fieldId: 'url', value: nvl(objRecordCliente.getValue({ fieldId: 'url' }),'') });
-                                objRecordProveedor.setValue({ fieldId: 'comments', value: nvl(objRecordCliente.getValue({ fieldId: 'comments' }),'') });
+                                objRecordProveedor.setValue({ fieldId: 'url', value: nvl(objRecordCliente.getValue({ fieldId: 'url' }), '') });
+                                objRecordProveedor.setValue({ fieldId: 'comments', value: nvl(objRecordCliente.getValue({ fieldId: 'comments' }), '') });
                                 objRecordProveedor.setValue({ fieldId: 'email', value: objRecordCliente.getValue({ fieldId: 'email' }) });
-                                objRecordProveedor.setValue({ fieldId: 'phone', value: nvl(objRecordCliente.getValue({ fieldId: 'phone' }),'') });
+                                objRecordProveedor.setValue({ fieldId: 'phone', value: nvl(objRecordCliente.getValue({ fieldId: 'phone' }), '') });
                                 objRecordProveedor.setValue({ fieldId: 'subsidiary', value: objRecordCliente.getValue({ fieldId: 'subsidiary' }) });
 
                                 var monedaPrincipal = objRecordCliente.getValue({ fieldId: 'currency' });
@@ -105,19 +105,19 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                                             sublistId: 'addressbook'
                                         });
 
-                                        objRecordProveedor.setCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultbilling', value: objRecordCliente.getCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultbilling' })});
-                                        objRecordProveedor.setCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping', value: objRecordCliente.getCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping' })});
+                                        objRecordProveedor.setCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultbilling', value: objRecordCliente.getCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultbilling' }) });
+                                        objRecordProveedor.setCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping', value: objRecordCliente.getCurrentSublistValue({ sublistId: 'addressbook', fieldId: 'defaultshipping' }) });
 
                                         subrecordAddress = objRecordProveedor.getCurrentSublistSubrecord({
                                             sublistId: 'addressbook',
                                             fieldId: 'addressbookaddress'
                                         });
 
-                                        subrecordAddress.setValue({sublistId: 'addressbookaddress',fieldId: 'addressee',value: objSubrecord.getValue({ fieldId: 'addressee' })});
-                                        subrecordAddress.setValue({sublistId: 'addressbookaddress',fieldId: 'addr1',value: objSubrecord.getValue({ fieldId: 'addr1' })});
-                                        subrecordAddress.setValue({sublistId: 'addressbookaddress',fieldId: 'state',value: objSubrecord.getValue({ fieldId: 'state' })});
-                                        subrecordAddress.setValue({sublistId: 'addressbookaddress',fieldId: 'city',value: objSubrecord.getValue({ fieldId: 'city' })});
-                                        subrecordAddress.setValue({sublistId: 'addressbookaddress',fieldId: 'zip',value: objSubrecord.getValue({ fieldId: 'zip' })});
+                                        subrecordAddress.setValue({ sublistId: 'addressbookaddress', fieldId: 'addressee', value: objSubrecord.getValue({ fieldId: 'addressee' }) });
+                                        subrecordAddress.setValue({ sublistId: 'addressbookaddress', fieldId: 'addr1', value: objSubrecord.getValue({ fieldId: 'addr1' }) });
+                                        subrecordAddress.setValue({ sublistId: 'addressbookaddress', fieldId: 'state', value: objSubrecord.getValue({ fieldId: 'state' }) });
+                                        subrecordAddress.setValue({ sublistId: 'addressbookaddress', fieldId: 'city', value: objSubrecord.getValue({ fieldId: 'city' }) });
+                                        subrecordAddress.setValue({ sublistId: 'addressbookaddress', fieldId: 'zip', value: objSubrecord.getValue({ fieldId: 'zip' }) });
 
                                         objRecordProveedor.commitLine({
                                             sublistId: 'addressbook'
@@ -144,7 +144,7 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
 
                                         var monedaLinea = objRecordCliente.getCurrentSublistValue({ sublistId: 'currency', fieldId: 'currency' });
 
-                                        if(monedaLinea!=monedaPrincipal){
+                                        if (monedaLinea != monedaPrincipal) {
 
                                             objRecordProveedor.selectNewLine({
                                                 sublistId: 'currency'
@@ -162,6 +162,45 @@ define(['N/error', 'N/record', 'N/search', '3K/utilities'],
                                 }
 
                                 // FIN Obtener Informacion de Monedas
+
+                                // INICIO Obtener Cuenta a Pagar Predeterminada
+
+                                var searchConfCuenta = utilities.searchSavedPro('customsearch_3k_config_cta_prov_com');
+
+                                if (!utilities.isEmpty(searchConfCuenta) && searchConfCuenta.error == false) {
+                                    if (!utilities.isEmpty(searchConfCuenta.objRsponseFunction.result) && searchConfCuenta.objRsponseFunction.result.length > 0) {
+
+                                        var resultSet = searchConfCuenta.objRsponseFunction.result;
+                                        var resultSearch = searchConfCuenta.objRsponseFunction.search;
+
+                                        var ctaPredeterminada = resultSet[0].getValue({
+                                            name: resultSearch.columns[0]
+                                        });
+
+                                        log.audit('Inicio Grabar Cliente', 'ctaPredeterminada: ' + ctaPredeterminada);
+
+                                        if (!utilities.isEmpty(ctaPredeterminada)){
+                                            objRecordProveedor.setValue({ fieldId: 'payablesaccount', value: ctaPredeterminada });
+                                        }
+
+                                    } else {
+                                        var mensaje = 'Error Consultando Cuenta a Pagar Predeterminada - Error : No se encontro la Configuración Cta Proveedor Comisionista';
+                                        log.error('Grabar Cliente', 'AfterSubmit - : ' + mensaje);
+                                        throw utilities.crearError('SCLI008', mensaje);
+                                    }
+                                } else {
+                                    if (utilities.isEmpty(searchConfCuenta)) {
+                                        var mensaje = 'Error Consultando Cuenta a Pagar Predeterminada - Error : No se recibio Respuesta del Proceso de Busqueda de Cuenta a Pagar Predeterminada';
+                                        log.error('Grabar Cliente', 'AfterSubmit - : ' + mensaje);
+                                        throw utilities.crearError('SCLI009', mensaje);
+                                    } else {
+                                        var mensaje = 'Error Consultando Cuenta a Pagar Predeterminada - Error : ' + searchConfCuenta.tipoError + ' - Descripcion : ' + searchConfCuenta.descripcion;
+                                        log.error('Grabar Cliente', 'AfterSubmit - : ' + mensaje);
+                                        throw utilities.crearError('SCLI010', mensaje);
+                                    }
+                                }
+
+                                // FIN Obtener Cuenta a Pagar Predeterminada
 
                                 // INICIO - Crear Proveedor
                                 try {
