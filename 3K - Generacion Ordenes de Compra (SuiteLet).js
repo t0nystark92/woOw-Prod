@@ -233,6 +233,14 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                     container: 'filtros'
                 });
 
+                /*var OrdenVenta = form.addField({
+                    id: 'ovfilter',
+                    label: 'Orden Venta',
+                    type: serverWidget.FieldType.SELECT,
+                    source: 'salesorder',
+                    container: 'filtros'
+                });*/
+
                 var enviarEmailProveedor = form.addField({
                     id: 'enviaremail',
                     label: 'Enviar OC por Email al Proveedor',
@@ -298,6 +306,15 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                     id: 'cantidad',
                     type: serverWidget.FieldType.INTEGER,
                     label: 'Cantidad'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED
+                });
+
+                sublist.addField({
+                    id: 'ordenventa',
+                    type: serverWidget.FieldType.SELECT,
+                    label: 'Orden Venta',
+                    source: 'salesorder'
                 }).updateDisplayType({
                     displayType: serverWidget.FieldDisplayType.DISABLED
                 });
@@ -800,6 +817,12 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                             name: resultSet.columns[9]
                         });
 
+                        var ov = completeResultSet[i].getValue({
+                            name: resultSet.columns[18]
+                        });
+
+                        log.debug('Resultados SS', 'var ov: '+ ov)
+
                         idUnico = completeResultSet[i].getValue({
                             name: resultSet.columns[8]
                         });
@@ -891,6 +914,12 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                             id: 'cantidad',
                             line: j,
                             value: parseInt(cantidadTotal, 10).toString()
+                        });
+
+                        sublist.setSublistValue({
+                            id: 'ordenventa',
+                            line: j,
+                            value: ov
                         });
 
                         if (!utilities.isEmpty(cantidadTotal) && !isNaN(cantidadTotal) && !utilities.isEmpty(precio) && !isNaN(precio)) {

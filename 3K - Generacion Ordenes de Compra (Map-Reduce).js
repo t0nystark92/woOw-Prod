@@ -731,9 +731,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             respuesta.mensaje = "";
 
             if (error == true) {
-                log.error('Generar Ordenes de Compras', 'REDUCE - ' + error.mensajeError);
+                log.error('Generar Ordenes de Compras', 'REDUCE - ' + mensajeError);
                 respuesta.error = true;
-                respuesta.mensaje = error.mensajeError;
+                respuesta.mensaje = mensajeError;
             } else {
                 if (!isEmpty(idOrdenCompra)) {
                     respuesta.mensaje = 'La Orden de Compra con ID Interno : ' + idOrdenCompra + ' Se genero correctamente';
