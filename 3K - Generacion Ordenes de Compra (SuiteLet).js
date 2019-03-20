@@ -13,7 +13,7 @@
 
 define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/format', 'N/task', '3K/utilities'],
 
-    function(serverWidget, https, record, error, search, format, task, utilities) {
+    function (serverWidget, https, record, error, search, format, task, utilities) {
 
         /**
          * Definition of the Suitelet script trigger point.
@@ -424,7 +424,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                             context.response.writePage(form);
                             break;
                         case 'Buscar Requisiciones Pendientes':
-                            var resultado = cargarRequisiciones(sublist,idInternoField, context.request);
+                            var resultado = cargarRequisiciones(sublist, idInternoField, context.request);
                             if (!utilities.isEmpty(resultado) && resultado.error == true) {
                                 var mensaje = resultado.mensaje;
                                 log.error('Generacion Ordenes de Compras REST', 'Error Consulta Requisiciones Pendientes - Error : ' + mensaje);
@@ -455,14 +455,14 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                     var delimiterArray = /\u0002/;
 
                     var idInternosRequis = request.parameters.custpage_idinterno;
-                    log.debug('generar OC', 'idInternosRequis: '+ idInternosRequis);
+                    log.debug('generar OC', 'idInternosRequis: ' + idInternosRequis);
 
                     var enviarEmail = 'F';
                     if (!utilities.isEmpty(request.parameters.enviaremail) && request.parameters.enviaremail == 'T') {
                         enviarEmail = 'T';
                     }
 
-                     log.debug('Generacion Ordenes de Compras SUITELET', 'mensaje : ' + JSON.stringify(request.parameters.requisicionesdata));
+                    log.debug('Generacion Ordenes de Compras SUITELET', 'mensaje : ' + JSON.stringify(request.parameters.requisicionesdata));
 
 
                     var sublista = request.parameters.requisicionesdata.split(delimiterArray);
@@ -524,7 +524,7 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                             respuesta.mensaje = "No se selecciono ninguna requisicion para procesar";
                         }*/
 
-                        if (respuesta.error == false &&  utilities.isEmpty(idInternosRequis)) {
+                        if (respuesta.error == false && utilities.isEmpty(idInternosRequis)) {
                             respuesta.error = true;
                             respuesta.mensaje = "No se selecciono ninguna requisicion para procesar";
                         }
@@ -780,7 +780,7 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
 
                     var idUnico = 0;
                     var idUnicoAnterior = 0;
-                    var idInternosTotal =[];
+                    var idInternosTotal = [];
 
                     var i = 0;
                     while (!utilities.isEmpty(completeResultSet) && completeResultSet.length > 0 && i < completeResultSet.length) {
@@ -821,7 +821,7 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                             name: resultSet.columns[18]
                         });
 
-                        log.debug('Resultados SS', 'var ov: '+ ov)
+                        log.debug('Resultados SS', 'var ov: ' + ov)
 
                         idUnico = completeResultSet[i].getValue({
                             name: resultSet.columns[8]
@@ -916,11 +916,13 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                             value: parseInt(cantidadTotal, 10).toString()
                         });
 
-                        sublist.setSublistValue({
-                            id: 'ordenventa',
-                            line: j,
-                            value: ov
-                        });
+                        if (!utilities.isEmpty(ov)) {
+                            sublist.setSublistValue({
+                                id: 'ordenventa',
+                                line: j,
+                                value: ov
+                            });
+                        }
 
                         if (!utilities.isEmpty(cantidadTotal) && !isNaN(cantidadTotal) && !utilities.isEmpty(precio) && !isNaN(precio)) {
                             sublist.setSublistValue({
@@ -967,8 +969,8 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                         //log.debug('Generacion Ordenes de Compras SUITELET', 'idInternos array length: ' +idInternos.length);
                         //log.debug('Generacion Ordenes de Compras SUITELET', 'idInternos array toString length: ' +idInternos.toString().length);
                         //log.debug('Generacion Ordenes de Compras SUITELET', 'idInternos2 array: ' +JSON.stringify(idInternos2));
-                          //  log.debug('Generacion Ordenes de Compras SUITELET', 'idInternos2 array length: ' +idInternos2.length);
-                           // log.debug('Generacion Ordenes de Compras SUITELET', 'idInternos2 array toString length: ' +idInternos2.toString().length);
+                        //  log.debug('Generacion Ordenes de Compras SUITELET', 'idInternos2 array length: ' +idInternos2.length);
+                        // log.debug('Generacion Ordenes de Compras SUITELET', 'idInternos2 array toString length: ' +idInternos2.toString().length);
 
                         /*sublistCupones.setSublistValue({
                             id: 'idinternos',
