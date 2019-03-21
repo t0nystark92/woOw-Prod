@@ -66,10 +66,26 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
       var author = runtime.getCurrentUser().id;
       var recipients = runtime.getCurrentUser().id;
-      var subject = 'Proceso Funcionalidades Cupon ' + runtime.getCurrentScript().id + ' Error en Estado : ' + stage;
+      var subject = 'Proceso Niveles de Acción ' + runtime.getCurrentScript().id + ' Error en Estado : ' + stage;
       var body = 'Ocurrio un error con la siguiente informacion : \n' +
         'Codigo de Error: ' + e.name + '\n' +
         'Mensaje de Error: ' + e.message;
+
+      email.send({
+        author: author,
+        recipients: recipients,
+        subject: subject,
+        body: body
+      });
+    }
+
+    function handleOKAndSendNotification(msj) {
+      log.audit('handleOKAndSendNotification', 'msj: '+ msj);
+
+      var author = runtime.getCurrentUser().id;
+      var recipients = runtime.getCurrentUser().id;
+      var subject = 'Proceso Niveles de Acción ' + runtime.getCurrentScript().id + ' FINALIZADO';
+      var body = msj
 
       email.send({
         author: author,
@@ -84,7 +100,12 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
       var mapSummary = summary.mapSummary;
       var reduceSummary = summary.reduceSummary;
 
+      var error = false;
+
       if (inputSummary.error) {
+        
+        error = true;
+
         var e = error.create({
           name: 'INPUT_STAGE_FAILED',
           message: inputSummary.error
@@ -92,8 +113,12 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         handleErrorAndSendNotification(e, 'getInputData');
       }
 
-      handleErrorInStage('map', mapSummary);
-      handleErrorInStage('reduce', reduceSummary);
+      error = handleErrorInStage('map', mapSummary);
+      error = handleErrorInStage('reduce', reduceSummary);
+
+      if(error == false){
+        handleOKAndSendNotification('El proceso de Niveles de Acción Finalizó Correctamente');
+      }
     }
 
     function handleErrorInStage(stage, summary) {
@@ -104,11 +129,15 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         return true;
       });
       if (errorMsg.length > 0) {
+        
         var e = error.create({
           name: 'ERROR_CUSTOM',
           message: JSON.stringify(errorMsg)
         });
         handleErrorAndSendNotification(e, stage);
+        return true;
+      }else{
+        return false;
       }
     }
 
