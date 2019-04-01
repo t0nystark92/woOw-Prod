@@ -1137,6 +1137,24 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                         value: ulid
                                                                     });
 
+                                                                    if (!utilities.isEmpty(sitioWeb)) {
+
+                                                                        recordCreate.setValue({
+                                                                            fieldId: 'custbody_cseg_3k_sitio_web_o',
+                                                                            value: sitioWeb
+                                                                        });
+    
+                                                                    }
+    
+                                                                    if (!utilities.isEmpty(sistema)) {
+    
+                                                                        recordCreate.setValue({
+                                                                            fieldId: 'custbody_cseg_3k_sistema',
+                                                                            value: sistema
+                                                                        });
+    
+                                                                    }
+
                                                                     recordCreate.selectNewLine({
                                                                         sublistId: 'item'
                                                                     });
