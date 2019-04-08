@@ -11373,9 +11373,9 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
                 var numLines = rec.getLineCount({sublistId: sublist});
 
-                if(!utilities.isEmpty(numlines) && numLines > 0 ){
+                if(!utilities.isEmpty(numLines) && numLines > 0 ){
 
-                    for(var i = 0; i < numlines; i++){
+                    for(var i = 0; i < numLines; i++){
 
                         rec.selectLine({
                             sublistId: sublist,
