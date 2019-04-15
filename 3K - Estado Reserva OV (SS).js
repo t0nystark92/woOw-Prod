@@ -192,7 +192,13 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                     line: i
                                 });
 
-                                if (esFidelidadLineFor == true) {
+                                var esRedondeoLineFor = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_es_redondeo',
+                                    line: i
+                                });
+
+                                if (esFidelidadLineFor == true || esRedondeoLineFor == true) {
                                     continue
                                 }
 
@@ -556,9 +562,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
 
 
+                                                            log.audit("Funcionalidades URU", "Inicio beforeSubmit")
 
                                                             var beforeSubmit = funcionalidadesURU.beforeSubmit('create', factComision);
 
+                                                            log.audit("Funcionalidades URU", "Termino beforeSubmit")
 
                                                             factComision.setValue({
                                                                 fieldId: 'custbody_3k_ulid_servicios',
@@ -578,7 +586,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                 });
                                                             }
 
-
+                                                            log.audit("Fact Comisión", "Termino seteo cliente factura")
 
                                                             var numLinesFact = factComision.getLineCount({
                                                                 sublistId: 'item'
@@ -595,6 +603,8 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                         line: l
                                                                     });
 
+                                                                    log.audit("Armado Lines Fact Comision", "Termino Seleccion de linea")
+
                                                                     if (unredeem == false) {
 
                                                                         factComision.setCurrentSublistValue({
@@ -603,7 +613,9 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                             value: 0
                                                                         });
 
+                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo 0 Rate")
 
+                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo amount. ingresoLiqSinIva: "+ ingresoLiqSinIva)
 
                                                                         factComision.setCurrentSublistValue({
                                                                             sublistId: 'item',
@@ -611,11 +623,17 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                             value: parseFloat(ingresoLiqSinIva).toFixed(2)
                                                                         });
 
+                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo amount. ingresoLiqSinIva: "+ ingresoLiqSinIva)
+
+                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo taxcode. taxcode: "+ taxcode)
+
                                                                         factComision.setCurrentSublistValue({
                                                                             sublistId: 'item',
                                                                             fieldId: 'taxcode',
                                                                             value: taxcode
                                                                         });
+
+                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo taxcode. taxcode: "+ taxcode)
 
                                                                     } else {
 
@@ -688,8 +706,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                 fieldId: 'total'
                                                             })
 
+                                                            log.audit("Armado Lines Fact Comision", "Inicio save FactComision");
+
                                                             var idTran = factComision.save();
 
+                                                            log.audit("Armado Lines Fact Comision", "Fin save FactComision");
 
                                                             var obj = new Object();
                                                             obj.idTran = idTran;
@@ -1437,6 +1458,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
             } catch (error) {
                 log.error("Error afertSubmit Catch", error.message);
+                log.error("Error Object afertSubmit Catch", JSON.stringify(error));
 
                 log.debug('arrayTranCreated', JSON.stringify(arrayTranCreated))
 
