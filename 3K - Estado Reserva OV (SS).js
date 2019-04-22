@@ -585,8 +585,28 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                     value: clienteLiq
                                                                 });
                                                             }
-
                                                             log.audit("Fact Comisión", "Termino seteo cliente factura")
+
+                                                            log.audit("Fact Comisión", "Inicio comprobación monedas")
+
+                                                            var currencyFactComsion = factComision.getValue({fieldId: 'currency'});
+
+                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision: '+ currencyFactComsion + ' - Moneda OV: '+ currency);
+
+                                                            if (currencyFactComsion != currency){
+
+                                                                factComision.setValue({
+                                                                    fieldId: 'currency',
+                                                                    value: currency
+                                                                })
+
+                                                            }
+
+                                                            var currencyFactComsionAfter = factComision.getValue({fieldId: 'currency'});
+
+                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision After seteo: '+ currencyFactComsion);
+
+                                                            log.audit("Fact Comisión", "Fin comprobación monedas")
 
                                                             var numLinesFact = factComision.getLineCount({
                                                                 sublistId: 'item'
