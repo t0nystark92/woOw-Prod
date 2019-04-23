@@ -84,7 +84,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                     //Consultar Item Programa Fidelidad
                     var filtrosMoneda = new Array();
-                    
+
                     var filtroMon = new Object();
                     filtroMon.name = 'custrecord_3k_conf_prog_fidelidad_moneda';
                     filtroMon.operator = 'IS';
@@ -363,8 +363,8 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         objRecord.setSublistValue({ sublistId: 'item', fieldId: 'quantity', line: lineNum, value: sumCantidadMillas });
                         objRecord.setSublistValue({ sublistId: 'item', fieldId: 'rate', line: lineNum, value: sumUnitarioMillas });
                         objRecord.setSublistValue({ sublistId: 'item', fieldId: 'amount', line: lineNum, value: sumTotalMillas });
-                        objRecord.setSublistValue({ sublistId: 'item', fieldId: 'custcol_3k_importe_bruto_woow', line: lineNum, value: sumTotalMillas });
                     }
+
                     /************************************ FIN - AGREGAR LINEA DE MILLAS ************************************/
 
                     /***************************INICIO SE CREA ARREGLO DE COMPONENTES PARA LUEGO PASARLO A SS DE BUSQUEDA DE STOCK TERCEROS Y STOCK PROPIO************************************************************/
@@ -767,7 +767,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                     fieldId: 'city',
                                     value: ciudadGenerica
                                 });
-                                var idTmp = objRecord.save();
+                                //var idTmp = objRecord.save();
                             } else {
                                 error = true;
                                 respuesta.error = true;
@@ -832,8 +832,22 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                         if (esFidelidad == true) {
                             fidelidadOV = true;
+
+                            var lineNum = objRecord.selectLine({
+                                sublistId: 'item',
+                                line: i
+                            });
+
+                            var itemImporte = objRecord.getCurrentSublistValue({sublistId: 'item', fieldId: 'grossamt'});
+                            log.debug('Creación OV (SS) - beforeSubmit', 'itemImporte: ' + itemImporte);
+
+                            objRecord.setCurrentSublistValue({ sublistId: 'item', fieldId: 'custcol_3k_importe_bruto_woow', value: itemImporte });
+                            
+                            objRecord.commitLine({sublistId: 'item'});                        
                         }
                     }
+
+                    var idTmp = objRecord.save();
 
                     log.debug('Creación OV (SS) - afterSubmit', 'arrayArticulos: ' + JSON.stringify(arrayArticulos));
                     //FIN - Verificar si algun item de la OV es de Fidelidad, para luego marcar la OV como Programa de Fidelidad
@@ -941,7 +955,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         var respuestaAjusteRedondeo = generarAjusteRedondeo(null, objRecord);
 
                         log.debug('Creación OV (SS) - afterSubmit', 'respuestaAjusteRedondeo: ' + JSON.stringify(respuestaAjusteRedondeo));
-                        
+
                         if (respuestaAjusteRedondeo.error == true) {
                             error = true;
                             mensajeError = mensajeError + ' ' + respuestaAjusteRedondeo.mensajeError;
