@@ -529,7 +529,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           if (!utilities.isEmpty(ordenventaSeleccionados) && ordenventaSeleccionados.length > 0) {
             var filtroOrdenVenta = {
               name: 'internalid',
-              operator: 'IS',
+              operator: 'ANYOF',
               values: ordenventaSeleccionados
             };
             log.debug('filtroOrdenVenta', filtroOrdenVenta);

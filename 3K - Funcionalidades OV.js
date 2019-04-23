@@ -11379,6 +11379,55 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             return JSON.stringify(arrayRespuesta);
         }
 
+        function cerrarTransaccion (idTran,sublist,tranType){
+
+            var objRespuesta = new Object();
+            objRespuesta.error = false;
+            objRespuesta.mensaje = '';
+
+            try{
+
+                var rec = record.load({
+                    type: tranType,
+                    id: idTran,
+                    isDynamic: true
+                });
+
+                var numLines = rec.getLineCount({sublistId: sublist});
+
+                if(!utilities.isEmpty(numLines) && numLines > 0 ){
+
+                    for(var i = 0; i < numLines; i++){
+
+                        rec.selectLine({
+                            sublistId: sublist,
+                            line: i
+                        });
+
+                        rec.setCurrentSublistValue({
+                            sublistId: sublist,
+                            fieldId: 'isclosed',
+                            value: true
+                        })
+
+                        rec.commitLine({sublistId: sublist});
+
+
+                    }
+
+                    rec.save();
+                    return objRespuesta;
+
+                }
+
+            }catch(e){
+                objRespuesta.error = true;
+                objRespuesta.mensaje = e.message;
+                return objRespuesta;
+            }
+
+        }
+
 
         return {
             beforeSubmitOV: beforeSubmitOV,
@@ -11399,6 +11448,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             eliminarRegistrosDependientes: eliminarRegistrosDependientes,
             generarAjusteRedondeo: generarAjusteRedondeo,
             obtenerInformacionProveedores: obtenerInformacionProveedores,
-            generarFacturaTravel: generarFacturaTravel
+            generarFacturaTravel: generarFacturaTravel,
+            cerrarTransaccion: cerrarTransaccion
         };
     });

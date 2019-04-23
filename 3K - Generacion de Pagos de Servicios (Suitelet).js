@@ -510,6 +510,14 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           });
 
           sublistas[tipoSublista[i]].addField({
+            id: 'ulid_' + tipoSublista[i],
+            label: 'ULID Servicios',
+            type: serverWidget.FieldType.TEXT
+          }).updateDisplayType({
+            displayType: serverWidget.FieldDisplayType.DISABLED
+          });
+
+          sublistas[tipoSublista[i]].addField({
             id: 'id_' + tipoSublista[i],
             label: 'Documento',
             type: serverWidget.FieldType.SELECT,
@@ -744,6 +752,10 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
               name: ss.columns[0]
             });
 
+            var ulid = ss.result[j].getValue({
+              name: ss.columns[7]
+            });
+
             var tipoDoc = ss.result[j].getValue({
               name: ss.columns[1]
             }).toLowerCase();
@@ -799,6 +811,12 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                 id: 'fecha_' + tipoDoc,
                 line: indiceSublista[tipoDoc],
                 value: fecha
+              });
+
+              sublistas[tipoDoc].setSublistValue({
+                id: 'ulid_' + tipoDoc,
+                line: indiceSublista[tipoDoc],
+                value: ulid
               });
 
               if (!utilities.isEmpty(idEmpresa)) {
@@ -947,7 +965,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                       if (procesar == 'T') { //solo si esta marcado para enviar
                         existenDocumentosSeleccionados = true;
 
-                        var idInternoComisiones = columnas[2];
+                        var idInternoComisiones = columnas[3];
 
                         if (!utilities.isEmpty(idInternoComisiones)) {
 
@@ -1001,6 +1019,8 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           parametros.custscript_generar_pagos_banco_emisor = request.parameters.bancoemisorpago;
 
           log.debug('Generacion Pagos Servicios', 'Generacion Pagos - ID Comisiones A Procesar : ' + parametros.custscript_generar_pago_id_doc);
+
+          log.debug('Generacion Pagos Servicios', 'Generacion Pagos - Cuenta de Banco Origen : ' + parametros.custscript_generar_pagos_cta_orig);
 
           log.debug('Generacion Pagos Servicios', 'Generacion Pagos - INICIO llamada Script MAP/REDUCE');
 

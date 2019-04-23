@@ -4,10 +4,10 @@
  * @NScriptType UserEventScript
  * @NModuleScope Public
  */
-define(['N/record', 'N/transaction', '3K/utilities'], function (record, transaction, utilities) {
+define(['N/record', 'N/search', 'N/transaction', '3K/utilities'], function (record, search, transaction, utilities) {
 
 
-    function afterSubmit(context) {
+    function beforeSubmit(context) {
 
         try {
 
@@ -67,7 +67,7 @@ define(['N/record', 'N/transaction', '3K/utilities'], function (record, transact
 
                             transaction.void({
                                 id: liqConfirmar,
-                                type: customtransaction_3k_liquidacion_conf
+                                type: 'customtransaction_3k_liquidacion_conf'
                             })
 
                         }
@@ -84,11 +84,18 @@ define(['N/record', 'N/transaction', '3K/utilities'], function (record, transact
 
         } catch (error) {
             log.error('Error Catch Voided from Cash Refund', error.message)
+
+            var errObj = error.create({
+                name: 'CASHREFUND001',
+                message: e.message
+            })
+
+            throw errObj;
         }
 
     }
 
     return {
-        afterSubmit: afterSubmit
+        beforeSubmit: beforeSubmit
     }
 });

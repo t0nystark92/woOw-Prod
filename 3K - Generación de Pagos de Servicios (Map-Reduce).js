@@ -35,6 +35,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
       log.debug('Pago Comisiones Servicios', 'SUMMARIZE - INICIO ENVIO EMAIL - ID AUTOR : ' + autor + ' - ID DESTINATARIO : ' + destinatario + ' - TITULO : ' + titulo + ' - MENSAJE : ' + mensaje);
 
       if (!isEmpty(autor) && !isEmpty(destinatario) && !isEmpty(titulo) && !isEmpty(mensaje)) {
+        log.debug('Proceso de Envio de mail','Enviando');
         attachments = adjuntos || undefined;
         email.send({
           author: autor,
@@ -43,6 +44,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           body: mensaje,
           attachments: attachments
         });
+        log.debug('Proceso de Envio de mail','Enviado');
       } else {
         var detalleError = 'No se recibio la siguiente informacion necesaria para realizar el envio del Email : ';
         if (isEmpty(autor)) {
@@ -200,6 +202,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
           return null;
         }
+        log.debug('Pago Comisiones Servicios', 'INPUT DATA - Cuentas de comisiones: ' + arrayInfoCuentas);
         // FIN - Consultar Cuentas de Pago
 
         // INICIO - Consultar Datos Bancarios Proveedores Comisionistas
@@ -315,11 +318,11 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                   return (objeto.moneda == obj.moneda);
                 });
 
-                if (!isEmpty(objCuenta) && objCuenta.length > 0) {
-                  if (obj.tipoDoc == 'vendbill' || obj.tipoDoc == 'vendcred') {
-                    obj.idCuenta = objCuenta[0].cuentaPago;
-                  }
-                }
+                //if (!isEmpty(objCuenta) && objCuenta.length > 0) {
+                  //if (obj.tipoDoc == 'vendbill' || obj.tipoDoc == 'vendcred') {
+                    //obj.idCuenta = objCuenta[0].cuentaPago;
+                  //}
+                //}
 
                 var objDatosBancarios = arrayDatosBancarios.filter(function (objeto) {
                   return (objeto.proveedor == obj.empresa && objeto.moneda == obj.moneda);
@@ -332,7 +335,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 }
 
               }
-              if (obj.tipoDoc == 'custinvc' || obj.tipoDoc == 'custcred') {
+              if (obj.tipoDoc == 'custinvc' || obj.tipoDoc == 'custcred' || isEmpty(obj.idCuenta)) {
                 obj.idCuenta = completeResultSet[i].getValue({
                   name: resultSearch.columns[9]
                 });;
@@ -480,7 +483,6 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Proveedor Ejecutada');
 
       }
-
       // FIN GENERAR PAGO LIQUIDACION
 
       var respuesta = {};
@@ -640,7 +642,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                       value: registro.mensaje
                     });
                   }
-                  if (!isEmpty(registro.idPago)) {
+                  if (!isEmpty(registro.idPago) && registro.idPago != 0) {
                     registroDLOG.setValue({
                       fieldId: 'custrecord_3k_gen_pago_liq_logdet_pliq',
                       value: registro.idPago
@@ -668,7 +670,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     }
                     transaccionesEnviar.push(registro.transacciones[i].id);
                   }
-                  
+                  log.debug('671 empresas', empresas);
                   try {
                     idDLog = registroDLOG.save();
                     if (isEmpty(idDLog)) {
@@ -700,6 +702,73 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         mensajeError = 'Excepcion Generando LOG de Proceso de Generacion de Pago de Liquidacion - Excepcion : ' + excepcion.message.toString();
       }
 
+      // INICIO ACTUALIZAR LINEAS LIQUIDADAS
+      if (error == false) {
+        log.audit('Pago Comisiones Servicios - SUMMARIZE', 'Marcando líneas liquidadas');
+        var transaccionesMarcadas = [];
+        var ssTransLiquidadas = search.load('customsearch_3k_trans_liquidadas');
+        var filtroID = search.createFilter({
+          name: 'internalid',
+          operator: search.Operator.ANYOF,
+          values: transaccionesEnviar
+        });
+        ssTransLiquidadas.filters.push(filtroID);
+        ssTransLiq = correrSearch(ssTransLiquidadas);
+        log.debug('ssTransLiq', ssTransLiq);
+        for (var k = 0; k < ssTransLiq.result.length; i++){
+          var idOV = ssTransLiq.result[k].getValue(ssTransLiq.columns[3]);
+          log.debug('idOV', idOV);
+          var existeTrans = transaccionesMarcadas.filter(function(trans){
+            return trans == idOV;
+          });
+          log.debug('existeTrans', existeTrans);
+          if (existeTrans.length == 0){
+            var ulidsMarcar = ssTransLiq.result.filter(function (trans) {
+              return trans.getValue(ssTransLiq.columns[3]) == idOV;
+            });
+            log.debug('ulidsMarcar', ulidsMarcar);
+            var ovMarcar = record.load({
+              type: record.Type.SALES_ORDER,
+              id: idOV,
+              isDynamic: true
+            });
+            for(var l = 0; l < ulidsMarcar.length; l++){
+              var linea = ovMarcar.findSublistLineWithValue({
+                sublistId: 'item',
+                fieldId: 'lineuniquekey',
+                value: ulidsMarcar[l].getValue('custbody_3k_ulid_servicios')
+              });
+              log.debug('linea',linea);
+              if (!isEmpty(linea) && linea >=0){
+                ovMarcar.selectLine({
+                  sublistId: 'item',
+                  line: linea
+                });
+                ovMarcar.setCurrentSublistValue({
+                  sublistId: 'item',
+                  fieldId: 'custcol_3k_servicio_liquidado',
+                  value: true
+                });
+                ovMarcar.commitLine({
+                  sublistId: 'item'
+                });
+              }else{
+                log.error('Error', 'No hay línea en la OV con el ULID: ' + ulidsMarcar[l].getValue('custbody_3k_ulid_servicios'));
+              }
+            }
+            try{
+              ovMarcar.save();
+              log.audit('Pago Comisiones Servicios - SUMMARIZE', 'Línea: ' + ulidsMarcar[l].getValue('custbody_3k_ulid_servicios') + ' OV: ' + idOV + ' OK');
+            }catch(e){
+              error = true;
+              log.error('Pago Comisiones Servicios - SUMMARIZE','ERROR - '+e);
+            }
+          }
+        }
+        log.audit('Pago Comisiones Servicios - SUMMARIZE', 'Líneas liquidadas marcadas');
+      }
+      // FIN ACTUALIZAR LINEAS LIQUIDADAS
+
       if (error == true) {
         errorGeneral = true;
         log.error('Generacion Pago Liquidacion', 'SUMMARIZE - ' + mensajeError);
@@ -710,15 +779,12 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         try {
         var ssGeneralTransaccionesVentaSearch = search.load('customsearch_3k_fc_nc_imprimir_pago_serv');
         var ssDetalleTransaccionesSearch = search.load('customsearch_3k_detalle_servicios_pagos');
-        var filtroID = search.createFilter({
-          name: 'internalid',
-          operator: search.Operator.ANYOF,
-          values: transaccionesEnviar
-        });
         ssDetalleTransaccionesSearch.filters.push(filtroID);
         ssGeneralTransaccionesVentaSearch.filters.push(filtroID);
         var ssDetTrans = correrSearch(ssDetalleTransaccionesSearch);
+        log.debug('721 ssDetTrans', ssDetTrans);
         var ssGenTransVent = correrSearch(ssGeneralTransaccionesVentaSearch);
+        log.debug('723 ssGenTransVent', ssGenTransVent);
         if (!isEmpty(ssDetTrans) && ssDetTrans.result.length > 0) {
           for (var m = 0; m < empresas.length; m++) {
 
@@ -759,7 +825,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 contenidoXLS += '          <Cell><Data ss:Type="String">Moneda</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">Importe de la Orden</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">Importe a Pagar</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">Devoluciones Aplicadas (A pagar)</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">Neto Comision</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">Devoluciones Aplicadas (Comision)</Data></Cell>';
                 contenidoXLS += '      </Row>';
               }
               contenidoXLS += '      <Row>';
@@ -769,7 +837,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
               contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[5]) + '</Data></Cell>';
               contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[6]) + '</Data></Cell>';
               contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[7]) + '</Data></Cell>';
+              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[9]) + '</Data></Cell>';
               contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[8]) + '</Data></Cell>';
+              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[10]) + '</Data></Cell>';
               contenidoXLS += '      </Row>';
             }
             contenidoXLS += '   </Table>';
@@ -796,43 +866,55 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             //GENERAR XLS - FIN
 
             //GENERAR Invoices y CreditMemos - INICIO
-            var ssPDFGenerar = ssGenTransVent.result.filter(function (obj) {
-              return obj.getValue(ssGenTransVent.columns[3]) == empresas[m];
-            });
-            var arrayPDF = [];
-            if (ssPDFGenerar.length > 0){
-              for (var n = 0; n < ssPDFGenerar.length; n++){
-                var idT = ssPDFGenerar[n].getValue(ssGenTransVent.columns[0]);
-                var idForm = ssPDFGenerar[n].getValue(ssGenTransVent.columns[2]);
-                var docPDF = render.transaction({
-                  entityId: parseInt(idT,10),
-                  printMode: render.PrintMode.PDF,
-                  formId: parseInt(idForm,10),
-                  inCustLocale:false
-                });
-                arrayPDF.push(docPDF);
+            if (!isEmpty(ssGenTransVent.result) && ssGenTransVent.result.length > 0){
+              var ssPDFGenerar = ssGenTransVent.result.filter(function (obj) {
+                return obj.getValue(ssGenTransVent.columns[3]) == empresas[m];
+              });
+              var arrayPDF = [];
+              if (ssPDFGenerar.length > 0){
+                for (var n = 0; n < ssPDFGenerar.length; n++){
+                  var idT = ssPDFGenerar[n].getValue(ssGenTransVent.columns[0]);
+                  var idForm = ssPDFGenerar[n].getValue(ssGenTransVent.columns[2]);
+                  var docPDF = render.transaction({
+                    entityId: parseInt(idT,10),
+                    printMode: render.PrintMode.PDF,
+                    formId: parseInt(idForm,10),
+                    inCustLocale:false
+                  });
+                  arrayPDF.push(docPDF);
+                }
+              }else{
+                log.audit('SIN TRANSACCIONES DE VENTA', 'No se generaron pagos de transacciones de venta para la empresa: ' + proveedor.entityid);
               }
-            }else{
-              log.audit('SIN TRANSACCIONES DE VENTA', 'No se generaron pagos de transacciones de venta para la empresa: ' + proveedor.entityid);
+            } else {
+              log.audit('SIN TRANSACCIONES DE VENTA', 'No se generaron pagos de transacciones de venta para ninguna empresa');
             }
             //GENERAR Invoices y CreditMemos - FIN
 
             var autor = runtime.getCurrentUser().id;
             var msj = 'A continuación se le adjunta el detalle de pagos de comisiones y las facturas asociadas generados el día de hoy ' + fechaString;
             var mensajeMail = '<html><head></head><body><br>' + msj + '</body></html>';
-            var destinatario = autor; //empresas[m];
+            var destinatario = empresas[m];
             try{
-            email.send({
-              author: autor,
-              recipients: destinatario,
-              subject: 'Detalle de Pagos de Comisiones',
-              body: mensajeMail,
-              attachments: [fileXLS].concat(arrayPDF)
-            });
+              var archivos;
+              if (!isEmpty(arrayPDF) && !isEmpty(fileXLS)) archivos = [fileXLS].concat(arrayPDF);
+              
+              else if (!isEmpty(arrayPDF)) archivos = arrayPDF;
+              
+              else if (!isEmpty(fileXLS)) archivos = [fileXLS];
+              //log.debug('SUMMARIZE', 'Enviando mail con archivos de detalle');
+              //email.send({
+                //author: autor,
+                //recipients: destinatario,
+                //subject: 'Detalle de Pagos de Comisiones',
+                //body: mensajeMail,
+                //attachments: archivos
+              //});
+              //log.debug('SUMMARIZE', 'Mail con archivos de detalle enviado');
             }catch(xerror){
               log.error('Error','Error enviando mail de detalle de comisiones, error: '+xerror);
             }
-            //enviarEmail(autor, destinatario, 'Detalle de Pagos de Comisiones', mensajeMail, [fileXLS]);
+            enviarEmail(autor, destinatario, 'Detalle de Pagos de Comisiones', mensajeMail, archivos);
             } 
           }
         } catch (e) {
@@ -1232,7 +1314,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           } catch (excepcionPago) {
             error = true;
             mensajeError = 'Excepcion Generando Pago de Comisiones - Excepcion : ' + excepcionPago.message.toString();
-            log.error('Pago Comisiones Servicios', 'REDUCE - EXcepcion : ' + mensajeError);
+            log.error('Pago Comisiones Servicios', 'REDUCE - Excepcion : ' + mensajeError);
           }
           if (isEmpty(idPago)) {
             error = true;
@@ -1369,7 +1451,12 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             value: idProveedor,
             ignoreFieldChange: false
           });
-
+          
+          registroPago.setValue({
+            fieldId: 'apacct',
+            value: idCuenta
+          });
+          
           registroPago.setValue({
             fieldId: 'account',
             value: cuentaOrigen
@@ -1484,11 +1571,25 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
               value: true
             });
           }
-
+          /*EL ANTERIOR NO ANDA*/
+          registroPago.setValue({
+            fieldId: 'account',
+            value: cuentaOrigen
+          });
+          log.debug('ACCOUNT - intento',registroPago.getValue('account'));
           //INICIO - MARCAR FACTURAS Y NC APLICADAS
           var transaccionesAplicadas = [];
           for (var i = 0; !isEmpty(records) && records.length > 0 && i < records.length && error == false; i++) {
             var registro = JSON.parse(records[i]);
+
+            registroPago.selectLine({
+              sublistId: 'apply',
+              line: 0
+            });
+            log.debug('internalid linea 0', registroPago.getCurrentSublistValue({
+              sublistId: 'apply',
+              fieldId: 'internalid'
+            }));
 
             var linea = registroPago.findSublistLineWithValue({
               sublistId: 'apply',
