@@ -460,46 +460,60 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
      */
     function reduce(context) {
       log.audit('Pago Comisiones Servicios', 'INICIO REDUCE - KEY : ' + context.key);
-
-      var idPago = null;
-
-      var registro = JSON.parse(context.values[0]);
-      if (registro.tipoDoc == 'custinvc' || registro.tipoDoc == 'custcred') {
-
-        log.audit('Pago Comisiones Servicios - REDUCE', 'Ejecutando Funcion de Generar Pago de Cliente');
-
-        var respuestaF = generarPagoCliente(context.values);
-
-        log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Cliente Ejecutada');
-
-      }
-      
-      else if (registro.tipoDoc == 'vendbill' || registro.tipoDoc == 'vendcred') {
-
-        log.audit('Pago Comisiones Servicios - REDUCE', 'Ejecutando Funcion de Generar Pago de Proveedor');
-
-        var respuestaF = generarPagoProveedor(context.values);
-
-        log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Proveedor Ejecutada');
-
-      }
-      // FIN GENERAR PAGO LIQUIDACION
-
       var respuesta = {};
-      respuesta.idPago = respuestaF.idPago;
       respuesta.error = false;
-      respuesta.mensaje = "";
+      respuesta.mensaje = [];
+      respuesta.idPago = [];
+      respuesta.transacciones = [];
+      var erroresEnProceso = false;
+      var transaccionesSinError = [];
 
-      if (respuestaF.error == true) {
-        log.error('Generacion Pago Comision', 'REDUCE - ' + respuestaF.mensaje);
-        respuesta.error = true;
-        respuesta.mensaje = respuestaF.mensaje;
-      } else {
-        respuesta.mensaje = 'El Pago con ID Interno : ' + respuestaF.idPago + ' Se genero correctamente Asociado a las transacciones : ' + JSON.stringify(respuestaF.transacciones);
-        respuesta.transacciones = respuestaF.transacciones;
+      for(var n=0; n < context.values.length; n++){
+        var registro = JSON.parse(context.values[n]);
+        if (registro.tipoDoc == 'custinvc' || registro.tipoDoc == 'custcred') {
+
+          log.audit('Pago Comisiones Servicios - REDUCE', 'Ejecutando Funcion de Generar Pago de Cliente');
+
+          var respuestaF = generarPagoCliente(context.values);
+
+          log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Cliente Ejecutada');
+
+        }
+        
+        else if (registro.tipoDoc == 'vendbill' || registro.tipoDoc == 'vendcred') {
+
+          log.audit('Pago Comisiones Servicios - REDUCE', 'Ejecutando Funcion de Generar Pago de Proveedor');
+
+          var respuestaF = generarPagoProveedor(context.values);
+
+          log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Proveedor Ejecutada');
+
+        }
+        // FIN GENERAR PAGO LIQUIDACION
+        respuesta.idPago.push(respuestaF.idPago);
+        if (respuestaF.error == true) {
+          log.error('Generacion Pago Comision', 'REDUCE - ' + respuestaF.mensaje);
+          erroresEnProceso = true;
+          respuesta.mensaje.push(respuestaF.mensaje);
+        } else {
+          respuesta.mensaje.push('El Pago con ID Interno : ' + respuestaF.idPago + ' Se genero correctamente Asociado a las transacciones : ' + JSON.stringify(respuestaF.transacciones));
+          respuesta.transacciones = respuesta.transacciones.concat(respuestaF.transacciones);
+          transaccionesSinError = transaccionesSinError.concat(respuestaF.transacciones);
+          log.debug('respuesta.transacciones',respuesta.transacciones);
+        }
       }
+      if(erroresEnProceso == true){
+        respuesta.error = true;
+      }
+      // INICIO ACTUALIZAR LINEAS LIQUIDADAS
+      //log.audit('Pago Comisiones Servicios - REDUCE', 'MARCAR LINEAS LIQUIDADAS - INICIO');
+      //log.debug('transaccionesSinError',transaccionesSinError);
+        //marcarLiquidadas(transaccionesSinError);
+      //log.audit('Pago Comisiones Servicios - REDUCE', 'MARCAR LINEAS LIQUIDADAS - FIN');
+      // FIN ACTUALIZAR LINEAS LIQUIDADAS
 
       log.audit('Generacion Pago Comision', 'FIN REDUCE - KEY : ' + context.key + ' ID PAGO GENERADO : ' + respuestaF.idPago);
+
 
       context.write(context.key, JSON.stringify(respuesta));
     }
@@ -511,7 +525,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
      * @since 2015.1
      */
     function summarize(summary) {
-
+      log.debug('reduce usage', summary.reduceSummary.usage);
       var errorGeneral = false;
       var mensajeErrorGeneral = 'El Proceso de Pago de Comisiones Servicios Finalizo con errores';
       var mensajeOKGeneral = 'El Proceso de Pago de Comisiones Servicios Finalizo Correctamente';
@@ -619,7 +633,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 if (!isEmpty(registro)) {
                   var idEstado = idEstadoCorrecto;
                   if (registro.error == true) {
-                    errorGeneral = true;
+                    //errorGeneral = true;
                     idEstado = idEstadoError;
                   }
                   var registroDLOG = record.create({
@@ -702,73 +716,6 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         mensajeError = 'Excepcion Generando LOG de Proceso de Generacion de Pago de Liquidacion - Excepcion : ' + excepcion.message.toString();
       }
 
-      // INICIO ACTUALIZAR LINEAS LIQUIDADAS
-      if (error == false) {
-        log.audit('Pago Comisiones Servicios - SUMMARIZE', 'Marcando líneas liquidadas');
-        var transaccionesMarcadas = [];
-        var ssTransLiquidadas = search.load('customsearch_3k_trans_liquidadas');
-        var filtroID = search.createFilter({
-          name: 'internalid',
-          operator: search.Operator.ANYOF,
-          values: transaccionesEnviar
-        });
-        ssTransLiquidadas.filters.push(filtroID);
-        ssTransLiq = correrSearch(ssTransLiquidadas);
-        log.debug('ssTransLiq', ssTransLiq);
-        for (var k = 0; k < ssTransLiq.result.length; i++){
-          var idOV = ssTransLiq.result[k].getValue(ssTransLiq.columns[3]);
-          log.debug('idOV', idOV);
-          var existeTrans = transaccionesMarcadas.filter(function(trans){
-            return trans == idOV;
-          });
-          log.debug('existeTrans', existeTrans);
-          if (existeTrans.length == 0){
-            var ulidsMarcar = ssTransLiq.result.filter(function (trans) {
-              return trans.getValue(ssTransLiq.columns[3]) == idOV;
-            });
-            log.debug('ulidsMarcar', ulidsMarcar);
-            var ovMarcar = record.load({
-              type: record.Type.SALES_ORDER,
-              id: idOV,
-              isDynamic: true
-            });
-            for(var l = 0; l < ulidsMarcar.length; l++){
-              var linea = ovMarcar.findSublistLineWithValue({
-                sublistId: 'item',
-                fieldId: 'lineuniquekey',
-                value: ulidsMarcar[l].getValue('custbody_3k_ulid_servicios')
-              });
-              log.debug('linea',linea);
-              if (!isEmpty(linea) && linea >=0){
-                ovMarcar.selectLine({
-                  sublistId: 'item',
-                  line: linea
-                });
-                ovMarcar.setCurrentSublistValue({
-                  sublistId: 'item',
-                  fieldId: 'custcol_3k_servicio_liquidado',
-                  value: true
-                });
-                ovMarcar.commitLine({
-                  sublistId: 'item'
-                });
-              }else{
-                log.error('Error', 'No hay línea en la OV con el ULID: ' + ulidsMarcar[l].getValue('custbody_3k_ulid_servicios'));
-              }
-            }
-            try{
-              ovMarcar.save();
-              log.audit('Pago Comisiones Servicios - SUMMARIZE', 'Línea: ' + ulidsMarcar[l].getValue('custbody_3k_ulid_servicios') + ' OV: ' + idOV + ' OK');
-            }catch(e){
-              error = true;
-              log.error('Pago Comisiones Servicios - SUMMARIZE','ERROR - '+e);
-            }
-          }
-        }
-        log.audit('Pago Comisiones Servicios - SUMMARIZE', 'Líneas liquidadas marcadas');
-      }
-      // FIN ACTUALIZAR LINEAS LIQUIDADAS
-
       if (error == true) {
         errorGeneral = true;
         log.error('Generacion Pago Liquidacion', 'SUMMARIZE - ' + mensajeError);
@@ -777,6 +724,11 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
       //INICIO Generar Mail de Liquidacion
       if (error == false){
         try {
+        var filtroID = search.createFilter({
+          name: 'internalid',
+          operator: search.Operator.ANYOF,
+          values: transaccionesEnviar
+        });
         var ssGeneralTransaccionesVentaSearch = search.load('customsearch_3k_fc_nc_imprimir_pago_serv');
         var ssDetalleTransaccionesSearch = search.load('customsearch_3k_detalle_servicios_pagos');
         ssDetalleTransaccionesSearch.filters.push(filtroID);
