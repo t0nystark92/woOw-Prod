@@ -54,29 +54,28 @@ function customizeGlImpact(transactionRecord, standardLines, customLines, book) 
                 var newLine1 = customLines.addNewLine();
                 //nlapiLogExecution('AUDIT', proceso, 'INICIO - newAcctLine1: ' + JSON.stringify(newAcctLine1));
                 newLine1.setDebitAmount(objAcct.importeCredito);
-                newLine1.setAccountId(account);
+                newLine1.setAccountId(parseInt(account));
                 
                 if (!isEmpty(objAcct.nombre)) newLine1.setEntityId(objAcct.nombre);
                 if (!isEmpty(objAcct.sitioWeb)) newLine1.setClassId(objAcct.sitioWeb);
                 if (!isEmpty(objAcct.ubicacion)) newLine1.setLocationId(objAcct.ubicacion);
                 if (!isEmpty(objAcct.departament)) newLine1.setDepartmentId(objAcct.departament);
                 //if (!isEmpty(objAcct.subsidiary)) newAcctLine1.setEntityId(objAcct.subsidiary);
-                if (!isEmpty(sitioWebOrigen)) newLine1.setSegmentValueId('cseg_3k_sitio_web_o',sitioWebOrigen);
-                if (!isEmpty(sistema)) newLine1.setSegmentValueId('cseg_3k_sistema',sistema);
-
+                if (!isEmpty(sitioWebOrigen)) newLine1.setSegmentValueId('cseg_3k_sitio_web_o',parseInt(sitioWebOrigen));
+                if (!isEmpty(sistema)) newLine1.setSegmentValueId('cseg_3k_sistema',parseInt(sistema));
                 //nlapiLogExecution('AUDIT', proceso, 'INICIO - newAcctLine1: ' + JSON.stringify(newAcctLine1));
 
                 //Credito sobre la cuenta de reclasificacion
                 var newLine2 = customLines.addNewLine();
-                newLine2.setAccountId(cuentaDevolucion);
+                newLine2.setAccountId(parseInt(cuentaDevolucion));
                 newLine2.setCreditAmount(objAcct.importeCredito);
                 if (!isEmpty(objAcct.nombre)) newLine2.setEntityId(objAcct.nombre);
                 if (!isEmpty(objAcct.sitioWeb)) newLine2.setClassId(objAcct.sitioWeb);
                 if (!isEmpty(objAcct.ubicacion)) newLine2.setLocationId(objAcct.ubicacion);
                 if (!isEmpty(objAcct.departament)) newLine2.setDepartmentId(objAcct.departament);
                 //if (!isEmpty(objAcct.subsidiary)) newAcctLine1.setEntityId(objAcct.subsidiary);
-                if (!isEmpty(sitioWebOrigen)) newLine2.setSegmentValueId('cseg_3k_sitio_web_o',sitioWebOrigen);
-                if (!isEmpty(sistema)) newLine2.setSegmentValueId('cseg_3k_sistema',sistema);
+                if (!isEmpty(sitioWebOrigen)) newLine2.setSegmentValueId('cseg_3k_sitio_web_o',parseInt(sitioWebOrigen));
+                if (!isEmpty(sistema)) newLine2.setSegmentValueId('cseg_3k_sistema',parseInt(sistema));
 
 
                 //nlapiLogExecution('AUDIT', proceso, 'INICIO - newAcctLine2: ' + JSON.stringify(newAcctLine2));
