@@ -2859,15 +2859,6 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             });
                         }*/
 
-                        if (!utilities.isEmpty(tipoCambioPago)) {
-                            objRecordDeposit.setValue({
-                                fieldId: 'exchangerate',
-                                value: parseFloat(tipoCambioPago, 10).toFixed(2),
-                                ignoreFieldChange: false,
-                                fireSlavingSync: true
-                            });
-                        }
-
                         objRecordDeposit.setValue({
                             fieldId: 'paymentmethod',
                             value: formaPago,
@@ -2967,6 +2958,36 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                         /*if (utilities.isEmpty(tipoCambioOficial)) {
                             tipoCambioOficial = tipoCambioPago;
                         }*/
+
+                        log.audit('Cobranza Cliente', 'monedaOV : ' + monedaOV + ', monedaPago : ' + monedaPago);
+                        log.audit('Cobranza Cliente', 'tipoCambioPago : ' + tipoCambioPago + ', tipoCambioOV : ' + tipoCambioOV);
+
+                        if (monedaOV != monedaPago) {
+                            log.audit('Cobranza Cliente', 'Diferente Moneda');
+
+                            if (!utilities.isEmpty(tipoCambioPago)) {
+                                objRecordDeposit.setValue({
+                                    fieldId: 'exchangerate',
+                                    value: parseFloat(tipoCambioPago, 10).toFixed(2),
+                                    ignoreFieldChange: false,
+                                    fireSlavingSync: true
+                                });
+                            }
+
+                        } else {
+                            log.audit('Cobranza Cliente', 'Misma Moneda');
+
+                            if (!utilities.isEmpty(tipoCambioOV)) {
+                                objRecordDeposit.setValue({
+                                    fieldId: 'exchangerate',
+                                    value: parseFloat(tipoCambioOV, 10).toFixed(2),
+                                    ignoreFieldChange: false,
+                                    fireSlavingSync: true
+                                });
+                            }
+
+
+                        }
 
                         var monedaCustomTransaction = '';
                         var importeGanancia = 0;
@@ -5740,10 +5761,6 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             fieldId: 'custbody_3k_moneda_pago'
                         });
 
-                        if (moneda != monedaPago) {
-                            pagoEnDiferenteMoneda = true;
-                        }
-
                         /*if (!utilities.isEmpty(monedaPago)) {
                             if (moneda != monedaPago) {
                                 pagoEnDiferenteMoneda = true;
@@ -5765,8 +5782,13 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             fieldId: 'custbody_3k_tipo_cambio_pago'
                         });
 
-                        if (!utilities.isEmpty(tipoCambioPago)) {
-                            tipoCambio = tipoCambioPago;
+                        if (moneda != monedaPago) {
+                            pagoEnDiferenteMoneda = true;
+                            if (!utilities.isEmpty(tipoCambioPago)) {
+                                tipoCambio = tipoCambioPago;
+                            }
+                        } else {
+                            tipoCambio = tipoCambio;
                         }
 
                         var cuenta = objRecordCobranza.getValue({

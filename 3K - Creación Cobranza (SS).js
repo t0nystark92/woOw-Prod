@@ -265,7 +265,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                             //Si la OV es de Servicio y No corresponde a Programa de Fidelidad, genera asiento de Deuda a Pagar e Ingreso a Confirmar
                             if (objOV.esServicio == true && objOV.esFidelidad == false && !utilities.isEmpty(impTotalDeudaPagar) && impTotalDeudaPagar > 0 && !utilities.isEmpty(impTotalImporteFacturar) && impTotalImporteFacturar > 0){
-                                var asientoDeudaIngreso = crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, objOV.tipoCambioOV, objOV.monedaOV, objOV.subsidiaria, objOV.sistema, objOV.sitioWeb);
+                                var asientoDeudaIngreso = crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, objOV.tipoCambioOV, objOV.monedaOV, objOV.subsidiaria, objOV.sistema, objOV.sitioWeb, objOV.idCliente);
                                 log.debug('Creación Cobranza (SS) - afterSubmit', 'asientoDeudaIngreso : ' + asientoDeudaIngreso);
 
                                 var updCobranza = record.submitFields({
@@ -300,11 +300,11 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
             }
         }
 
-        function crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, tipoCambio, moneda, subsidiaria, sistema, sitioWeb) {
+        function crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, tipoCambio, moneda, subsidiaria, sistema, sitioWeb, idCliente) {
 
             
             log.audit('crearAsientoDeudaIngreso', 'INICIO - Crear Asiento Deuda e Ingreso');
-            log.debug('crearAsientoDeudaIngreso', 'Parámetros: tipoCambio: ' + tipoCambio + ', impTotalImporteFacturar: ' + impTotalImporteFacturar +  ', impTotalDeudaPagar: ' + impTotalDeudaPagar + ', moneda: ' + moneda + ', subsidiaria: ' + subsidiaria + ', sistema: ' + sistema + ', sitioWeb: ' + sitioWeb);
+            log.debug('crearAsientoDeudaIngreso', 'Parámetros: tipoCambio: ' + tipoCambio + ', impTotalImporteFacturar: ' + impTotalImporteFacturar +  ', impTotalDeudaPagar: ' + impTotalDeudaPagar + ', moneda: ' + moneda + ', subsidiaria: ' + subsidiaria + ', sistema: ' + sistema + ', sitioWeb: ' + sitioWeb + ', idCliente: ' + idCliente);
 
             var respuesta = new Object();
             respuesta.error = false;
@@ -445,6 +445,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         value: importeTotal
                     });
 
+                    objRecordLiqConf.setCurrentSublistValue({
+                        sublistId: 'line',
+                        fieldId: 'entity',
+                        value: idCliente
+                    });
+
                     objRecordLiqConf.commitLine({
                         sublistId: 'line'
                     });
@@ -476,6 +482,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                             sublistId: 'line',
                             fieldId: 'credit',
                             value: impTotalDeudaPagar
+                        });
+
+                        objRecordLiqConf.setCurrentSublistValue({
+                            sublistId: 'line',
+                            fieldId: 'entity',
+                            value: idCliente
                         });
 
                         objRecordLiqConf.commitLine({
@@ -513,6 +525,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                             value: impTotalImporteFacturar
                         });
 
+                        objRecordLiqConf.setCurrentSublistValue({
+                            sublistId: 'line',
+                            fieldId: 'entity',
+                            value: idCliente
+                        });
+                        
                         objRecordLiqConf.commitLine({
                             sublistId: 'line'
                         });

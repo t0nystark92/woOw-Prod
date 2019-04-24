@@ -79,55 +79,239 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
             var objRespuesta = new Object({});
             objRespuesta.error = false;
             objRespuesta.message = "";
-            //arrayOrdenes
+
             /*************************************************SE VALIDA QUE NO VENGA CLIENTE, MONEDA, TIPO CAMBIO Y CARRITO VACIO***************************************************/
             if (!utilities.isEmpty(informacion.cliente) && !utilities.isEmpty(informacion.moneda) && !utilities.isEmpty(informacion.tipoCambio) && !utilities.isEmpty(informacion.metodoPago) && !utilities.isEmpty(informacion.ubicacion) && !utilities.isEmpty(informacion.sitio)) {
                 //log.audit('DEBUG','linea 131');
-                try {
+                try {                    
                     
+                var arraySearchParams = [];
+                var objParam = new Object({});
+                objParam.name = 'custrecord_3k_ubicacion_sitio';
+                objParam.operator = 'IS';
+                objParam.values = [informacion.sitio];
+                arraySearchParams.push(objParam);
+
+                var objResultSet = utilities.searchSavedPro('customsearch_3k_ubicacion_sitio_web', arraySearchParams);
+                if (objResultSet.error) {
+                    return objResultSet;
+                }
+
+                var resultUbicacion = objResultSet.objRsponseFunction.array;
+                var ubicacion = resultUbicacion[0].internalid;
+
+
+
+                if (utilities.isEmpty(informacion.ubicacion)) {
+                    informacion.ubicacion = ubicacion;
+                }
+
                     /******************************* INICIO  DE SETEO DE DE CAMPOS DE CABECERA DE LA OV *******************************************************************/
                     var rec = record.create({
                         type: 'salesorder',
                         isDynamic: true
                     });
+
                     rec.setValue({
                         fieldId: 'entity',
                         value: informacion.cliente
                     });
+
                     rec.setValue({
                         fieldId: 'currency',
                         value: informacion.moneda
                     });
-                    rec.setValue({
+
+                    /*rec.setValue({
                         fieldId: 'exchangerate',
                         value: informacion.tipoCambio.toString()
-                    });
+                    });*/
+
+                    /*rec.setValue({
+                        fieldId: 'custbody_3k_exchangerate_voucher',
+                        value: informacion.tipoCambioVoucher
+                    });*/
+
                     rec.setValue({
                         fieldId: 'custbody_3k_forma_pago',
                         value: informacion.metodoPago
                     });
+
+                    rec.setValue({
+                        fieldId: 'custbody_3k_id_orden_misbeneficios',
+                        value: informacion.idOrdenMisBeneficios
+                    }); //Verificar
+
                     rec.setValue({
                         fieldId: 'location',
                         value: informacion.ubicacion
                     });
 
+
                     rec.setValue({
-                        fieldId: 'custbody_cseg_3k_sitio_web',
+                        fieldId: 'custbody_cseg_3k_sitio_web_o',
                         value: informacion.sitio
                     });
+
+                    rec.setValue({
+                        fieldId: 'custbody_3k_referencia_cliente',
+                        value: informacion.referencia
+                    }); //Verificar
+
+                    rec.setValue({
+                        fieldId: 'billcountry',
+                        value: 'US'
+                    });
+
+                    if (!utilities.isEmpty(informacion.sistema)) {
+                        rec.setValue({
+                            fieldId: 'custbody_cseg_3k_sistema',
+                            value: informacion.sistema
+                        });
+                    }
+
+                    //INICIO RECIBIR DATOS FACTURACION
+
+                    if (!utilities.isEmpty(informacion.tipoDocumento)) {
+                        rec.setValue({
+                            fieldId: 'custbody_l598_tipo_documento',
+                            value: informacion.tipoDocumento
+                        });
+                    } else {
+                        rec.setValue({
+                            fieldId: 'custbody_l598_tipo_documento',
+                            value: ''
+                        });
+                    }
+
+                    if (!utilities.isEmpty(informacion.nroDocumento)) {
+                        rec.setValue({
+                            fieldId: 'custbody_l598_nro_documento',
+                            value: informacion.nroDocumento
+                        });
+                    } else {
+                        rec.setValue({
+                            fieldId: 'custbody_l598_nro_documento',
+                            value: ''
+                        });
+                    }
+
+                    if (!utilities.isEmpty(informacion.razonSocial)) {
+                        rec.setValue({
+                            fieldId: 'custbody_l598_razon_social_cliente',
+                            value: informacion.razonSocial
+                        });
+
+                    } else {
+                        rec.setValue({
+                            fieldId: 'custbody_l598_razon_social_cliente',
+                            value: ''
+                        });
+                    }
+
+                    //INICIO - NUEVOS CAMPOS SOLAPA FACTURACION
+
+                    rec.setValue({
+                        fieldId: 'custbody_3k_moneda_pago_ov',
+                        value: informacion.monedaPago
+                    }); 
+
+                    rec.setValue({
+                        fieldId: 'custbody_3k_tc_woow_ov',
+                        value: informacion.tasaCambioWoow
+                    }); 
+
+                    rec.setValue({
+                        fieldId: 'custbody_3k_importe_pago',
+                        value: informacion.importePago
+                    });
+                    
+                    rec.setValue({
+                        fieldId: 'custbody_3k_cant_cuotas',
+                        value: informacion.cuotasPago
+                    });
+
+                    //FIN - NUEVOS CAMPOS SOLAPA FACTURACION
+
+                    var searchConfDomicilio = utilities.searchSavedPro('customsearch_3k_conf_dom_fact');
+
+                    if (!utilities.isEmpty(searchConfDomicilio) && searchConfDomicilio.error == false) {
+                        if (!utilities.isEmpty(searchConfDomicilio.objRsponseFunction.result) && searchConfDomicilio.objRsponseFunction.result.length > 0) {
+
+                            var resultSet = searchConfDomicilio.objRsponseFunction.result;
+                            var resultSearch = searchConfDomicilio.objRsponseFunction.search;
+
+                            var direccionGenerica = resultSet[0].getValue({
+                                name: resultSearch.columns[1]
+                            });
+
+                            //log.error('Crear Orden de Venta', 'informacion.direccionFactura: ' + informacion.direccionFactura);
+
+                            if (utilities.isEmpty(informacion.direccionFactura)) {
+
+                                informacion.direccionFactura = direccionGenerica;
+
+                            }
+
+                            var ciudadGenerica = resultSet[0].getValue({
+                                name: resultSearch.columns[2]
+                            });
+
+                            //log.error('Crear Orden de Venta', 'informacion.ciudadFactura: ' + informacion.ciudadFactura);
+
+                            if (utilities.isEmpty(informacion.ciudadFactura)) {
+
+                                informacion.ciudadFactura = ciudadGenerica;
+
+                            }
+
+                            // FIN Obtener Domicilio General
+
+                        } else {
+                            objetoRespuesta.error = true;
+                            objetoRespuesta.mensaje.tipo = 'RFAC025';
+                            objetoRespuesta.mensaje.descripcion = 'Error Consultando Dimicilio Generico de Facturacion - Error : No se encontro la Configuracion Generica de Domicilio de Facturacion';
+                            objRespuesta.detalle.push(objRespuestaParcial);
+                            log.error(objetoRespuesta.mensaje.tipo, objetoRespuesta.mensaje.descripcion);
+                            return JSON.stringify(objRespuesta);
+                        }
+                    } else {
+                        if (utilities.isEmpty(searchConfDomicilio)) {
+                            objetoRespuesta.error = true;
+                            objetoRespuesta.mensaje.tipo = 'RFAC023';
+                            objetoRespuesta.mensaje.descripcion = 'Error Consultando Domicilio Generico de Facturacion - Error : No se recibio Respuesta del Proceso de Busqueda del Domicilio Generico de Facturacion';
+                            objRespuesta.detalle.push(objRespuestaParcial);
+                            log.error(objetoRespuesta.mensaje.tipo, objetoRespuesta.mensaje.descripcion);
+                            return JSON.stringify(objRespuesta);
+                        } else {
+                            objetoRespuesta.error = true;
+                            objetoRespuesta.mensaje.tipo = 'RFAC024';
+                            objetoRespuesta.mensaje.descripcion = 'Error Consultando Domicilio Generico de Facturacion - Error : ' + searchConfDomicilio.tipoError + ' - Descripcion : ' + searchConfDomicilio.descripcion;
+                            objRespuesta.detalle.push(objRespuestaParcial);
+                            log.error(objetoRespuesta.mensaje.tipo, objetoRespuesta.mensaje.descripcion);
+                            return JSON.stringify(objRespuesta);
+                        }
+                    }
+
+
+                    //FIN RECIBIR DATOS FACTURACION
 
                     /******************************* FIN  DE SETEO DE DE CAMPOS DE CABECERA DE LA OV *******************************************************************/
 
 
                     /******************************* INICIO LLAMADA A FUNCION QUE CREA LA OV *******************************************************************/
 
-                    var respuesta = funcionalidades.crearOrdenVenta(rec,informacion, "NE");
-                    if (respuesta.error){
+                    log.error('Crear Orden de Venta', 'INICIO LLAMADA FUNCION CREAR OV');
+
+                    var respuesta = funcionalidades.crearOrdenVenta(rec, informacion, "NE");
+                    if (respuesta.error) {
                         return respuesta;
                     }
-                    
+
+                    log.error('Crear Orden de Venta', 'FIN LLAMADA FUNCION CREAR OV');
+
                     /******************************* FIN LLAMADA A FUNCION QUE CREA LA OV *******************************************************************/
-                    
+
                 } catch (e) {
                     objRespuesta.error = true;
                     objRespuesta.tipoError = 'RORV004';
