@@ -119,6 +119,12 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     isDynamic: true
                 });
 
+
+                objRecord.setValue({
+                    fieldId: 'shippingcost',
+                    value: 0.00
+                });
+
                 var beforeSubmit = funcionalidadesURU.beforeSubmit('create', objRecord);
 
                 if (funcionalidadesURU.l598esOneworld()) {
