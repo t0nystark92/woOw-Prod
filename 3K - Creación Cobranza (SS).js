@@ -69,8 +69,18 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     var itemMillas = '';
                     var impTotalDeudaPagar = 0;
                     var impTotalImporteFacturar = 0;
+                    var arrayAsientoLiqConfirmar = new Array();
+
+                    var contadorDescuento = 0;
+                    var totalDescuento = 0;
 
                     for (var i = 0; i < numLines; i++) {
+
+                        var itemType = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'itemtype',
+                            line: i
+                        });
 
                         var esFidelidad = objRecord.getSublistValue({
                             sublistId: 'item',
@@ -84,17 +94,82 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                             line: i
                         });
 
-                        var servicioImporteFacturar = objRecord.getSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'custcol_3k_importe_fact_liq',
-                            line: i
-                        });
+                        if (itemType == 'Discount') {
+                            contadorDescuento++;
+                            totalDescuento = totalDescuento + impLinea;
+                            log.debug('Creación Cobranza (SS) - afterSubmit', 'contadorDescuento: ' + contadorDescuento + ', totalDescuento: ' + totalDescuento);
+                        }
 
-                        var servicioDeudaPagar = objRecord.getSublistValue({
-                            sublistId: 'item',
-                            fieldId: 'custcol_3k_deuda_pagar',
-                            line: i
-                        });
+
+                        //Completar array de OV para enviar al Asiento de Liquidación a Confirmar
+                        //Solo items de inventario, servicio y descuento
+                        if (itemType == 'InvtPart' || itemType == 'Service' || itemType == 'Discount' && contadorDescuento == 1) {
+
+                            var objAsientoLiqConfirmar = new Object({});
+
+                            objAsientoLiqConfirmar.grossAmount = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'grossamt',
+                                line: i
+                            });
+
+                            objAsientoLiqConfirmar.servicioImporteFacturar = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_importe_fact_liq',
+                                line: i
+                            });
+
+                            objAsientoLiqConfirmar.servicioDeudaPagar = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_deuda_pagar',
+                                line: i
+                            });
+
+                            objAsientoLiqConfirmar.clienteLiquidacion = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_cliente_liquidacion',
+                                line: i
+                            });
+
+                            objAsientoLiqConfirmar.proveedorLiquidacion = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_proveedor_liquidacion',
+                                line: i
+                            });
+
+                            objAsientoLiqConfirmar.cuentaItemDescuento = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_cta_devolucion_promo',
+                                line: i
+                            });
+
+                            objAsientoLiqConfirmar.lineaDescuento = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_item_discount_line',
+                                line: i
+                            });
+
+                            objAsientoLiqConfirmar.impBrutoDescuento = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_item_import_disc',
+                                line: i
+                            });
+
+                            arrayAsientoLiqConfirmar.push(objAsientoLiqConfirmar);
+
+                            /*var servicioImporteFacturar = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_importe_fact_liq',
+                                line: i
+                            });
+
+                            var servicioDeudaPagar = objRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'custcol_3k_deuda_pagar',
+                                line: i
+                            });*/
+
+                        }
 
                         //log.debug('Creación Cobranza (SS) - afterSubmit', 'impTotalItems: ' + impTotalItems + ', impTotalMillasimpTotalMillas: ' + impTotalMillas);     
                         //log.debug('Creación Cobranza (SS) - afterSubmit', 'impLinea: ' + impLinea);     
@@ -106,18 +181,22 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                             impTotalItems = parseFloat(impTotalItems, 10) + parseFloat(impLinea, 10);
                         }
 
-                        if (!utilities.isEmpty(servicioDeudaPagar) && servicioDeudaPagar > 0) {
+                        /*if (!utilities.isEmpty(servicioDeudaPagar) && servicioDeudaPagar > 0) {
                             impTotalDeudaPagar = parseFloat(impTotalDeudaPagar, 10) + parseFloat(servicioDeudaPagar, 10);
                         }
 
                         if (!utilities.isEmpty(servicioImporteFacturar) && servicioImporteFacturar > 0) {
                             impTotalImporteFacturar = parseFloat(impTotalImporteFacturar, 10) + parseFloat(servicioImporteFacturar, 10);
-                        }
+                        }*/
 
                     }
 
+                    log.debug('Creación Cobranza (SS) - afterSubmit', 'arrayAsientoLiqConfirmar: ' + JSON.stringify(arrayAsientoLiqConfirmar) + ', arrayAsientoLiqConfirmar.length: ' + arrayAsientoLiqConfirmar.length);
+                    log.debug('Creación Cobranza (SS) - afterSubmit', 'TOTALES DESCUENTO - contadorDescuento: ' + contadorDescuento + ', totalDescuento: ' + totalDescuento);
+
+
                     log.debug('Creación Cobranza (SS) - afterSubmit', 'impTotalItems: ' + impTotalItems + ', impTotalMillas: ' + impTotalMillas + ', itemMillas: ' + itemMillas);
-                    log.debug('Creación Cobranza (SS) - afterSubmit', 'impTotalDeudaPagar: ' + impTotalDeudaPagar + ', impTotalImporteFacturar: ' + impTotalImporteFacturar);
+                    //log.debug('Creación Cobranza (SS) - afterSubmit', 'impTotalDeudaPagar: ' + impTotalDeudaPagar + ', impTotalImporteFacturar: ' + impTotalImporteFacturar);
 
                     //FIN - CONSULTA INFORMACION ITEMS
 
@@ -158,7 +237,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         objOV.tipoCambioPago = objRecord.getValue({
                             fieldId: 'custbody_3k_tc_woow_ov'
                         });
-                        
+
                         objOV.monedaPago = objRecord.getValue({
                             fieldId: 'custbody_3k_moneda_pago_ov'
                         });
@@ -264,8 +343,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                             respuesta = respuestaCrearDepositos;
 
                             //Si la OV es de Servicio y No corresponde a Programa de Fidelidad, genera asiento de Deuda a Pagar e Ingreso a Confirmar
-                            if (objOV.esServicio == true && objOV.esFidelidad == false && !utilities.isEmpty(impTotalDeudaPagar) && impTotalDeudaPagar > 0 && !utilities.isEmpty(impTotalImporteFacturar) && impTotalImporteFacturar > 0){
-                                var asientoDeudaIngreso = crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, objOV.tipoCambioOV, objOV.monedaOV, objOV.subsidiaria, objOV.sistema, objOV.sitioWeb, objOV.idCliente);
+                            if (objOV.esServicio == true && objOV.esFidelidad == false && !utilities.isEmpty(arrayAsientoLiqConfirmar)) {
+                                //var asientoDeudaIngreso = crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, objOV.tipoCambioOV, objOV.monedaOV, objOV.subsidiaria, objOV.sistema, objOV.sitioWeb, objOV.idCliente);
+                                var asientoDeudaIngreso = crearAsientoDeudaIngreso(arrayAsientoLiqConfirmar, objOV.tipoCambioOV, objOV.monedaOV, objOV.subsidiaria, objOV.sistema, objOV.sitioWeb, objOV.idCliente, contadorDescuento, totalDescuento);
                                 log.debug('Creación Cobranza (SS) - afterSubmit', 'asientoDeudaIngreso : ' + asientoDeudaIngreso);
 
                                 var updCobranza = record.submitFields({
@@ -280,7 +360,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                                     }
                                 });
 
-                            }    
+                            }
                         }
 
                     }
@@ -300,27 +380,37 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
             }
         }
 
-        function crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, tipoCambio, moneda, subsidiaria, sistema, sitioWeb, idCliente) {
+        function crearAsientoDeudaIngreso(arrayAsientoLiqConfirmar, tipoCambio, moneda, subsidiaria, sistema, sitioWeb, idCliente, contadorDescuento, totalDescuento) {
 
-            
+
             log.audit('crearAsientoDeudaIngreso', 'INICIO - Crear Asiento Deuda e Ingreso');
-            log.debug('crearAsientoDeudaIngreso', 'Parámetros: tipoCambio: ' + tipoCambio + ', impTotalImporteFacturar: ' + impTotalImporteFacturar +  ', impTotalDeudaPagar: ' + impTotalDeudaPagar + ', moneda: ' + moneda + ', subsidiaria: ' + subsidiaria + ', sistema: ' + sistema + ', sitioWeb: ' + sitioWeb + ', idCliente: ' + idCliente);
+            //log.debug('crearAsientoDeudaIngreso', 'Parámetros: tipoCambio: ' + tipoCambio + ', impTotalImporteFacturar: ' + impTotalImporteFacturar + ', impTotalDeudaPagar: ' + impTotalDeudaPagar + ', moneda: ' + moneda + ', subsidiaria: ' + subsidiaria + ', sistema: ' + sistema + ', sitioWeb: ' + sitioWeb + ', idCliente: ' + idCliente);
+            log.debug('crearAsientoDeudaIngreso', 'Parámetros: tipoCambio: ' + tipoCambio + ', moneda: ' + moneda + ', subsidiaria: ' + subsidiaria + ', sistema: ' + sistema + ', sitioWeb: ' + sitioWeb + ', idCliente: ' + idCliente);
+            log.debug('crearAsientoDeudaIngreso', 'Parámetros: arrayAsientoLiqConfirmar: ' + JSON.stringify(arrayAsientoLiqConfirmar) + ' , arrayAsientoLiqConfirmar.length: ' + arrayAsientoLiqConfirmar.length);
+
 
             var respuesta = new Object();
             respuesta.error = false;
             respuesta.detalle = new Array();
 
+            var idCuentaIngresoAConfirmar = '';
+            var idCuentaDeudaAConfirmar = '';
+            var idCuentaIngresoInicial = '';
+            var recordIdLiqConf = '';
+
+            var impTotalImporteFacturar = '';
+            var impTotalDeudaPagar = '';
+            var clienteLiquidacion = '';
+            var proveedorLiquidacion = '';
+            var grossAmount = '';
+            var lineaDescuento = '';
+            var cuentaItemDescuento = '';
+            var impBrutoDescuento = '';
+
             try {
-                var importeTotal = parseFloat(impTotalDeudaPagar, 10) + parseFloat(impTotalImporteFacturar, 10);
-
-                var idCuentaIngresoAConfirmar = '';
-                var idCuentaDeudaAConfirmar = '';
-                var idCuentaIngresoInicial = '';
-                var recordIdLiqConf = '';
-
-                log.debug('crearAsientoDeudaIngreso', 'importeTotal: ' + importeTotal);
 
                 if (!utilities.isEmpty(moneda)) {
+
                     // INICIO - Obtener Cuentas Contables de Confirmacion
                     var filtrosMoneda = new Array();
 
@@ -382,12 +472,13 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     isDynamic: true,
                 });
 
+                var cuentaItemCliente = idCuentaIngresoInicial;
+
                 if (!utilities.isEmpty(objRecordLiqConf)) {
                     objRecordLiqConf.setValue({
                         fieldId: 'subsidiary',
                         value: subsidiaria
                     });
-                    //objRecordLiqConf.setValue({ fieldId: 'currency', value: moneda });
                     objRecordLiqConf.setValue({
                         fieldId: 'currency',
                         value: moneda
@@ -418,126 +509,172 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         }
                     }
 
-                    objRecordLiqConf.selectNewLine({
-                        sublistId: 'line'
-                    });
-                    objRecordLiqConf.setCurrentSublistValue({
-                        sublistId: 'line',
-                        fieldId: 'account',
-                        value: idCuentaIngresoInicial
-                    });
+                    for (var i = 0; i < arrayAsientoLiqConfirmar.length; i++) {
 
-                    objRecordLiqConf.setCurrentSublistValue({
-                        sublistId: 'line',
-                        fieldId: 'currency',
-                        value: moneda
-                    });
+                        impTotalImporteFacturar = arrayAsientoLiqConfirmar[i].servicioImporteFacturar
+                        impTotalDeudaPagar = arrayAsientoLiqConfirmar[i].servicioDeudaPagar;
+                        clienteLiquidacion = arrayAsientoLiqConfirmar[i].clienteLiquidacion;
+                        proveedorLiquidacion = arrayAsientoLiqConfirmar[i].proveedorLiquidacion;
+                        grossAmount = arrayAsientoLiqConfirmar[i].grossAmount;
+                        lineaDescuento = arrayAsientoLiqConfirmar[i].lineaDescuento;
+                        cuentaItemDescuento = arrayAsientoLiqConfirmar[i].cuentaItemDescuento;;
+                        impBrutoDescuento = arrayAsientoLiqConfirmar[i].impBrutoDescuento;
+                        var idCuentaInicial = '';
 
-                    objRecordLiqConf.setCurrentSublistValue({
-                        sublistId: 'line',
-                        fieldId: 'exchangerate',
-                        value: tipoCambio
-                    });
+                        log.debug('crearAsientoDeudaIngreso', 'grossAmount: ' + grossAmount);
 
-                    objRecordLiqConf.setCurrentSublistValue({
-                        sublistId: 'line',
-                        fieldId: 'debit',
-                        value: importeTotal
-                    });
+                        if (lineaDescuento) {
+                            log.debug('crearAsientoDeudaIngreso', 'contadorDescuento: ' + contadorDescuento + ', totalDescuento: ' + totalDescuento);
+                            //Si hay mas de una linea de descuento, se agrega la linea al asiento con la sumatoria de los descuentos
+                            if (contadorDescuento > 1) {
+                                importeTotal = totalDescuento * (-1);
+                            } else {
+                                importeTotal = grossAmount * (-1);
+                            }
+                            idCuentaInicial = cuentaItemDescuento;
+                        } else {
+                            //importeTotal = parseFloat(impTotalDeudaPagar, 10) + parseFloat(impTotalImporteFacturar, 10);
+                            importeTotal = grossAmount;
+                            if (!utilities.isEmpty(impBrutoDescuento)) {
+                                importeTotal = importeTotal - impBrutoDescuento;
+                            }
+                            idCuentaInicial = idCuentaIngresoInicial;
+                        }
 
-                    objRecordLiqConf.setCurrentSublistValue({
-                        sublistId: 'line',
-                        fieldId: 'entity',
-                        value: idCliente
-                    });
+                        log.debug('crearAsientoDeudaIngreso', 'importeTotal: ' + importeTotal);
 
-                    objRecordLiqConf.commitLine({
-                        sublistId: 'line'
-                    });
+                        if (importeTotal != 0.00) {
 
-                    if (!utilities.isEmpty(impTotalDeudaPagar) && !isNaN(parseFloat(impTotalDeudaPagar, 10)) && impTotalDeudaPagar > 0) {
+                            log.debug('crearAsientoDeudaIngreso', 'Inicio - Agregando linea Principal');
 
-                        objRecordLiqConf.selectNewLine({
-                            sublistId: 'line'
-                        });
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'account',
-                            value: idCuentaDeudaAConfirmar
-                        });
+                            objRecordLiqConf.selectNewLine({
+                                sublistId: 'line'
+                            });
 
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'currency',
-                            value: moneda
-                        });
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'account',
+                                value: idCuentaInicial
+                            });
 
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'exchangerate',
-                            value: tipoCambio
-                        });
 
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'credit',
-                            value: impTotalDeudaPagar
-                        });
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'currency',
+                                value: moneda
+                            });
 
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'entity',
-                            value: idCliente
-                        });
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'exchangerate',
+                                value: tipoCambio
+                            });
 
-                        objRecordLiqConf.commitLine({
-                            sublistId: 'line'
-                        });
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'debit',
+                                value: importeTotal
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'entity',
+                                value: idCliente
+                            });
+
+                            objRecordLiqConf.commitLine({
+                                sublistId: 'line'
+                            });
+
+                            log.debug('crearAsientoDeudaIngreso', 'Fin - Agregando linea Principal');
+
+                        }
+
+                        if (!lineaDescuento && !utilities.isEmpty(impTotalDeudaPagar) && !isNaN(parseFloat(impTotalDeudaPagar, 10)) && impTotalDeudaPagar > 0) {
+                            log.debug('crearAsientoDeudaIngreso', 'Inicio - Agregando linea Deuda a Pagar');
+                            objRecordLiqConf.selectNewLine({
+                                sublistId: 'line'
+                            });
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'account',
+                                value: idCuentaDeudaAConfirmar
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'currency',
+                                value: moneda
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'exchangerate',
+                                value: tipoCambio
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'credit',
+                                value: impTotalDeudaPagar
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'entity',
+                                value: proveedorLiquidacion
+                            });
+
+                            objRecordLiqConf.commitLine({
+                                sublistId: 'line'
+                            });
+                            log.debug('crearAsientoDeudaIngreso', 'Fin - Agregando linea Deuda a Pagar');
+
+                        }
+
+                        if (!lineaDescuento && !utilities.isEmpty(impTotalImporteFacturar) && !isNaN(parseFloat(impTotalImporteFacturar, 10)) && impTotalImporteFacturar > 0) {
+                            log.debug('crearAsientoDeudaIngreso', 'Inicio - Agregando linea Importe a Facturar');
+
+                            objRecordLiqConf.selectNewLine({
+                                sublistId: 'line'
+                            });
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'account',
+                                value: idCuentaIngresoAConfirmar
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'currency',
+                                value: moneda
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'exchangerate',
+                                value: tipoCambio
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'credit',
+                                value: impTotalImporteFacturar
+                            });
+
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'entity',
+                                value: clienteLiquidacion
+                            });
+
+                            objRecordLiqConf.commitLine({
+                                sublistId: 'line'
+                            });
+                            log.debug('crearAsientoDeudaIngreso', 'Fin - Agregando linea Importe a Facturar');
+                        }
 
                     }
-
-                    if (!utilities.isEmpty(impTotalImporteFacturar) && !isNaN(parseFloat(impTotalImporteFacturar, 10)) && impTotalImporteFacturar > 0) {
-
-                        objRecordLiqConf.selectNewLine({
-                            sublistId: 'line'
-                        });
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'account',
-                            value: idCuentaIngresoAConfirmar
-                        });
-
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'currency',
-                            value: moneda
-                        });
-
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'exchangerate',
-                            value: tipoCambio
-                        });
-
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'credit',
-                            value: impTotalImporteFacturar
-                        });
-
-                        objRecordLiqConf.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'entity',
-                            value: idCliente
-                        });
-                        
-                        objRecordLiqConf.commitLine({
-                            sublistId: 'line'
-                        });
-
-                    }
-
-
                     try {
                         recordIdLiqConf = objRecordLiqConf.save({
                             enableSourcing: true,
@@ -558,7 +695,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         respuesta.detalle.push(respuestaParcial);
                     } else {
                         respuesta.idRegLiqConf = recordIdLiqConf;
-                        return respuesta.idRegLiqConf;                                           
+                        return respuesta.idRegLiqConf;
                     }
                 } else {
                     respuesta.error = true;
