@@ -34,22 +34,94 @@
             if (scriptContext.newRecord.type == 'salesorder') { //(scriptContext.type == 'create' || scriptContext.type == 'edit') && 
 
                 log.debug(proceso, 'INICIO del proceso.');
-                
-                var respDevPromo = {};
-                respDevPromo.item = '1393577'; //1392849 Buscar en RT customrecord_3k_conf_dev_promo --> custrecord_3k_conf_dev_promo_disc_item
 
+                var idCtaIngresoAConfirm = '';
+                var idCtaDeudaAConfirm = '';
+
+                var dataItems = [];
+                var ovCabecera = {};
+                var error = false;
+
+                //se carga el OV y se agregan las lineas de descuento adicionales
                 var objRecord = record.load({
                     type: scriptContext.newRecord.type,
                     id: scriptContext.newRecord.id,
                     isDynamic: true
                 }); 
+
+                ovCabecera.id = objRecord.getValue({
+                    fieldId: 'internalid'
+                });                
+
+                ovCabecera.entity = objRecord.getValue({
+                    fieldId: 'entity'
+                }); 
+
+                ovCabecera.moneda = objRecord.getValue({
+                    fieldId: 'currency'
+                }); 
+
+                ovCabecera.tipoCambio = objRecord.getValue({
+                    fieldId: 'exchangerate'
+                });
+
+                ovCabecera.subsidiaria = objRecord.getValue({
+                    fieldId: 'subsidiary'
+                });                
+                
+                ovCabecera.sistema = objRecord.getValue({
+                    fieldId: 'custbody_cseg_3k_sistema'
+                });
+
+                ovCabecera.sitioWeb = objRecord.getValue({
+                    fieldId: 'custbody_cseg_3k_sitio_web_o'
+                });
+
+                ovCabecera.isService = objRecord.getValue({
+                    fieldId: 'custbody_3k_ov_servicio'
+                });        
+                
+                ovCabecera.isTravel = objRecord.getValue({
+                    fieldId: 'custbody_3k_ov_travel'
+                });                   
+                
+                ovCabecera.isFidelity = objRecord.getValue({
+                    fieldId: 'custbody_3k_programa_fidelidad'
+                });                 
+
+                ovCabecera.bfTotal = objRecord.getValue({
+                    fieldId: 'total'
+                });     
+                
+                ovCabecera.sumDescuentos = 0.0;
+
+                ovCabecera.ctaItemDevolucion = '';
+
+                var ctasOv = ctasIngresoDeuda(ovCabecera.moneda);  
+
+                if(!ctasOv.error){
+                    //log.debug(proceso, 'Cuentas OV: ' + JSON.stringify(ctasOv.result));
+                    if(ctasOv.result.length > 0) {
+                        var idCtaIngresoAConfirm = ctasOv.result[0].ctaIngreso;
+                        var idCtaDeudaAConfirm = ctasOv.result[0].ctaDeuda;
+                    }
+                } else {
+                    error = ctasOv.error;
+                }
+
+                var respArtPromo = artDescuentoPromo();
+
+                if(!respArtPromo.error){ 
+                    if(respArtPromo.result.length > 0) {
+                        var itemDescuento = respArtPromo.result[0].idItem;
+                    }
+                } else {
+                    error = respArtPromo.error;
+                }           
                 
                 var numLines = objRecord.getLineCount({
                     sublistId: 'item'
                 });
-
-                var dataItems = [];
-                var error = false;
                 
                 for (var i = 0; i < numLines && !error; i++) {
 
@@ -59,12 +131,14 @@
                         line: i
                     }); 
 
-                    importeDescuento = !utilities.isEmpty(importeDescuento) ? parseFloat(importeDescuento) : 0.0;
+                    importeDescuento = !utilities.isEmpty(importeDescuento) ? parseFloat(importeDescuento)  : 0.0;
 
                     if(importeDescuento > 0) { 
                         var objItem = {};
 
                         objItem.importeDescuento = importeDescuento;
+
+                        ovCabecera.sumDescuentos += importeDescuento;
 
                         objItem.taxCode = objRecord.getSublistValue({
                             sublistId: 'item',
@@ -106,7 +180,7 @@
                             objRecord.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'item',
-                                value: respDevPromo.item
+                                value: itemDescuento
                             });
 
                             objRecord.setCurrentSublistValue({
@@ -118,7 +192,7 @@
                             objRecord.setCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'grossamt',
-                                value: objItem.importeDescuento
+                                value: (objItem.importeDescuento * -1)
                             }); 
 
                             objRecord.setCurrentSublistValue({
@@ -127,17 +201,19 @@
                                 value: true
                             });
                             
-                            objItem.ctaItemDevolucion = objRecord.getCurrentSublistValue({
+                            var ctaItemDevolucion = objRecord.getCurrentSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_cta_devolucion_promo'
                             });
 
+                            if(!utilities.isEmpty(ctaItemDevolucion) && utilities.isEmpty(ovCabecera.ctaItemDevolucion)) {ovCabecera.ctaItemDevolucion = ctaItemDevolucion;}
+
                             objRecord.commitLine({
                                 sublistId: 'item'
                             });                            
-                        } catch(eNewLine) {
+                        } catch(exNewLine) {
                             error = true;
-                            log.error(proceso, 'Excepcion Inesperada al insertar la linea de descuento ' + (i+1) + ' - Excepcion : ' + excepcionSave.message);
+                            log.error(proceso, 'Excepcion Inesperada al insertar la linea de descuento ' + (i+1) + ' - Excepcion : ' + exNewLine.message);
                         }
 
                         if(!error){
@@ -148,6 +224,12 @@
                     }
                 }
 
+                ovCabecera.afTotal = objRecord.getValue({
+                    fieldId: 'total'
+                });     
+                
+                log.debug(proceso, 'Cabecera: ' + JSON.stringify(ovCabecera));
+
                 log.debug(proceso, 'Lineas con Descuento: ' + JSON.stringify(dataItems));
 
                 /*
@@ -156,8 +238,25 @@
                     value: totalNoGravado
                 }); 
                 */
-
-                if(!error && dataItems.length > 0){
+                
+                if(!error){
+                    try {
+                        var idRecordUpdate = objRecord.save();
+                        if (utilities.isEmpty(idRecordUpdate)) {
+                            error = true;
+                            log.error(proceso, 'Error al Guardar - Error : No se Recibio el ID Interno del Registro a Actualizar');
+                        } else {
+                            log.debug(proceso, 'FIN.');
+                        }
+                    } catch (exSave) {
+                        error = true;
+                        log.error(proceso, 'Excepcion Inesperada al guardar Registro - Excepcion : ' + exSave.message);
+                    } 
+                }
+                
+                if(!error && dataItems.length > 0 && ovCabecera.afTotal <= 0 && (ovCabecera.isService && !(ovCabecera.isTravel || ovCabecera.isFidelity))){
+                    
+                    //si se cumplen las condiciones se inicia el proceso para crear el custom transaction liquidacion_a_confirmar
                     
                     objRecordLiqConf = record.create({
                         type: 'customtransaction_3k_liquidacion_conf',
@@ -167,31 +266,30 @@
                     if (!utilities.isEmpty(objRecordLiqConf)) {
                         objRecordLiqConf.setValue({
                             fieldId: 'subsidiary',
-                            value: subsidiaria
+                            value: ovCabecera.subsidiaria
                         });
                         //objRecordLiqConf.setValue({ fieldId: 'currency', value: moneda });
                         objRecordLiqConf.setValue({
                             fieldId: 'currency',
-                            value: moneda
+                            value: ovCabecera.moneda
                         });
                         objRecordLiqConf.setValue({
                             fieldId: 'exchangerate',
-                            value: tipoCambio
+                            value: ovCabecera.tipoCambio
                         });
                         objRecordLiqConf.setValue({
                             fieldId: 'custbody_cseg_3k_sitio_web_o',
-                            value: sitioWeb
+                            value: ovCabecera.sitioWeb
                         });
                         objRecordLiqConf.setValue({
                             fieldId: 'custbody_cseg_3k_sistema',
-                            value: sistema
+                            value: ovCabecera.sistema
                         });
     
                         var cantidadLineasLiqConf = objRecordLiqConf.getLineCount({
                             sublistId: 'line'
                         });
-
-                        /*
+                        
                         if (!utilities.isEmpty(cantidadLineasLiqConf) && cantidadLineasLiqConf > 0) {
                             for (var iLiqConf = 0; iLiqConf < cantidadLineasLiqConf; iLiqConf++) {
                                 objRecordLiqConf.removeLine({
@@ -200,64 +298,259 @@
                                 });
                             }
                         }
-                        */
-    
+                        
                         objRecordLiqConf.selectNewLine({
                             sublistId: 'line'
                         });
+
                         objRecordLiqConf.setCurrentSublistValue({
                             sublistId: 'line',
                             fieldId: 'account',
-                            value: idCuentaIngresoInicial
+                            value: ovCabecera.ctaItemDevolucion
                         });
     
                         objRecordLiqConf.setCurrentSublistValue({
                             sublistId: 'line',
                             fieldId: 'currency',
-                            value: moneda
+                            value: ovCabecera.moneda
                         });
     
                         objRecordLiqConf.setCurrentSublistValue({
                             sublistId: 'line',
                             fieldId: 'exchangerate',
-                            value: tipoCambio
+                            value: ovCabecera.tipoCambio
                         });
     
                         objRecordLiqConf.setCurrentSublistValue({
                             sublistId: 'line',
                             fieldId: 'debit',
-                            value: importeTotal
+                            value: ovCabecera.sumDescuentos
                         });
     
                         objRecordLiqConf.setCurrentSublistValue({
                             sublistId: 'line',
                             fieldId: 'entity',
-                            value: idCliente
+                            value: ovCabecera.entity
                         });
     
                         objRecordLiqConf.commitLine({
                             sublistId: 'line'
-                        });                        
-                    }
+                        });      
 
+                        for (var i = 0; i < dataItems.length; i++) {   
+                            
+                            //linea de Deuda a confirmar
+                            objRecordLiqConf.selectNewLine({
+                                sublistId: 'line'
+                            });
+    
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'account',
+                                value: idCtaDeudaAConfirm
+                            });
+        
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'currency',
+                                value: ovCabecera.moneda
+                            });
+        
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'exchangerate',
+                                value: ovCabecera.tipoCambio
+                            });
+        
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'credit',
+                                value: dataItems[i].deudaPagar
+                            });
+        
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'entity',
+                                value: dataItems[i].proveedorLiq
+                            });
+        
+                            objRecordLiqConf.commitLine({
+                                sublistId: 'line'
+                            }); 
 
-                }
-                
-                try {
-                    var idRecordUpdate = objRecord.save();
-                    if (utilities.isEmpty(idRecordUpdate)) {
-                        log.error(proceso, 'Error al Guardar - Error : No se Recibio el ID Interno del Registro a Actualizar');
-                    } else {
-                        log.debug(proceso, 'FIN.');
+                            //linea de ingreso a confirmar
+                            objRecordLiqConf.selectNewLine({
+                                sublistId: 'line'
+                            });
+    
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'account',
+                                value: idCtaIngresoAConfirm
+                            });
+        
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'currency',
+                                value: ovCabecera.moneda
+                            });
+        
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'exchangerate',
+                                value: ovCabecera.tipoCambio
+                            });
+        
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'credit',
+                                value: dataItems[i].ingresoFacturar
+                            });
+        
+                            objRecordLiqConf.setCurrentSublistValue({
+                                sublistId: 'line',
+                                fieldId: 'entity',
+                                value: dataItems[i].clienteLiq
+                            });
+        
+                            objRecordLiqConf.commitLine({
+                                sublistId: 'line'
+                            });                             
+                        }                     
+                        
+                        //log.debug(proceso, 'Obj de custom transaction: ' + JSON.stringify(objRecordLiqConf));
+
+                        try {
+                            var idRecordCreate = objRecordLiqConf.save();
+                            if (utilities.isEmpty(idRecordCreate)) {
+                                error = true;
+                                log.error(proceso, 'Error al Guardar Custom Transaction  - Error : No se Recibio el ID Interno del Registro a Actualizar');
+                            } else {
+                                log.debug(proceso, 'FIN.');
+                            }
+                        } catch (exSave) {
+                            error = true;
+                            log.error(proceso, 'Excepcion Inesperada al guardar Custom Transaction - Excepcion : ' + exSave.message);
+                        }                         
                     }
-                } catch (excepcionSave) {
-                    log.error(proceso, 'Excepcion Inesperada al guardar Registro - Excepcion : ' + excepcionSave.message);
-                }             
+                }                
             }
         } catch (excepcion) {
                 log.error(proceso + ' - afterSubmit', 'Ocurrió una excepcion general - error: ' + excepcion.message);
         }
     }
+
+    function ctasIngresoDeuda(moneda){
+        log.audit(proceso, 'INICIO Consulta de Cuentas de la OV');
+        var respuesta = {};
+        respuesta.error = false;
+        respuesta.mensaje = "";
+
+        try {
+            if (!utilities.isEmpty(moneda)) {   
+                
+                var filtros = [];
+                var filtroMoneda = {};
+                filtroMoneda.name = 'custrecord_3k_config_ctas_cup_mon';
+                filtroMoneda.operator = 'ANYOF';
+                filtroMoneda.values = moneda; 
+                filtros.push(filtroMoneda);                           
+                
+                var searchCuentas = utilities.searchSavedPro('customsearch_3k_config_ctas_cupones',filtros);
+                
+                respuesta.result = [];
+
+                if (!searchCuentas.error && !utilities.isEmpty(searchCuentas.objRsponseFunction.result) && searchCuentas.objRsponseFunction.result.length > 0) {
+
+                    var cuentasResultSet = searchCuentas.objRsponseFunction.result;
+                    var cuentasResultSearch = searchCuentas.objRsponseFunction.search;
+                    
+                    for(var i = 0; i < cuentasResultSet.length; i++)
+                    {
+                        var objDebitos = {};
+
+                        objDebitos.id = cuentasResultSet[i].getValue({
+                            name: cuentasResultSearch.columns[0]
+                        });
+                                                    
+                        objDebitos.ctaIngreso = parseFloat(cuentasResultSet[i].getValue({
+                            name: cuentasResultSearch.columns[3]
+                        }));
+                        
+                        objDebitos.ctaDeuda = parseFloat(cuentasResultSet[i].getValue({
+                            name: cuentasResultSearch.columns[4]
+                        }));                                                      
+
+                        respuesta.result.push(objDebitos);
+                    }
+                } else{
+                    respuesta.error = true;
+                    respuesta.mensaje = "No hay cuentas configuradas para la moneda.";
+                    log.error(proceso, respuesta.mensaje);                        
+                }
+                log.debug(proceso, 'Cuentas: ' + JSON.stringify(respuesta.result));
+ 
+            } else {
+                respuesta.error = true;
+                respuesta.mensaje = "Debe indicar la moneda de la OV.";
+                log.error(proceso, respuesta.mensaje);
+            }
+        } catch (excepcion) {
+            respuesta.error = true;
+            respuesta.mensaje = "Excepcion Consultando Cuentas de la OV - Excepcion : " + excepcion.message;
+            log.error(proceso, respuesta.mensaje);
+        }
+
+        log.audit(proceso, 'FIN Consulta de Cuentas de la OV');
+        return respuesta;                    
+    }  
+    
+    function artDescuentoPromo(){
+        log.audit(proceso, 'INICIO Consulta de articulo disc');
+        var respuesta = {};
+        respuesta.error = false;
+        respuesta.mensaje = "";
+
+        try {
+                        
+            var searchArt = utilities.searchSavedPro('customsearch_3k_item_dev_promo');
+            
+            respuesta.result = [];
+
+            if (!searchArt.error && !utilities.isEmpty(searchArt.objRsponseFunction.result) && searchArt.objRsponseFunction.result.length > 0) {
+
+                var ResultSet = searchArt.objRsponseFunction.result;
+                var ResultSearch = searchArt.objRsponseFunction.search;
+                
+                for(var i = 0; i < ResultSet.length; i++)
+                {
+                    var objDebitos = {};
+
+                    objDebitos.id = ResultSet[i].getValue({
+                        name: ResultSearch.columns[0]
+                    });
+                                                
+                    objDebitos.idItem = parseFloat(ResultSet[i].getValue({
+                        name: ResultSearch.columns[1]
+                    }));                                               
+
+                    respuesta.result.push(objDebitos);
+                }
+            } else{
+                respuesta.error = true;
+                respuesta.mensaje = "No hay articulos de disc configurados.";
+                log.error(proceso, respuesta.mensaje);                        
+            }
+            log.debug(proceso, 'Articulo Discount: ' + JSON.stringify(respuesta.result));
+        } catch (excepcion) {
+            respuesta.error = true;
+            respuesta.mensaje = "Excepcion Consultando Articulo Discount - Excepcion : " + excepcion.message;
+            log.error(proceso, respuesta.mensaje);
+        }
+
+        log.audit(proceso, 'FIN Consulta de articulo disc');
+        return respuesta;                    
+    }    
     
     return {
         afterSubmit: afterSubmit
