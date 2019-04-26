@@ -1486,10 +1486,10 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                     for (var y = 0; y < arrayTranCreated.length; y++) {
 
-                        record.delete({
+                        /*record.delete({
                             type: arrayTranCreated[y].accion,
                             id: arrayTranCreated[y].idTran
-                        });
+                        });*/
 
                     }
 
