@@ -11415,6 +11415,42 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
                     }
 
+                    // INICIO - Inactivar Requisiciones Asociadas
+                    var numLinesRequisiciones = rec.getLineCount({
+                        sublistId: 'recmachcustrecord_3k_req_compra_ov'
+                    });
+
+                    log.debug('Cierre de OV por Reembolso', 'Cantidad de Lineas de Requisiciones : ' + numLinesRequisiciones);
+
+                    if(!utilities.isEmpty(numLinesRequisiciones) && numLinesRequisiciones > 0 ){
+                        for(var j = 0; j < numLinesRequisiciones; j++){
+                            var lineNum = rec.selectLine({
+                                sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                line: j
+                            });
+                            var ordenCompraAsociada = rec.getCurrentSublistValue({
+                                sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                fieldId: 'custrecord_3k_req_compra_oc'
+                            });
+
+                            log.debug('Cierre de OV por Reembolso', 'OC : ' + ordenCompraAsociada);
+
+                            if (utilities.isEmpty(ordenCompraAsociada)) {
+                                rec.setCurrentSublistValue({
+                                    sublistId: 'recmachcustrecord_3k_req_compra_ov',
+                                    fieldId: 'isinactive',
+                                    value: true,
+                                    ignoreFieldChange: true
+                                });
+
+                                rec.commitLine({
+                                    sublistId: 'recmachcustrecord_3k_req_compra_ov'
+                                });
+                            }
+                        }
+                    }
+                    // FIN - Inactivar Requisiciones Asociadas
+
                     rec.save();
                     return objRespuesta;
 
