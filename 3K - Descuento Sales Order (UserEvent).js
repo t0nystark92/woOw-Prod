@@ -29,29 +29,28 @@
 
         try {
 
-            log.audit(proceso, 'Tipo Evento: ' + scriptContext.type + ' - Tipo Registro: ' + scriptContext.newRecord.type + ' - ID: ' + scriptContext.newRecord.id + ' - ExecutionContext: ' + runtime.executionContext);
-
-            if (scriptContext.newRecord.type == 'salesorder') { //(scriptContext.type == 'create' || scriptContext.type == 'edit') && 
+            if (scriptContext.newRecord.type == 'salesorder') { //&& runtime.executionContext != 'USERINTERFACE' /*Agregar en Productivo*/
 
                 log.debug(proceso, 'INICIO del proceso.');
 
+                log.audit(proceso, 'Tipo Evento: ' + scriptContext.type + ' - Tipo Registro: ' + scriptContext.newRecord.type + ' - ID: ' + scriptContext.newRecord.id + ' - ExecutionContext: ' + runtime.executionContext);
+
                 var idCtaIngresoAConfirm = '';
                 var idCtaDeudaAConfirm = '';
+                var itemDescuento = '';
 
                 var dataItems = [];
                 var ovCabecera = {};
                 var error = false;
 
-                //se carga el OV y se agregan las lineas de descuento adicionales
+                //se carga la OV y se agregan las lineas de descuento adicionales
                 var objRecord = record.load({
                     type: scriptContext.newRecord.type,
                     id: scriptContext.newRecord.id,
                     isDynamic: true
                 }); 
 
-                ovCabecera.id = objRecord.getValue({
-                    fieldId: 'internalid'
-                });                
+                ovCabecera.id = scriptContext.newRecord.id;
 
                 ovCabecera.entity = objRecord.getValue({
                     fieldId: 'entity'
@@ -100,10 +99,9 @@
                 var ctasOv = ctasIngresoDeuda(ovCabecera.moneda);  
 
                 if(!ctasOv.error){
-                    //log.debug(proceso, 'Cuentas OV: ' + JSON.stringify(ctasOv.result));
                     if(ctasOv.result.length > 0) {
-                        var idCtaIngresoAConfirm = ctasOv.result[0].ctaIngreso;
-                        var idCtaDeudaAConfirm = ctasOv.result[0].ctaDeuda;
+                        idCtaIngresoAConfirm = ctasOv.result[0].ctaIngreso;
+                        idCtaDeudaAConfirm = ctasOv.result[0].ctaDeuda;
                     }
                 } else {
                     error = ctasOv.error;
@@ -113,7 +111,7 @@
 
                 if(!respArtPromo.error){ 
                     if(respArtPromo.result.length > 0) {
-                        var itemDescuento = respArtPromo.result[0].idItem;
+                        itemDescuento = respArtPromo.result[0].idItem;
                     }
                 } else {
                     error = respArtPromo.error;
@@ -171,7 +169,7 @@
                         }); 
 
                         try{
-                            //aca se debe insertar la nueva linea
+                            
                             objRecord.insertLine({
                                 sublistId: 'item',
                                 line: (i+1),
@@ -216,8 +214,7 @@
                             log.error(proceso, 'Excepcion Inesperada al insertar la linea de descuento ' + (i+1) + ' - Excepcion : ' + exNewLine.message);
                         }
 
-                        if(!error){
-                            //despues de agregar la nueva linea
+                        if(!error){ //si no hay error se cuenta la linea
                             numLines++;
                             dataItems.push(objItem);    
                         }
@@ -231,13 +228,6 @@
                 log.debug(proceso, 'Cabecera: ' + JSON.stringify(ovCabecera));
 
                 log.debug(proceso, 'Lineas con Descuento: ' + JSON.stringify(dataItems));
-
-                /*
-                objRecord.setValue({
-                    fieldId: 'custbody_3k_neto_no_gravado',
-                    value: totalNoGravado
-                }); 
-                */
                 
                 if(!error){
                     try {
@@ -257,6 +247,7 @@
                 if(!error && dataItems.length > 0 && ovCabecera.afTotal <= 0 && (ovCabecera.isService && !(ovCabecera.isTravel || ovCabecera.isFidelity))){
                     
                     //si se cumplen las condiciones se inicia el proceso para crear el custom transaction liquidacion_a_confirmar
+                    log.debug(proceso, 'Inicio - Custom Trasaction 3k_liquidacion_conf.');
                     
                     objRecordLiqConf = record.create({
                         type: 'customtransaction_3k_liquidacion_conf',
@@ -268,7 +259,7 @@
                             fieldId: 'subsidiary',
                             value: ovCabecera.subsidiaria
                         });
-                        //objRecordLiqConf.setValue({ fieldId: 'currency', value: moneda });
+                        
                         objRecordLiqConf.setValue({
                             fieldId: 'currency',
                             value: ovCabecera.moneda
@@ -299,6 +290,7 @@
                             }
                         }
                         
+                        //linea de debito - sumatoria de descuentos
                         objRecordLiqConf.selectNewLine({
                             sublistId: 'line'
                         });
@@ -416,9 +408,7 @@
                             objRecordLiqConf.commitLine({
                                 sublistId: 'line'
                             });                             
-                        }                     
-                        
-                        //log.debug(proceso, 'Obj de custom transaction: ' + JSON.stringify(objRecordLiqConf));
+                        }
 
                         try {
                             var idRecordCreate = objRecordLiqConf.save();
@@ -426,7 +416,26 @@
                                 error = true;
                                 log.error(proceso, 'Error al Guardar Custom Transaction  - Error : No se Recibio el ID Interno del Registro a Actualizar');
                             } else {
-                                log.debug(proceso, 'FIN.');
+                                
+                                log.debug(proceso, 'FIN - Guardada la custom transaction exitosamente.');
+
+                                try{
+                                    var idOVUpdate = record.submitFields({
+                                        type: scriptContext.newRecord.type,
+                                        id: ovCabecera.id,
+                                        values: {'custbody_3k_link_reg_liq_conf':idRecordCreate},
+                                        options: {
+                                            enableSourcing: false,
+                                            ignoreMandatoryFields: true
+                                        }
+                                    });
+
+                                    if (utilities.isEmpty(idOVUpdate)) {
+                                        log.error(proceso, 'Error intentando guardar el ID del Custom Transaction en la Sales Order: ' + ovCabecera.id); 
+                                    } 
+                                } catch(exUpdateOV) {
+                                    log.error(proceso, 'Excepción al intentar guardar el ID del Custom Transaction en la Sales Order - Excepción: ' + exUpdateOV.message);
+                                }
                             }
                         } catch (exSave) {
                             error = true;
