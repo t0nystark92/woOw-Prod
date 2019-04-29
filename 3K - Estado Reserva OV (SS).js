@@ -9,14 +9,18 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
 
         function afterSubmit(context) {
+
+            var errorCath = false;
+            var soRecord = context.newRecord;
+
+
+            var soRecordOld = context.oldRecord;
+
             try {
 
                 if (context.type == 'edit') {
 
-                    var soRecord = context.newRecord;
-
-
-                    var soRecordOld = context.oldRecord;
+                    
 
                     var esServicio = soRecord.getValue({
                         fieldId: 'custbody_3k_ov_servicio'
@@ -1386,6 +1390,10 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                         }
 
+                                        /*
+                                            ACTUALIZO OV PARA MARCAR LAS LINEAS COMO FACTURADAS
+                                        */
+
                                         if (arrayLineasMarcarFacturadas.length > 0) {
 
                                             log.debug('entro facturar', 'entro');
@@ -1415,6 +1423,15 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                             }
 
+                                            /*
+                                            RECORRO NUEVAMENTE LAS LINEAS DE LA OV FINAL PARA SABER SI SE DEBE CREAR JE
+                                            QUE BAJE SALDO DE CUENTA CORRIENTE DE DEPOSITO DE CLIENTE FINAL
+                                            */
+
+                                            var lineCountSOFinal = soRecordFinal.getLineCount({sublistId: 'item'});
+
+                                            //for(var )
+
 
 
                                             soRecordFinal.save();
@@ -1432,7 +1449,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                         }
 
-                        if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0) {
+                        /*if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0) {
 
                             var filterTran = arrayTranCreated.filter(function (obj) {
                                 return obj.accion == 'invoice' || obj.accion == 'creditmemo'
@@ -1469,7 +1486,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                             }
 
-                        }
+                        }*/
                     }
 
 
@@ -1477,6 +1494,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
 
             } catch (error) {
+                errorCath = true;
                 log.error("Error afertSubmit Catch", error.message);
                 log.error("Error Object afertSubmit Catch", JSON.stringify(error));
 
@@ -1490,6 +1508,47 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                             type: arrayTranCreated[y].accion,
                             id: arrayTranCreated[y].idTran
                         });*/
+
+                    }
+
+                }
+            }
+            finally{
+
+                if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0 && errorCath == false) {
+
+                    var filterTran = arrayTranCreated.filter(function (obj) {
+                        return obj.accion == 'invoice' || obj.accion == 'creditmemo'
+                    })
+
+                    if (!utilities.isEmpty(filterTran) && filterTran.length > 0) {
+
+                        var arrayCAE = new Array();
+
+                        for (var e = 0; e < filterTran.length; e++) {
+
+                            arrayCAE.push(filterTran[e].idTran);
+
+                        }
+
+                        var resultCae = funcionalidades.generarCAE(arrayCAE, subsidiary);
+
+                        if (resultCae.error == true) {
+
+                            record.submitField({
+                                type: record.Type.SALES_ORDER,
+                                id: soRecord.id,
+                                values: {
+                                    custbody_3k_netsuite_ov: resultCae.mensaje
+                                },
+                                options: {
+                                    enableSourcing: true,
+                                    ignoreMandatoryFields: false
+                                }
+                            })
+
+
+                        }
 
                     }
 
