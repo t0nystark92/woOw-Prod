@@ -20,7 +20,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                 if (context.type == 'edit') {
 
-                    
+
 
                     var esServicio = soRecord.getValue({
                         fieldId: 'custbody_3k_ov_servicio'
@@ -202,9 +202,22 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                     line: i
                                 });
 
-                                if (esFidelidadLineFor == true || esRedondeoLineFor == true) {
+                                var esRedondeoLineFor = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_es_redondeo',
+                                    line: i
+                                });
+
+                                var esDescuentoLineFor = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_item_discount_line',
+                                    line: i
+                                });
+
+                                if (esFidelidadLineFor == true || esRedondeoLineFor == true || esDescuentoLineFor == true) {
                                     continue
                                 }
+
 
                                 log.debug('estadoServicio', estadoServicio);
                                 log.debug('estadoServicioOld', estadoServicioOld);
@@ -593,11 +606,13 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                                             log.audit("Fact Comisión", "Inicio comprobación monedas")
 
-                                                            var currencyFactComsion = factComision.getValue({fieldId: 'currency'});
+                                                            var currencyFactComsion = factComision.getValue({
+                                                                fieldId: 'currency'
+                                                            });
 
-                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision: '+ currencyFactComsion + ' - Moneda OV: '+ currency);
+                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision: ' + currencyFactComsion + ' - Moneda OV: ' + currency);
 
-                                                            if (currencyFactComsion != currency){
+                                                            if (currencyFactComsion != currency) {
 
                                                                 factComision.setValue({
                                                                     fieldId: 'currency',
@@ -606,9 +621,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                                             }
 
-                                                            var currencyFactComsionAfter = factComision.getValue({fieldId: 'currency'});
+                                                            var currencyFactComsionAfter = factComision.getValue({
+                                                                fieldId: 'currency'
+                                                            });
 
-                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision After seteo: '+ currencyFactComsion);
+                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision After seteo: ' + currencyFactComsion);
 
                                                             log.audit("Fact Comisión", "Fin comprobación monedas")
 
@@ -639,7 +656,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                                                         log.audit("Armado Lines Fact Comision", "Fin Seteo 0 Rate")
 
-                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo amount. ingresoLiqSinIva: "+ ingresoLiqSinIva)
+                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo amount. ingresoLiqSinIva: " + ingresoLiqSinIva)
 
                                                                         factComision.setCurrentSublistValue({
                                                                             sublistId: 'item',
@@ -647,9 +664,9 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                             value: parseFloat(ingresoLiqSinIva).toFixed(2)
                                                                         });
 
-                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo amount. ingresoLiqSinIva: "+ ingresoLiqSinIva)
+                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo amount. ingresoLiqSinIva: " + ingresoLiqSinIva)
 
-                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo taxcode. taxcode: "+ taxcode)
+                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo taxcode. taxcode: " + taxcode)
 
                                                                         factComision.setCurrentSublistValue({
                                                                             sublistId: 'item',
@@ -657,7 +674,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                             value: taxcode
                                                                         });
 
-                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo taxcode. taxcode: "+ taxcode)
+                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo taxcode. taxcode: " + taxcode)
 
                                                                     } else {
 
@@ -715,12 +732,21 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                                                 } else {
 
-                                                                    factComision.removeLine({
+                                                                    var redondeoAjd = factComision.getSublistValue({
                                                                         sublistId: 'item',
+                                                                        fieldId: 'custcol_3k_es_redondeo',
                                                                         line: l
-                                                                    });
+                                                                    })
 
-                                                                    numLinesFact--;
+                                                                    if (redondeoAjd == false) {
+
+                                                                        factComision.removeLine({
+                                                                            sublistId: 'item',
+                                                                            line: l
+                                                                        });
+
+                                                                        numLinesFact--;
+                                                                    }
 
                                                                 }
 
@@ -1188,16 +1214,16 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                             fieldId: 'custbody_cseg_3k_sitio_web_o',
                                                                             value: sitioWeb
                                                                         });
-    
+
                                                                     }
-    
+
                                                                     if (!utilities.isEmpty(sistema)) {
-    
+
                                                                         recordCreate.setValue({
                                                                             fieldId: 'custbody_cseg_3k_sistema',
                                                                             value: sistema
                                                                         });
-    
+
                                                                     }
 
                                                                     recordCreate.selectNewLine({
@@ -1428,7 +1454,9 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                             QUE BAJE SALDO DE CUENTA CORRIENTE DE DEPOSITO DE CLIENTE FINAL
                                             */
 
-                                            var lineCountSOFinal = soRecordFinal.getLineCount({sublistId: 'item'});
+                                            /*var lineCountSOFinal = soRecordFinal.getLineCount({
+                                                sublistId: 'item'
+                                            });*/
 
                                             //for(var )
 
@@ -1512,8 +1540,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                     }
 
                 }
-            }
-            finally{
+            } finally {
 
                 if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0 && errorCath == false) {
 
