@@ -143,6 +143,12 @@
                             fieldId: 'taxcode',
                             line: i
                         }); 
+
+                        objItem.priceLevel = objRecord.getSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'price',
+                            line: i
+                        });                        
                         
                         objItem.ingresoFacturar = objRecord.getSublistValue({
                             sublistId: 'item',
@@ -166,7 +172,7 @@
                             sublistId: 'item',
                             fieldId: 'custcol_3k_proveedor_liquidacion',
                             line: i
-                        }); 
+                        });                          
 
                         try{
                             
@@ -185,7 +191,13 @@
                                 sublistId: 'item',
                                 fieldId: 'taxcode',
                                 value: objItem.taxCode
-                            });                        
+                            });            
+
+                            objRecord.setCurrentSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'price',
+                                value: objItem.priceLevel
+                            });  
 
                             objRecord.setCurrentSublistValue({
                                 sublistId: 'item',
