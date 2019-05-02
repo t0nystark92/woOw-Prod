@@ -172,37 +172,37 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         //log.debug('Pago Comisiones Servicios','BancoEmisorPago: '+bancoEmisorPago);
 
         // INICIO - Consultar Cuentas de Pago
-        var arrayInfoCuentas = [];
-        var searchInfoCuentas = searchSavedPro('customsearch_3k_config_ctas_cupones');
-
-        if (!isEmpty(searchInfoCuentas) && !searchInfoCuentas.error) {
-          if (!isEmpty(searchInfoCuentas.objRsponseFunction.result) && searchInfoCuentas.objRsponseFunction.result.length > 0) {
-            var resultSet = searchInfoCuentas.objRsponseFunction.result;
-            var resultSearch = searchInfoCuentas.objRsponseFunction.search;
-            for (var q = 0; q < resultSet.length; q++) {
-              var infoCuenta = new Object({});
-              infoCuenta.moneda = resultSet[q].getValue({
-                name: resultSearch.columns[1]
-              });
-              infoCuenta.cuentaPago = resultSet[q].getValue({
-                name: resultSearch.columns[6]
-              });
-              infoCuenta.cuentaCobro = resultSet[q].getValue({
-                name: resultSearch.columns[7]
-              });
-              arrayInfoCuentas.push(infoCuenta);
-            }
-          } else {
-            log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
-            log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
-            return null;
-          }
-        } else {
-          log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
-          log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
-          return null;
-        }
-        log.debug('Pago Comisiones Servicios', 'INPUT DATA - Cuentas de comisiones: ' + arrayInfoCuentas);
+        //var arrayInfoCuentas = [];
+        //var searchInfoCuentas = searchSavedPro('customsearch_3k_config_ctas_cupones');
+//
+        //if (!isEmpty(searchInfoCuentas) && !searchInfoCuentas.error) {
+          //if (!isEmpty(searchInfoCuentas.objRsponseFunction.result) && searchInfoCuentas.objRsponseFunction.result.length > 0) {
+            //var resultSet = searchInfoCuentas.objRsponseFunction.result;
+            //var resultSearch = searchInfoCuentas.objRsponseFunction.search;
+            //for (var q = 0; q < resultSet.length; q++) {
+              //var infoCuenta = new Object({});
+              //infoCuenta.moneda = resultSet[q].getValue({
+                //name: resultSearch.columns[1]
+              //});
+              //infoCuenta.cuentaPago = resultSet[q].getValue({
+                //name: resultSearch.columns[6]
+              //});
+              //infoCuenta.cuentaCobro = resultSet[q].getValue({
+                //name: resultSearch.columns[7]
+              //});
+              //arrayInfoCuentas.push(infoCuenta);
+            //}
+          //} else {
+            //log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
+            //log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
+            //return null;
+          //}
+        //} else {
+          //log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
+          //log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
+          //return null;
+        //}
+        //log.debug('Pago Comisiones Servicios', 'INPUT DATA - Cuentas de comisiones: ' + arrayInfoCuentas);
         // FIN - Consultar Cuentas de Pago
 
         // INICIO - Consultar Datos Bancarios Proveedores Comisionistas
