@@ -313,15 +313,22 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                   log.audit('Todos los datos completados', 'Guardando Factura para el remito con ID Interno: ' + idRemito);
                   
                   log.debug('beforeSubmit - FC', 'beforeSubmit - FC - INICIO');
-                  funcionalidadesURU.beforeSubmit('create', factRecord);
+                  var befSubmitRsp = funcionalidadesURU.beforeSubmit('create', factRecord);
+                  if (befSubmitRsp.error == false) {
+                    var idFactGenerada = factRecord.save();
+                  } else {
+                    log.error('beforeSubmit - FC', 'beforeSubmit - FC - ERROR: ' + befSubmitRsp);
+                    //throw (befSubmitRsp.codigo, befSubmitRsp);
+                  }
                   log.debug('beforeSubmit - FC', 'beforeSubmit - FC - FIN');
-                  
-                  var idFactGenerada = factRecord.save();
-                
 
                   if (!utilities.isEmpty(idFactGenerada)) {
                     log.debug('afterSubmit - FC', 'afterSubmit - FC - INICIO');
-                    funcionalidadesURU.afterSubmit('invoice', idFactGenerada);
+                    var aftSubmitRsp = funcionalidadesURU.afterSubmit('invoice', idFactGenerada);
+                    if (aftSubmitRsp.error == true){
+                      log.error('afterSubmit - FC', 'afterSubmit - FC - ERROR: ' + aftSubmitRsp);
+                      //throw (aftSubmitRsp.codigo, aftSubmitRsp);
+                    }
                     log.debug('afterSubmit - FC', 'afterSubmit - FC - FIN');
                     
                     log.debug('Seteando ID de Factura')
@@ -341,7 +348,8 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                       }
                     });
                     log.debug('GenerarCAE - FC', 'GenerarCAE - FC - INICIO');
-                    funcionalidadesOV.generarCAE([idFactGenerada], factRecord.getValue('subsidiary'));
+                      var generarCAERsp = funcionalidadesOV.generarCAE([idFactGenerada], factRecord.getValue('subsidiary'));
+                      log.audit('GenerarCAE - FC', 'generarCAERsp: ' + JSON.stringify(generarCAERsp));
                     log.debug('GenerarCAE - FC', 'GenerarCAE - FC - FIN');
                   }
                   log.audit('Factura Guardada', 'Generada Factura con ID Interno: ' + idFactGenerada + '. Para el Remito con ID Interno: ' + idRemito);

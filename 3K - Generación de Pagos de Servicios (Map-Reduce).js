@@ -31,11 +31,11 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
       return false;
     }
 
-    function enviarEmail(autor, destinatario, titulo, mensaje,adjuntos) {
+    function enviarEmail(autor, destinatario, titulo, mensaje, adjuntos) {
       log.debug('Pago Comisiones Servicios', 'SUMMARIZE - INICIO ENVIO EMAIL - ID AUTOR : ' + autor + ' - ID DESTINATARIO : ' + destinatario + ' - TITULO : ' + titulo + ' - MENSAJE : ' + mensaje);
 
       if (!isEmpty(autor) && !isEmpty(destinatario) && !isEmpty(titulo) && !isEmpty(mensaje)) {
-        log.debug('Proceso de Envio de mail','Enviando');
+        log.debug('Proceso de Envio de mail', 'Enviando');
         attachments = adjuntos || undefined;
         email.send({
           author: autor,
@@ -44,7 +44,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           body: mensaje,
           attachments: attachments
         });
-        log.debug('Proceso de Envio de mail','Enviado');
+        log.debug('Proceso de Envio de mail', 'Enviado');
       } else {
         var detalleError = 'No se recibio la siguiente informacion necesaria para realizar el envio del Email : ';
         if (isEmpty(autor)) {
@@ -172,37 +172,37 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         //log.debug('Pago Comisiones Servicios','BancoEmisorPago: '+bancoEmisorPago);
 
         // INICIO - Consultar Cuentas de Pago
-        var arrayInfoCuentas = [];
-        var searchInfoCuentas = searchSavedPro('customsearch_3k_config_ctas_cupones');
-
-        if (!isEmpty(searchInfoCuentas) && !searchInfoCuentas.error) {
-          if (!isEmpty(searchInfoCuentas.objRsponseFunction.result) && searchInfoCuentas.objRsponseFunction.result.length > 0) {
-            var resultSet = searchInfoCuentas.objRsponseFunction.result;
-            var resultSearch = searchInfoCuentas.objRsponseFunction.search;
-            for (var q = 0; q < resultSet.length; q++) {
-              var infoCuenta = new Object({});
-              infoCuenta.moneda = resultSet[q].getValue({
-                name: resultSearch.columns[1]
-              });
-              infoCuenta.cuentaPago = resultSet[q].getValue({
-                name: resultSearch.columns[6]
-              });
-              infoCuenta.cuentaCobro = resultSet[q].getValue({
-                name: resultSearch.columns[7]
-              });
-              arrayInfoCuentas.push(infoCuenta);
-            }
-          } else {
-            log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
-            log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
-            return null;
-          }
-        } else {
-          log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
-          log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
-          return null;
-        }
-        log.debug('Pago Comisiones Servicios', 'INPUT DATA - Cuentas de comisiones: ' + arrayInfoCuentas);
+        //var arrayInfoCuentas = [];
+        //var searchInfoCuentas = searchSavedPro('customsearch_3k_config_ctas_cupones');
+//
+        //if (!isEmpty(searchInfoCuentas) && !searchInfoCuentas.error) {
+          //if (!isEmpty(searchInfoCuentas.objRsponseFunction.result) && searchInfoCuentas.objRsponseFunction.result.length > 0) {
+            //var resultSet = searchInfoCuentas.objRsponseFunction.result;
+            //var resultSearch = searchInfoCuentas.objRsponseFunction.search;
+            //for (var q = 0; q < resultSet.length; q++) {
+              //var infoCuenta = new Object({});
+              //infoCuenta.moneda = resultSet[q].getValue({
+                //name: resultSearch.columns[1]
+              //});
+              //infoCuenta.cuentaPago = resultSet[q].getValue({
+                //name: resultSearch.columns[6]
+              //});
+              //infoCuenta.cuentaCobro = resultSet[q].getValue({
+                //name: resultSearch.columns[7]
+              //});
+              //arrayInfoCuentas.push(infoCuenta);
+            //}
+          //} else {
+            //log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
+            //log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
+            //return null;
+          //}
+        //} else {
+          //log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
+          //log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
+          //return null;
+        //}
+        //log.debug('Pago Comisiones Servicios', 'INPUT DATA - Cuentas de comisiones: ' + arrayInfoCuentas);
         // FIN - Consultar Cuentas de Pago
 
         // INICIO - Consultar Datos Bancarios Proveedores Comisionistas
@@ -319,9 +319,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 });
 
                 //if (!isEmpty(objCuenta) && objCuenta.length > 0) {
-                  //if (obj.tipoDoc == 'vendbill' || obj.tipoDoc == 'vendcred') {
-                    //obj.idCuenta = objCuenta[0].cuentaPago;
-                  //}
+                //if (obj.tipoDoc == 'vendbill' || obj.tipoDoc == 'vendcred') {
+                //obj.idCuenta = objCuenta[0].cuentaPago;
+                //}
                 //}
 
                 var objDatosBancarios = arrayDatosBancarios.filter(function (objeto) {
@@ -418,7 +418,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             obj.tipoDoc = searchResult.tipoDoc;
             obj.empresa = searchResult.empresa;
             obj.moneda = searchResult.moneda;
-            
+
             obj.importePago = searchResult.importePago;
             obj.sitio = searchResult.sitio;
             //obj.fecha = fechaLocal;
@@ -432,7 +432,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             obj.bancoEmisorPago = searchResult.bancoEmisorPago;
 
             //var clave = obj.sitio + '-' + obj.empresa + '-' + obj.moneda;
-            var clave = obj.idProvCli + '-' + obj.moneda +'-'+obj.idCuenta;
+            var clave = obj.idProvCli + '-' + obj.moneda + '-' + obj.idCuenta;
 
             context.write(clave, JSON.stringify(obj));
 
@@ -460,60 +460,44 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
      */
     function reduce(context) {
       log.audit('Pago Comisiones Servicios', 'INICIO REDUCE - KEY : ' + context.key);
+
+      var idPago = null;
+
+      var registro = JSON.parse(context.values[0]);
+      if (registro.tipoDoc == 'custinvc' || registro.tipoDoc == 'custcred') {
+
+        log.audit('Pago Comisiones Servicios - REDUCE', 'Ejecutando Funcion de Generar Pago de Cliente');
+
+        var respuestaF = generarPagoCliente(context.values);
+
+        log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Cliente Ejecutada');
+
+      } else if (registro.tipoDoc == 'vendbill' || registro.tipoDoc == 'vendcred') {
+
+        log.audit('Pago Comisiones Servicios - REDUCE', 'Ejecutando Funcion de Generar Pago de Proveedor');
+
+        var respuestaF = generarPagoProveedor(context.values);
+
+        log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Proveedor Ejecutada');
+
+      }
+      // FIN GENERAR PAGO LIQUIDACION
+
       var respuesta = {};
+      respuesta.idPago = respuestaF.idPago;
       respuesta.error = false;
-      respuesta.mensaje = [];
-      respuesta.idPago = [];
-      respuesta.transacciones = [];
-      var erroresEnProceso = false;
-      var transaccionesSinError = [];
+      respuesta.mensaje = "";
 
-      for(var n=0; n < context.values.length; n++){
-        var registro = JSON.parse(context.values[n]);
-        if (registro.tipoDoc == 'custinvc' || registro.tipoDoc == 'custcred') {
-
-          log.audit('Pago Comisiones Servicios - REDUCE', 'Ejecutando Funcion de Generar Pago de Cliente');
-
-          var respuestaF = generarPagoCliente(context.values);
-
-          log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Cliente Ejecutada');
-
-        }
-        
-        else if (registro.tipoDoc == 'vendbill' || registro.tipoDoc == 'vendcred') {
-
-          log.audit('Pago Comisiones Servicios - REDUCE', 'Ejecutando Funcion de Generar Pago de Proveedor');
-
-          var respuestaF = generarPagoProveedor(context.values);
-
-          log.audit('Pago Comisiones Servicios - REDUCE', 'Funcion para Generar Pago de Proveedor Ejecutada');
-
-        }
-        // FIN GENERAR PAGO LIQUIDACION
-        respuesta.idPago.push(respuestaF.idPago);
-        if (respuestaF.error == true) {
-          log.error('Generacion Pago Comision', 'REDUCE - ' + respuestaF.mensaje);
-          erroresEnProceso = true;
-          respuesta.mensaje.push(respuestaF.mensaje);
-        } else {
-          respuesta.mensaje.push('El Pago con ID Interno : ' + respuestaF.idPago + ' Se genero correctamente Asociado a las transacciones : ' + JSON.stringify(respuestaF.transacciones));
-          respuesta.transacciones = respuesta.transacciones.concat(respuestaF.transacciones);
-          transaccionesSinError = transaccionesSinError.concat(respuestaF.transacciones);
-          log.debug('respuesta.transacciones',respuesta.transacciones);
-        }
-      }
-      if(erroresEnProceso == true){
+      if (respuestaF.error == true) {
+        log.error('Generacion Pago Comision', 'REDUCE - ' + respuestaF.mensaje);
         respuesta.error = true;
+        respuesta.mensaje = respuestaF.mensaje;
+      } else {
+        respuesta.mensaje = 'El Pago con ID Interno : ' + respuestaF.idPago + ' Se genero correctamente Asociado a las transacciones : ' + JSON.stringify(respuestaF.transacciones);
+        respuesta.transacciones = respuestaF.transacciones;
       }
-      // INICIO ACTUALIZAR LINEAS LIQUIDADAS
-      //log.audit('Pago Comisiones Servicios - REDUCE', 'MARCAR LINEAS LIQUIDADAS - INICIO');
-      //log.debug('transaccionesSinError',transaccionesSinError);
-        //marcarLiquidadas(transaccionesSinError);
-      //log.audit('Pago Comisiones Servicios - REDUCE', 'MARCAR LINEAS LIQUIDADAS - FIN');
-      // FIN ACTUALIZAR LINEAS LIQUIDADAS
 
       log.audit('Generacion Pago Comision', 'FIN REDUCE - KEY : ' + context.key + ' ID PAGO GENERADO : ' + respuestaF.idPago);
-
 
       context.write(context.key, JSON.stringify(respuesta));
     }
@@ -525,7 +509,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
      * @since 2015.1
      */
     function summarize(summary) {
-      log.debug('reduce usage', summary.reduceSummary.usage);
+
       var errorGeneral = false;
       var mensajeErrorGeneral = 'El Proceso de Pago de Comisiones Servicios Finalizo con errores';
       var mensajeOKGeneral = 'El Proceso de Pago de Comisiones Servicios Finalizo Correctamente';
@@ -546,7 +530,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         var idEstadoFinalizado = '';
         var idEstadoError = '';
         var idEstadoCorrecto = '';
-        
+
 
         var mySearch = search.load({
           id: 'customsearch_3k_config_pago_liq'
@@ -633,7 +617,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 if (!isEmpty(registro)) {
                   var idEstado = idEstadoCorrecto;
                   if (registro.error == true) {
-                    //errorGeneral = true;
+                    errorGeneral = true;
                     idEstado = idEstadoError;
                   }
                   var registroDLOG = record.create({
@@ -674,8 +658,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                       value: idLog
                     });
                   }
-                  
-                  for(var i = 0; i < registro.transacciones.length; i++){
+
+                  for (var i = 0; i < registro.transacciones.length; i++) {
                     var empresaGuardada = empresas.filter(function (empid) {
                       return empid == registro.transacciones[i].empresa
                     });
@@ -709,7 +693,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           });
         }
         // FIN Generar Detalle Log
-        
+
       } catch (excepcion) {
 
         error = true;
@@ -722,152 +706,199 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
       }
 
       //INICIO Generar Mail de Liquidacion
-      if (error == false){
+      if (error == false) {
         try {
-        var filtroID = search.createFilter({
-          name: 'internalid',
-          operator: search.Operator.ANYOF,
-          values: transaccionesEnviar
-        });
-        var ssGeneralTransaccionesVentaSearch = search.load('customsearch_3k_fc_nc_imprimir_pago_serv');
-        var ssDetalleTransaccionesSearch = search.load('customsearch_3k_detalle_servicios_pagos');
-        ssDetalleTransaccionesSearch.filters.push(filtroID);
-        ssGeneralTransaccionesVentaSearch.filters.push(filtroID);
-        var ssDetTrans = correrSearch(ssDetalleTransaccionesSearch);
-        log.debug('721 ssDetTrans', ssDetTrans);
-        var ssGenTransVent = correrSearch(ssGeneralTransaccionesVentaSearch);
-        log.debug('723 ssGenTransVent', ssGenTransVent);
-        if (!isEmpty(ssDetTrans) && ssDetTrans.result.length > 0) {
-          for (var m = 0; m < empresas.length; m++) {
+          var filtroID = search.createFilter({
+            name: 'internalid',
+            operator: search.Operator.ANYOF,
+            values: transaccionesEnviar
+          });
+          var ssGeneralTransaccionesVentaSearch = search.load('customsearch_3k_fc_nc_imprimir_pago_serv');
+          var ssDetalleTransaccionesSearch = search.load('customsearch_3k_detalle_servicios_pagos');
+          ssDetalleTransaccionesSearch.filters.push(filtroID);
+          ssGeneralTransaccionesVentaSearch.filters.push(filtroID);
+          var ssDetTrans = correrSearch(ssDetalleTransaccionesSearch);
+          log.debug('721 ssDetTrans', ssDetTrans);
+          var ssGenTransVent = correrSearch(ssGeneralTransaccionesVentaSearch);
+          log.debug('723 ssGenTransVent', ssGenTransVent);
+          if (!isEmpty(ssDetTrans) && ssDetTrans.result.length > 0) {
+            for (var m = 0; m < empresas.length; m++) {
 
-             //GENERAR XLS - INICIO
+              //GENERAR XLS - INICIO
 
-            var ssXLS = ssDetTrans.result.filter(function (obj) {
-              return obj.getValue(ssDetTrans.columns[2]) == empresas[m];
-            });
-
-            var contenidoXLS = '';
-
-            //OJO: SI NO SE SELECCIONA NINGUNA FACTURA CLIENTE DE LA MISMA EMPRESA-MONEDA PARA LA LIQUIDACIÓN
-            //HABRÁ DATOS FALTANTES EN EL .XLS
-            for (var o = 0; o < ssXLS.length && ssXLS.length > 0; o++) {
-              if (o == 0) {
-                var fechaProceso = new Date();
-                var fechaString = fechaProceso.getDate() + '-' + (fechaProceso.getMonth() + 1) + '-' + fechaProceso.getFullYear();
-                var proveedor = search.lookupFields({
-                  type: 'vendor',
-                  id: empresas[m],
-                  columns: [
-                    'entityid',
-                    'companyname',
-                    'email'
-                  ]
-                });
-                contenidoXLS = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
-                contenidoXLS += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"   xmlns:o="urn:schemas-microsoft-com:office:office"   xmlns:x="urn:schemas-microsoft-com:office:excel"   xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"   xmlns:html="http://www.w3.org/TR/REC-html40">';
-                contenidoXLS += '  <Worksheet ss:Name="Liquidacion">';
-                contenidoXLS += '<Table>';
-                contenidoXLS += '      <Row>';
-                contenidoXLS += '         <Cell><Data ss:Type="String"> Detalle Pago Comisiones ' + proveedor.entityid+ ' ' + proveedor.companyname + ' ' + fechaString + ' </Data></Cell>';
-                contenidoXLS += '      </Row>';
-                contenidoXLS += '      <Row>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Orden</Data></Cell>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Descripcion</Data></Cell>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Fecha</Data></Cell>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Moneda</Data></Cell>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Importe de la Orden</Data></Cell>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Importe a Pagar</Data></Cell>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Devoluciones Aplicadas (A pagar)</Data></Cell>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Neto Comision</Data></Cell>';
-                contenidoXLS += '          <Cell><Data ss:Type="String">Devoluciones Aplicadas (Comision)</Data></Cell>';
-                contenidoXLS += '      </Row>';
-              }
-              contenidoXLS += '      <Row>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[0]) + '</Data></Cell>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[3]) + '</Data></Cell>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[4]) + '</Data></Cell>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[5]) + '</Data></Cell>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[6]) + '</Data></Cell>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[7]) + '</Data></Cell>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[9]) + '</Data></Cell>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[8]) + '</Data></Cell>';
-              contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[10]) + '</Data></Cell>';
-              contenidoXLS += '      </Row>';
-            }
-            contenidoXLS += '   </Table>';
-            contenidoXLS += '  </Worksheet>';
-            contenidoXLS += '</Workbook>';
-            
-            var contenidoFile = encode.convert({
-              string: contenidoXLS,
-              inputEncoding: encode.Encoding.UTF_8,
-              outputEncoding: encode.Encoding.BASE_64
-            });
-            var fileXLS = file.create({
-              name: 'Pago Comisiones ' + proveedor.entityid + ' ' + proveedor.companyname + ' ' + fechaString + '.xls',
-              fileType: file.Type.EXCEL,
-              contents: contenidoFile,
-              encoding: file.Encoding.BASE_64 //,
-              //folder: '-15' 
-            });
-            //try {
-              //var archivo = fileXLS.save();
-            //} catch (err) {
-              //log.error('Error guardando archivo de Liquidación', err.message);
-            //}
-            //GENERAR XLS - FIN
-
-            //GENERAR Invoices y CreditMemos - INICIO
-            if (!isEmpty(ssGenTransVent.result) && ssGenTransVent.result.length > 0){
-              var ssPDFGenerar = ssGenTransVent.result.filter(function (obj) {
-                return obj.getValue(ssGenTransVent.columns[3]) == empresas[m];
+              var ssXLS = ssDetTrans.result.filter(function (obj) {
+                return obj.getValue(ssDetTrans.columns[2]) == empresas[m];
               });
-              var arrayPDF = [];
-              if (ssPDFGenerar.length > 0){
-                for (var n = 0; n < ssPDFGenerar.length; n++){
-                  var idT = ssPDFGenerar[n].getValue(ssGenTransVent.columns[0]);
-                  var idForm = ssPDFGenerar[n].getValue(ssGenTransVent.columns[2]);
-                  var docPDF = render.transaction({
-                    entityId: parseInt(idT,10),
-                    printMode: render.PrintMode.PDF,
-                    formId: parseInt(idForm,10),
-                    inCustLocale:false
-                  });
-                  arrayPDF.push(docPDF);
-                }
-              }else{
-                log.audit('SIN TRANSACCIONES DE VENTA', 'No se generaron pagos de transacciones de venta para la empresa: ' + proveedor.entityid);
-              }
-            } else {
-              log.audit('SIN TRANSACCIONES DE VENTA', 'No se generaron pagos de transacciones de venta para ninguna empresa');
-            }
-            //GENERAR Invoices y CreditMemos - FIN
 
-            var autor = runtime.getCurrentUser().id;
-            var msj = 'A continuación se le adjunta el detalle de pagos de comisiones y las facturas asociadas generados el día de hoy ' + fechaString;
-            var mensajeMail = '<html><head></head><body><br>' + msj + '</body></html>';
-            var destinatario = empresas[m];
-            try{
-              var archivos;
-              if (!isEmpty(arrayPDF) && !isEmpty(fileXLS)) archivos = [fileXLS].concat(arrayPDF);
-              
-              else if (!isEmpty(arrayPDF)) archivos = arrayPDF;
-              
-              else if (!isEmpty(fileXLS)) archivos = [fileXLS];
-              //log.debug('SUMMARIZE', 'Enviando mail con archivos de detalle');
-              //email.send({
+              var contenidoXLS = '';
+
+              //OJO: SI NO SE SELECCIONA NINGUNA FACTURA CLIENTE DE LA MISMA EMPRESA-MONEDA PARA LA LIQUIDACIÓN
+              //HABRÁ DATOS FALTANTES EN EL .XLS
+              var filaTotales ={
+                importeOrden: 0.00,
+                importePagar: 0.00,
+                devolucionesPagar: 0.00,
+                netoComision: 0.00,
+                devolucionesNetoComision: 0.00
+              };
+              for (var o = 0; o < ssXLS.length && ssXLS.length > 0; o++) {
+                if (o == 0) {
+                  var fechaProceso = new Date();
+                  var fechaString = fechaProceso.getDate() + '-' + (fechaProceso.getMonth() + 1) + '-' + fechaProceso.getFullYear();
+                  var proveedor = search.lookupFields({
+                    type: 'vendor',
+                    id: empresas[m],
+                    columns: [
+                      'entityid',
+                      'companyname',
+                      'email'
+                    ]
+                  });
+                  contenidoXLS = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
+                  contenidoXLS += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"   xmlns:o="urn:schemas-microsoft-com:office:office"   xmlns:x="urn:schemas-microsoft-com:office:excel"   xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"   xmlns:html="http://www.w3.org/TR/REC-html40">';
+                  contenidoXLS += '  <Worksheet ss:Name="Liquidacion">';
+                  contenidoXLS += '<Table>';
+                  contenidoXLS += '      <Row>';
+                  contenidoXLS += '         <Cell><Data ss:Type="String"> Detalle Pago Comisiones ' + proveedor.entityid + ' ' + proveedor.companyname + ' ' + fechaString + ' </Data></Cell>';
+                  contenidoXLS += '      </Row>';
+                  contenidoXLS += '      <Row>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Orden</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Descripcion</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Fecha</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Moneda</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">FC/NC</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Importe a Pagar</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Devoluciones Aplicadas (A pagar)</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Neto Comision</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Devoluciones Aplicadas (Comision)</Data></Cell>';
+                  contenidoXLS += '      </Row>';
+                }
+                var esFCoNC = (ssXLS[o].getValue(ssDetTrans.columns[6]) > 0) ? 'FC' : 'NC';
+                contenidoXLS += '      <Row>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[0]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[3]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[4]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[5]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + esFCoNC + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[7]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[9]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[8]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[10]) + '</Data></Cell>';
+                contenidoXLS += '      </Row>';
+                //filaTotales.importeOrden += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[6]),10);
+                filaTotales.importePagar += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[7]),10);
+                filaTotales.devolucionesPagar += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[9]),10);
+                filaTotales.netoComision += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[8]),10);
+                filaTotales.devolucionesNetoComision += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[10]),10);
+                if (!isEmpty(ssXLS[o + 1]) && ssXLS[o + 1].getValue(ssDetTrans.columns[5]) != ssXLS[o].getValue(ssDetTrans.columns[5])){
+                  //Fila Totales X Moneda
+                  contenidoXLS += '      <Row>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + 'Total Ordenes en ' + ssXLS[o].getValue(ssDetTrans.columns[5]) + ':</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + ''/*filaTotales.importeOrden*/ + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.importePagar + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesPagar + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.netoComision + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesNetoComision + '</Data></Cell>';
+                  contenidoXLS += '      </Row>';
+                //Fila Totales X Moneda
+                  filaTotales.importeOrden = 0.00;
+                  filaTotales.importePagar = 0.00;
+                  filaTotales.devolucionesPagar = 0.00;
+                  filaTotales.netoComision = 0.00;
+                  filaTotales.devolucionesNetoComision = 0.00;
+                } else if (isEmpty(ssXLS[o + 1])){
+                  //Fila Totales X Moneda
+                  contenidoXLS += '      <Row>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + 'Total Ordenes en ' + ssXLS[o].getValue(ssDetTrans.columns[5]) + ':</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + ''/*filaTotales.importeOrden*/ + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.importePagar + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesPagar + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.netoComision + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesNetoComision + '</Data></Cell>';
+                  contenidoXLS += '      </Row>';
+                //Fila Totales X Moneda
+                }
+              }
+              contenidoXLS += '   </Table>';
+              contenidoXLS += '  </Worksheet>';
+              contenidoXLS += '</Workbook>';
+
+              var contenidoFile = encode.convert({
+                string: contenidoXLS,
+                inputEncoding: encode.Encoding.UTF_8,
+                outputEncoding: encode.Encoding.BASE_64
+              });
+              var fileXLS = file.create({
+                name: 'Pago Comisiones ' + proveedor.entityid + ' ' + proveedor.companyname + ' ' + fechaString + '.xls',
+                fileType: file.Type.EXCEL,
+                contents: contenidoFile,
+                encoding: file.Encoding.BASE_64 //,
+                //folder: '-15' 
+              });
+              //try {
+              //var archivo = fileXLS.save();
+              //} catch (err) {
+              //log.error('Error guardando archivo de Liquidación', err.message);
+              //}
+              //GENERAR XLS - FIN
+
+              //GENERAR Invoices y CreditMemos - INICIO
+              if (!isEmpty(ssGenTransVent.result) && ssGenTransVent.result.length > 0) {
+                var ssPDFGenerar = ssGenTransVent.result.filter(function (obj) {
+                  return obj.getValue(ssGenTransVent.columns[3]) == empresas[m];
+                });
+                var arrayPDF = [];
+                if (ssPDFGenerar.length > 0) {
+                  for (var n = 0; n < ssPDFGenerar.length; n++) {
+                    var idT = ssPDFGenerar[n].getValue(ssGenTransVent.columns[0]);
+                    var idForm = ssPDFGenerar[n].getValue(ssGenTransVent.columns[2]);
+                    var docPDF = render.transaction({
+                      entityId: parseInt(idT, 10),
+                      printMode: render.PrintMode.PDF,
+                      formId: parseInt(idForm, 10),
+                      inCustLocale: false
+                    });
+                    arrayPDF.push(docPDF);
+                  }
+                } else {
+                  log.audit('SIN TRANSACCIONES DE VENTA', 'No se generaron pagos de transacciones de venta para la empresa: ' + proveedor.entityid);
+                }
+              } else {
+                log.audit('SIN TRANSACCIONES DE VENTA', 'No se generaron pagos de transacciones de venta para ninguna empresa');
+              }
+              //GENERAR Invoices y CreditMemos - FIN
+
+              var autor = runtime.getCurrentUser().id;
+              var msj = 'A continuación se le adjunta el detalle de pagos de comisiones y las facturas asociadas generados el día de hoy ' + fechaString;
+              var mensajeMail = '<html><head></head><body><br>' + msj + '</body></html>';
+              var destinatario = empresas[m];
+              try {
+                var archivos;
+                if (!isEmpty(arrayPDF) && !isEmpty(fileXLS)) archivos = [fileXLS].concat(arrayPDF);
+
+                else if (!isEmpty(arrayPDF)) archivos = arrayPDF;
+
+                else if (!isEmpty(fileXLS)) archivos = [fileXLS];
+                //log.debug('SUMMARIZE', 'Enviando mail con archivos de detalle');
+                //email.send({
                 //author: autor,
                 //recipients: destinatario,
                 //subject: 'Detalle de Pagos de Comisiones',
                 //body: mensajeMail,
                 //attachments: archivos
-              //});
-              //log.debug('SUMMARIZE', 'Mail con archivos de detalle enviado');
-            }catch(xerror){
-              log.error('Error','Error enviando mail de detalle de comisiones, error: '+xerror);
+                //});
+                //log.debug('SUMMARIZE', 'Mail con archivos de detalle enviado');
+              } catch (xerror) {
+                log.error('Error', 'Error enviando mail de detalle de comisiones, error: ' + xerror);
+              }
+              enviarEmail(autor, destinatario, 'Detalle de Pagos de Comisiones', mensajeMail, archivos);
             }
-            enviarEmail(autor, destinatario, 'Detalle de Pagos de Comisiones', mensajeMail, archivos);
-            } 
           }
         } catch (e) {
           error = true;
@@ -911,7 +942,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
       enviarEmail(autor, destinatario, titulo, mensaje);
       // FIN Enviar Email Log
 
-  
+
 
       log.audit('Generacion Pago Servicios', 'FIN SUMMARIZE');
 
@@ -1223,10 +1254,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           var transaccionesAplicadas = [];
           for (var i = 0; !isEmpty(records) && records.length > 0 && i < records.length && error == false; i++) {
             var registro = JSON.parse(records[i]);
-            if (registro.tipoDoc == 'custinvc'){
+            if (registro.tipoDoc == 'custinvc') {
               var sublista = 'apply';
-            }
-            else if (registro.tipoDoc == 'custcred'){
+            } else if (registro.tipoDoc == 'custcred') {
               var sublista = 'credit';
             }
 
@@ -1235,12 +1265,15 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
               fieldId: 'internalid',
               value: registro.idInternoDocComision
             });
-            
+
             registroPago.selectLine({
               sublistId: sublista,
               line: 0
             });
-            log.debug('internalid linea 0',registroPago.getCurrentSublistValue({sublistId: 'apply', fieldId:'internalid'}));
+            log.debug('internalid linea 0', registroPago.getCurrentSublistValue({
+              sublistId: 'apply',
+              fieldId: 'internalid'
+            }));
 
             registroPago.selectLine({
               sublistId: sublista,
@@ -1285,7 +1318,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             }
 
             //if (isEmpty(idSitio)) {
-              //mensaje = mensaje + ' Sitio A Utilizar para realizar el Pago de las Comisiones / ';
+            //mensaje = mensaje + ' Sitio A Utilizar para realizar el Pago de las Comisiones / ';
             //}
 
             if (isEmpty(idEmpresa)) {
@@ -1331,30 +1364,30 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         var fechaChequeDiferido = '';
         var imprimirCheque = false;
         var bancoEmisorPago = null;
-        
+
         var error = false;
 
         var registro = JSON.parse(records[0]);
 
         if (!isEmpty(registro)) {
-            idCuenta = registro.idCuenta;
-            idDatosBancarios = registro.idDatosBancarios;
-            idEmpresa = registro.empresa;
-            idProveedor = registro.idProvCli;
-            tipoDoc = registro.tipoDoc;
-            idMoneda = registro.moneda;
-            //fecha = registro.fecha;
-            idSitio = registro.sitio;
-            fechaPago = registro.fechaPago;
-            formaPago = registro.formaPago;
-            cuentaOrigen = registro.cuentaOrigen;
-            formularioImpresion = registro.formularioImpresion;
-            fechaChequeDiferido = registro.fechaChequeDiferido;
-            if (!isEmpty(registro.imprimirCheque) && registro.imprimirCheque == 'T') {
-              imprimirCheque = true;
-            }
-            bancoEmisorPago = registro.bancoEmisorPago;
-          } else {
+          idCuenta = registro.idCuenta;
+          idDatosBancarios = registro.idDatosBancarios;
+          idEmpresa = registro.empresa;
+          idProveedor = registro.idProvCli;
+          tipoDoc = registro.tipoDoc;
+          idMoneda = registro.moneda;
+          //fecha = registro.fecha;
+          idSitio = registro.sitio;
+          fechaPago = registro.fechaPago;
+          formaPago = registro.formaPago;
+          cuentaOrigen = registro.cuentaOrigen;
+          formularioImpresion = registro.formularioImpresion;
+          fechaChequeDiferido = registro.fechaChequeDiferido;
+          if (!isEmpty(registro.imprimirCheque) && registro.imprimirCheque == 'T') {
+            imprimirCheque = true;
+          }
+          bancoEmisorPago = registro.bancoEmisorPago;
+        } else {
           error = true;
           mensajeError = "Error No se Recibio Informacion del registro para generar el Pago";
         }
@@ -1366,7 +1399,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
       if (error == false) {
 
-        if (error == false && !isEmpty(idEmpresa) && !isEmpty(idMoneda) && !isEmpty(cuentaOrigen) /*&& !isEmpty(idCuenta) && !isEmpty(idSitio) && !isEmpty(idLiquidacion)*/) {
+        if (error == false && !isEmpty(idEmpresa) && !isEmpty(idMoneda) && !isEmpty(cuentaOrigen) /*&& !isEmpty(idCuenta) && !isEmpty(idSitio) && !isEmpty(idLiquidacion)*/ ) {
 
           var esTransferencia = false;
           // INICIO GENERAR PAGO
@@ -1403,12 +1436,12 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             value: idProveedor,
             ignoreFieldChange: false
           });
-          
+
           registroPago.setValue({
             fieldId: 'apacct',
             value: idCuenta
           });
-          
+
           registroPago.setValue({
             fieldId: 'account',
             value: cuentaOrigen
@@ -1462,8 +1495,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             log.debug('Pago Comisiones Servicios', 'REDUCE - Fecha Pago : ' + fechaPagoDate);
 
             //registroPago.setValue({
-              //fieldId: 'custbody_3k_fecha_pago',
-              //value: fechaPagoDate
+            //fieldId: 'custbody_3k_fecha_pago',
+            //value: fechaPagoDate
             //});
 
             registroPago.setValue({
@@ -1528,7 +1561,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             fieldId: 'account',
             value: cuentaOrigen
           });
-          log.debug('ACCOUNT - intento',registroPago.getValue('account'));
+          log.debug('ACCOUNT - intento', registroPago.getValue('account'));
           //INICIO - MARCAR FACTURAS Y NC APLICADAS
           var transaccionesAplicadas = [];
           for (var i = 0; !isEmpty(records) && records.length > 0 && i < records.length && error == false; i++) {
@@ -1554,7 +1587,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             });
             registroPago.setCurrentSublistValue({
               sublistId: 'apply',
-              fieldId:'apply',
+              fieldId: 'apply',
               value: true
             });
             transaccionesAplicadas.push({
@@ -1562,7 +1595,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
               id: registro.idInternoDocComision,
               empresa: idEmpresa
             });
-            registroPago.commitLine({sublistId: 'apply'});
+            registroPago.commitLine({
+              sublistId: 'apply'
+            });
           }
           //FIN - MARCAR FACTURAS Y NC APLICADAS
           try {
@@ -1602,7 +1637,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             error = true;
             var mensaje = 'No se Recibio la Siguiente Informacion requerida del Registro de Comisión : ';
             //if (isEmpty(idCuentaIngreso)) {
-              //mensaje = mensaje + ' Cuenta de Ingresos A Utilizar para realizar el Pago de la Comisión / ';
+            //mensaje = mensaje + ' Cuenta de Ingresos A Utilizar para realizar el Pago de la Comisión / ';
             //}
 
             if (isEmpty(cuentaOrigen)) {
@@ -1610,7 +1645,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             }
 
             //if (isEmpty(idSitio)) {
-              //mensaje = mensaje + ' Sitio A Utilizar para realizar el Pago de las Comisiones / ';
+            //mensaje = mensaje + ' Sitio A Utilizar para realizar el Pago de las Comisiones / ';
             //}
 
             if (isEmpty(idEmpresa)) {
@@ -1626,7 +1661,12 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           }
         }
       }
-      return { error: error, mensaje: mensajeError, idPago: idPago, transacciones: transaccionesAplicadas};
+      return {
+        error: error,
+        mensaje: mensajeError,
+        idPago: idPago,
+        transacciones: transaccionesAplicadas
+      };
     }
 
     function correrSearch(ss) {

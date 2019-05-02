@@ -838,12 +838,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                 line: i
                             });
 
-                            var itemImporte = objRecord.getCurrentSublistValue({sublistId: 'item', fieldId: 'grossamt'});
+                            var itemImporte = objRecord.getCurrentSublistValue({ sublistId: 'item', fieldId: 'grossamt' });
                             log.debug('Creación OV (SS) - beforeSubmit', 'itemImporte: ' + itemImporte);
 
                             objRecord.setCurrentSublistValue({ sublistId: 'item', fieldId: 'custcol_3k_importe_bruto_woow', value: itemImporte });
-                            
-                            objRecord.commitLine({sublistId: 'item'});                        
+
+                            objRecord.commitLine({ sublistId: 'item' });
                         }
                     }
 
@@ -949,6 +949,25 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             id: idOV,
                             isDynamic: true
                         });
+
+                        var impuestoCostoEnvio = 0.00;
+                        var importeTotalWoow = 0.00;
+
+                        impuestoCostoEnvio = objRecord.getValue({
+                            fieldId: 'custbody_3k_impuesto_costo_envio'
+                        });
+
+                        importeTotalWoow = objRecord.getValue({
+                            fieldId: 'custbody_3k_imp_total_woow'
+                        });
+
+                        log.debug('Creación OV (SS) - afterSubmit', 'importeTotalWoow antes del Costo Envio: ' + JSON.stringify(importeTotalWoow) + ', impuestoCostoEnvio: ' + JSON.stringify(impuestoCostoEnvio));
+
+                        if (!utilities.isEmpty(impuestoCostoEnvio) && impuestoCostoEnvio> 0.00) {
+                            importeTotalWoow = parseFloat(importeTotalWoow + impuestoCostoEnvio, 10);
+                            importeTotalWoow = parseFloat(importeTotalWoow, 10).toFixed(2);
+                            log.debug('Creación OV (SS) - afterSubmit', 'importeTotalWoow + impuestoCostoEnvio: ' + JSON.stringify(importeTotalWoow));
+                        }
 
                         // INICIO GENERAR AJUSTE POR REDONDEO
 
@@ -1237,7 +1256,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                                 fieldId: 'custbody_3k_programa_fidelidad',
                                 value: fidelidadOV
                             });
-
+       
                             // INICIO GRABAR OV
                             try {
                                 var recordId = objRecord.save({
@@ -1461,7 +1480,6 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         var importeTotalOVWOOW = objRecord.getValue({
                             fieldId: 'custbody_3k_imp_total_woow'
                         });
-
                         var cantidadLineasOV = objRecord.getLineCount({
                             sublistId: 'item'
                         });
