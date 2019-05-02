@@ -9,14 +9,18 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
 
         function afterSubmit(context) {
+
+            var errorCath = false;
+            var soRecord = context.newRecord;
+
+
+            var soRecordOld = context.oldRecord;
+
             try {
 
                 if (context.type == 'edit') {
 
-                    var soRecord = context.newRecord;
 
-
-                    var soRecordOld = context.oldRecord;
 
                     var esServicio = soRecord.getValue({
                         fieldId: 'custbody_3k_ov_servicio'
@@ -198,9 +202,22 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                     line: i
                                 });
 
-                                if (esFidelidadLineFor == true || esRedondeoLineFor == true) {
+                                var esRedondeoLineFor = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_es_redondeo',
+                                    line: i
+                                });
+
+                                var esDescuentoLineFor = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_item_discount_line',
+                                    line: i
+                                });
+
+                                if (esFidelidadLineFor == true || esRedondeoLineFor == true || esDescuentoLineFor == true) {
                                     continue
                                 }
+
 
                                 log.debug('estadoServicio', estadoServicio);
                                 log.debug('estadoServicioOld', estadoServicioOld);
@@ -589,11 +606,13 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                                             log.audit("Fact Comisión", "Inicio comprobación monedas")
 
-                                                            var currencyFactComsion = factComision.getValue({fieldId: 'currency'});
+                                                            var currencyFactComsion = factComision.getValue({
+                                                                fieldId: 'currency'
+                                                            });
 
-                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision: '+ currencyFactComsion + ' - Moneda OV: '+ currency);
+                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision: ' + currencyFactComsion + ' - Moneda OV: ' + currency);
 
-                                                            if (currencyFactComsion != currency){
+                                                            if (currencyFactComsion != currency) {
 
                                                                 factComision.setValue({
                                                                     fieldId: 'currency',
@@ -602,9 +621,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                                             }
 
-                                                            var currencyFactComsionAfter = factComision.getValue({fieldId: 'currency'});
+                                                            var currencyFactComsionAfter = factComision.getValue({
+                                                                fieldId: 'currency'
+                                                            });
 
-                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision After seteo: '+ currencyFactComsion);
+                                                            log.debug('Fact Comisión', 'Moneda de Fact Comision After seteo: ' + currencyFactComsion);
 
                                                             log.audit("Fact Comisión", "Fin comprobación monedas")
 
@@ -635,7 +656,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                                                         log.audit("Armado Lines Fact Comision", "Fin Seteo 0 Rate")
 
-                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo amount. ingresoLiqSinIva: "+ ingresoLiqSinIva)
+                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo amount. ingresoLiqSinIva: " + ingresoLiqSinIva)
 
                                                                         factComision.setCurrentSublistValue({
                                                                             sublistId: 'item',
@@ -643,9 +664,9 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                             value: parseFloat(ingresoLiqSinIva).toFixed(2)
                                                                         });
 
-                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo amount. ingresoLiqSinIva: "+ ingresoLiqSinIva)
+                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo amount. ingresoLiqSinIva: " + ingresoLiqSinIva)
 
-                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo taxcode. taxcode: "+ taxcode)
+                                                                        log.audit("Armado Lines Fact Comision", "Inicio Seteo taxcode. taxcode: " + taxcode)
 
                                                                         factComision.setCurrentSublistValue({
                                                                             sublistId: 'item',
@@ -653,7 +674,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                             value: taxcode
                                                                         });
 
-                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo taxcode. taxcode: "+ taxcode)
+                                                                        log.audit("Armado Lines Fact Comision", "Fin Seteo taxcode. taxcode: " + taxcode)
 
                                                                     } else {
 
@@ -711,12 +732,21 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                                                 } else {
 
-                                                                    factComision.removeLine({
+                                                                    var redondeoAjd = factComision.getSublistValue({
                                                                         sublistId: 'item',
+                                                                        fieldId: 'custcol_3k_es_redondeo',
                                                                         line: l
-                                                                    });
+                                                                    })
 
-                                                                    numLinesFact--;
+                                                                    if (redondeoAjd == false) {
+
+                                                                        factComision.removeLine({
+                                                                            sublistId: 'item',
+                                                                            line: l
+                                                                        });
+
+                                                                        numLinesFact--;
+                                                                    }
 
                                                                 }
 
@@ -1184,16 +1214,16 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                             fieldId: 'custbody_cseg_3k_sitio_web_o',
                                                                             value: sitioWeb
                                                                         });
-    
+
                                                                     }
-    
+
                                                                     if (!utilities.isEmpty(sistema)) {
-    
+
                                                                         recordCreate.setValue({
                                                                             fieldId: 'custbody_cseg_3k_sistema',
                                                                             value: sistema
                                                                         });
-    
+
                                                                     }
 
                                                                     recordCreate.selectNewLine({
@@ -1386,6 +1416,10 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                         }
 
+                                        /*
+                                            ACTUALIZO OV PARA MARCAR LAS LINEAS COMO FACTURADAS
+                                        */
+
                                         if (arrayLineasMarcarFacturadas.length > 0) {
 
                                             log.debug('entro facturar', 'entro');
@@ -1415,6 +1449,17 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                                             }
 
+                                            /*
+                                            RECORRO NUEVAMENTE LAS LINEAS DE LA OV FINAL PARA SABER SI SE DEBE CREAR JE
+                                            QUE BAJE SALDO DE CUENTA CORRIENTE DE DEPOSITO DE CLIENTE FINAL
+                                            */
+
+                                            /*var lineCountSOFinal = soRecordFinal.getLineCount({
+                                                sublistId: 'item'
+                                            });*/
+
+                                            //for(var )
+
 
 
                                             soRecordFinal.save();
@@ -1432,7 +1477,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                         }
 
-                        if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0) {
+                        /*if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0) {
 
                             var filterTran = arrayTranCreated.filter(function (obj) {
                                 return obj.accion == 'invoice' || obj.accion == 'creditmemo'
@@ -1469,7 +1514,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                             }
 
-                        }
+                        }*/
                     }
 
 
@@ -1477,6 +1522,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
 
             } catch (error) {
+                errorCath = true;
                 log.error("Error afertSubmit Catch", error.message);
                 log.error("Error Object afertSubmit Catch", JSON.stringify(error));
 
@@ -1486,10 +1532,50 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
                     for (var y = 0; y < arrayTranCreated.length; y++) {
 
-                        record.delete({
+                        /*record.delete({
                             type: arrayTranCreated[y].accion,
                             id: arrayTranCreated[y].idTran
-                        });
+                        });*/
+
+                    }
+
+                }
+            } finally {
+
+                if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0 && errorCath == false) {
+
+                    var filterTran = arrayTranCreated.filter(function (obj) {
+                        return obj.accion == 'invoice' || obj.accion == 'creditmemo'
+                    })
+
+                    if (!utilities.isEmpty(filterTran) && filterTran.length > 0) {
+
+                        var arrayCAE = new Array();
+
+                        for (var e = 0; e < filterTran.length; e++) {
+
+                            arrayCAE.push(filterTran[e].idTran);
+
+                        }
+
+                        var resultCae = funcionalidades.generarCAE(arrayCAE, subsidiary);
+
+                        if (resultCae.error == true) {
+
+                            record.submitField({
+                                type: record.Type.SALES_ORDER,
+                                id: soRecord.id,
+                                values: {
+                                    custbody_3k_netsuite_ov: resultCae.mensaje
+                                },
+                                options: {
+                                    enableSourcing: true,
+                                    ignoreMandatoryFields: false
+                                }
+                            })
+
+
+                        }
 
                     }
 
