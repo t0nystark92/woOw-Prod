@@ -1,6 +1,6 @@
 /**
  * @NApiVersion 2.x
- * @NAmdConfig ./configuration.json
+ * @NAmdConfig /SuiteBundles/Bundle 158453/configuration.json
  * @NScriptType UserEventScript
  * @NModuleScope Public
  */
