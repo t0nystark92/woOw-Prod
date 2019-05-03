@@ -1208,6 +1208,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                         value: ulid
                                                                     });
 
+                                                                    recordCreate.setValue({
+                                                                        fieldId: 'currency',
+                                                                        value: currency
+                                                                    });
+
                                                                     if (!utilities.isEmpty(sitioWeb)) {
 
                                                                         recordCreate.setValue({
