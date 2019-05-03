@@ -424,6 +424,10 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     sublistId: 'item'
                 });
 
+                var respArticulo = artFidelidad(idMoneda);
+
+                var idItem = respArticulo.idArticulo;
+
                 for (var i = 0; i < numLines; i++) {
 
                     var impTotalOC = 0;
@@ -477,7 +481,8 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         line: i
                     });
 
-                    var idItem = '1392886'; //Item de prueba, mientras se define el item a utilizar
+                    //se cambia por llamada a una funcion en la linea 427
+                    //var idItem = '1392886'; //Item de prueba, mientras se define el item a utilizar
 
                     if (!esFidelidad && !utilities.isEmpty(impTotalOC) && impTotalOC > 0) {
                         // INICIO GENERAR ORDEN DE COMPRA
@@ -562,6 +567,53 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
             log.audit('crearOrdenCompra', 'FIN - Crear Orden de Compra');
         }
+
+        function artFidelidad(moneda){
+            log.audit('Consulta de articulo Fidelidad', 'INICIO Consulta de articulo Fidelidad');
+            var respuesta = {};
+            respuesta.error = false;
+            respuesta.mensaje = "";
+            respuesta.idArticulo = '';
+
+            try {
+                if (!utilities.isEmpty(moneda)) {
+                    
+                    var filtros = [];
+                    var filtroMoneda = {};
+                    filtroMoneda.name = 'custrecord_3k_conf_prog_fidelidad_moneda';
+                    filtroMoneda.operator = 'ANYOF';
+                    filtroMoneda.values = moneda; 
+                    filtros.push(filtroMoneda);                           
+                    
+                    var searchArt = utilities.searchSavedPro('customsearch_3k_conf_prog_fidelidad',filtros);
+                    
+                    if (!searchArt.error && !utilities.isEmpty(searchArt.objRsponseFunction.result) && searchArt.objRsponseFunction.result.length > 0) {
+
+                        var resultSet = searchArt.objRsponseFunction.result;
+                        var resultSearch = searchArt.objRsponseFunction.search;
+                        
+                        respuesta.idArticulo = resultSet[0].getValue({name: resultSearch.columns[2]});
+                    } else{
+                        respuesta.error = true;
+                        respuesta.mensaje = "No hay articulo configurado para la moneda.";
+                        log.error('Consulta de articulo Fidelidad', respuesta.mensaje);        
+                    }
+                    log.debug('Consulta de articulo Fidelidad', 'Articulo Fidelidad: ' + respuesta.idArticulo);
+     
+                } else {
+                    respuesta.error = true;
+                    respuesta.mensaje = "Debe indicar la moneda para buscar el articulo.";
+                    log.error('Consulta de articulo Fidelidad', respuesta.mensaje);
+                }
+            } catch (excepcion) {
+                respuesta.error = true;
+                respuesta.mensaje = "Excepcion Consultando Articulo - Excepcion : " + excepcion.message;
+                log.error('Consulta de articulo Fidelidad', respuesta.mensaje);
+            }
+
+            log.audit('Consulta de articulo Fidelidad', 'FIN Consulta de articulo Fidelidad');
+            return respuesta;                    
+        }          
 
         return {
             afterSubmit: afterSubmit

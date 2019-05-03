@@ -207,6 +207,12 @@
 
                             objRecord.setCurrentSublistValue({
                                 sublistId: 'item',
+                                fieldId: 'custcol_3k_importe_bruto_woow',
+                                value: (objItem.importeDescuento * -1)
+                            });
+
+                            objRecord.setCurrentSublistValue({
+                                sublistId: 'item',
                                 fieldId: 'custcol_3k_item_discount_line',
                                 value: true
                             });
