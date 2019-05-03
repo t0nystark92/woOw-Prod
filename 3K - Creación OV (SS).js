@@ -971,7 +971,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                         // INICIO GENERAR AJUSTE POR REDONDEO
 
-                        var respuestaAjusteRedondeo = generarAjusteRedondeo(null, objRecord);
+                        var respuestaAjusteRedondeo = generarAjusteRedondeo(null, objRecord, importeTotalWoow);
 
                         log.debug('Creación OV (SS) - afterSubmit', 'respuestaAjusteRedondeo: ' + JSON.stringify(respuestaAjusteRedondeo));
 
@@ -1440,7 +1440,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
             // FIN - Obtener Array de Dias No Laborables
         }
 
-        function generarAjusteRedondeo(idOV, registro) {
+        function generarAjusteRedondeo(idOV, registro, importeTotalWoow) {
 
             log.audit('generarAjusteRedondeo ', 'INICIO');
             log.debug('generarAjusteRedondeo', 'Parámetros - idOV: ' + idOV + ', registro: ' + JSON.stringify(registro));
@@ -1477,9 +1477,10 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         var importeTotalOVNS = objRecord.getValue({
                             fieldId: 'custbody_3k_importe_total'
                         });
-                        var importeTotalOVWOOW = objRecord.getValue({
+                        /*var importeTotalOVWOOW = objRecord.getValue({
                             fieldId: 'custbody_3k_imp_total_woow'
-                        });
+                        });*/
+                        var importeTotalOVWOOW = importeTotalWoow;
                         var cantidadLineasOV = objRecord.getLineCount({
                             sublistId: 'item'
                         });

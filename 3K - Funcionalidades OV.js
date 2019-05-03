@@ -11416,7 +11416,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                     }
 
                     // INICIO - Inactivar Requisiciones Asociadas
-                    var numLinesRequisiciones = rec.getLineCount({
+                    /*var numLinesRequisiciones = rec.getLineCount({
                         sublistId: 'recmachcustrecord_3k_req_compra_ov'
                     });
 
@@ -11448,7 +11448,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                                 });
                             }
                         }
-                    }
+                    }*/
                     // FIN - Inactivar Requisiciones Asociadas
 
                     rec.save();
