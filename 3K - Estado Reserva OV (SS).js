@@ -579,11 +579,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
 
 
 
-                                                            log.audit("Funcionalidades URU", "Inicio beforeSubmit")
+                                                            /*log.audit("Funcionalidades URU", "Inicio beforeSubmit");
 
                                                             var beforeSubmit = funcionalidadesURU.beforeSubmit('create', factComision);
 
-                                                            log.audit("Funcionalidades URU", "Termino beforeSubmit")
+                                                            log.audit("Funcionalidades URU", "Termino beforeSubmit");*/
 
                                                             factComision.setValue({
                                                                 fieldId: 'custbody_3k_ulid_servicios',
@@ -756,6 +756,12 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                 fieldId: 'total'
                                                             })
 
+                                                            log.audit("Funcionalidades URU", "Inicio beforeSubmit");
+
+                                                            var beforeSubmit = funcionalidadesURU.beforeSubmit('create', factComision);
+
+                                                            log.audit("Funcionalidades URU", "Termino beforeSubmit");
+
                                                             log.audit("Armado Lines Fact Comision", "Inicio save FactComision");
 
                                                             var idTran = factComision.save();
@@ -784,7 +790,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                                 isDynamic: true
                                                             });
 
-                                                            var beforeSubmit = funcionalidadesURU.beforeSubmit('create', objRecord);
+                                                            //var beforeSubmit = funcionalidadesURU.beforeSubmit('create', objRecord);
 
 
                                                             var numLinesFidelidad = objRecord.getLineCount({
@@ -812,6 +818,8 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', '3K/utilities', '3K
                                                             var total = objRecord.getValue({
                                                                 fieldId: 'total'
                                                             })
+
+                                                            var beforeSubmit = funcionalidadesURU.beforeSubmit('create', objRecord);
 
                                                             var saveID = objRecord.save();
                                                             log.debug('crearFactura', 'Registro Factura: ' + saveID);
