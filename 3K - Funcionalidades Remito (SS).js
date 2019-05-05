@@ -52,7 +52,8 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
           ]
         });
         var esProducto = !(searchTravelServicio.custbody_3k_ov_servicio || searchTravelServicio.custbody_3k_ov_travel) || false;
-        if ((scriptContext.type == 'pack' || scriptContext.type == 'edit') && (shipStatus.toLowerCase() == 'b' || shipStatus.toLowerCase() == 'c') && utilities.isEmpty(idFactura) && esProducto) {
+        //if ((scriptContext.type == 'pack' || scriptContext.type == 'edit') && (shipStatus.toLowerCase() == 'b' || shipStatus.toLowerCase() == 'c') && utilities.isEmpty(idFactura) && esProducto) {
+        if ((scriptContext.type == 'ship' || (scriptContext.type == 'edit' && shipStatus.toLowerCase() == 'c')) && utilities.isEmpty(idFactura) && esProducto) {
           var idRemito = scriptContext.newRecord.id;
           var tipoTransaccion = scriptContext.newRecord.type;
           if (!utilities.isEmpty(idRemito) && !utilities.isEmpty(tipoTransaccion)) {
