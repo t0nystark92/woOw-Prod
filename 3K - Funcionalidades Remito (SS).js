@@ -222,10 +222,10 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                           sublistId: 'item',
                           fieldId: 'item'
                         });
-                        var importeEnvioOV = factRecord.getCurrentSublistValue({
-                          sublistId: 'item',
-                          fieldId: 'shippingcost'
-                        });
+                        //var importeEnvioOV = factRecord.getCurrentSublistValue({
+                          //sublistId: 'item',
+                          //fieldId: 'shippingcost'
+                        //});
                         var cantidadOV = factRecord.getCurrentSublistValue({
                           sublistId: 'item',
                           fieldId: 'quantity'
@@ -242,14 +242,14 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                             value: packed[0].cantidad,
                             ignoreFieldChange: true
                           });
-                          if (importeEnvioOV > 0) {
-                            var importeEnvioFact = (parseFloat(packed[0].cantidad) * parseFloat(importeEnvioOV)) / parseFloat(cantidadOV);
-                            factRecord.setCurrentSublistValue({
-                              sublistId: 'item',
-                              fieldId: 'shippingcost',
-                              value: importeEnvioFact
-                            });
-                          }
+                          //if (importeEnvioOV > 0) {
+                            //var importeEnvioFact = (parseFloat(packed[0].cantidad) * parseFloat(importeEnvioOV)) / parseFloat(cantidadOV);
+                            //factRecord.setCurrentSublistValue({
+                              //sublistId: 'item',
+                              //fieldId: 'shippingcost',
+                              //value: importeEnvioFact
+                            //});
+                          //}
                           factRecord.commitLine({
                             sublistId: 'item'
                           });
