@@ -7,13 +7,19 @@
 define(['N/record', 'N/search', '3K/utilities'], function (record, search, utilities) {
 
 
-    function beforeSubmit(context) {
+    function afterSubmit(context) {
 
         try {
 
             var error = false;
 
-            var objRecord = context.newRecord;
+            //var objRecord = context.newRecord;
+
+            var objRecord = record.load({
+                type: 'salesorder',
+                id: context.newRecord.id,
+                isDynamic: true
+            })
 
             /*INICIO CONSULTAR MAIN CATEGORY*/
 
@@ -96,17 +102,41 @@ define(['N/record', 'N/search', '3K/utilities'], function (record, search, utili
 
                     for (var i = 0; i < linesOV; i++) {
 
-                        var item = objRecord.getSublistValue({
+                        objRecord.selectLine({
                             sublistId: 'item',
-                            fieldId: 'item',
                             line: i
+                        })
+
+                        var item = objRecord.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'item'
                         });
 
-                        var mainCategory = objRecord.getSublistValue({
+                        var mainCategory = objRecord.getCurrentSublistValue({
                             sublistId: 'item',
-                            fieldId: 'custcol_cseg_3k_main_cat',
-                            line: i
+                            fieldId: 'custcol_cseg_3k_main_cat'
                         });
+
+                        var discount = objRecord.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_item_discount_line'
+                        });
+        
+                        var redondeo = objRecord.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_es_redondeo'
+                        });
+        
+                        var fidelidad = objRecord.getCurrentSublistValue({
+                            sublistId: 'item',
+                            fieldId: 'custcol_3k_programa_fidelidad'
+                        });
+        
+                        if (discount == false && redondeo == false && fidelidad == false) {
+
+                            continue;
+
+                        }
 
                         if (utilities.isEmpty(mainCategory)) {
 
@@ -118,16 +148,19 @@ define(['N/record', 'N/search', '3K/utilities'], function (record, search, utili
 
                             if (!utilities.isEmpty(filterArregloMainCategory) && filterArregloMainCategory.length > 0) {
 
-                                objRecord.setSublistValue({
+                                objRecord.setCurrentSublistValue({
                                     sublistId: 'item',
                                     fieldId: 'custcol_cseg_3k_main_cat',
-                                    value: filterArregloMainCategory[0]['Main Category'],
-                                    line: i
+                                    value: filterArregloMainCategory[0]['Main Category']
                                 })
 
                             }
 
                         }
+
+                        objRecord.commitLine({
+                            sublistId: 'item'
+                        })
                     }
 
 
@@ -195,6 +228,6 @@ define(['N/record', 'N/search', '3K/utilities'], function (record, search, utili
 
 
     return {
-        beforeSubmit: beforeSubmit
+        afterSubmit: afterSubmit
     }
 });
