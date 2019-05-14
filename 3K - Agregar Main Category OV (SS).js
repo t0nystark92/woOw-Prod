@@ -142,6 +142,7 @@ define(['N/record', 'N/search', '3K/utilities'], function (record, search, utili
                             respuestaParcial = new Object();
                             respuestaParcial.codigo = 'UCOV019';
                             respuestaParcial.mensaje = 'Error Consultando Main Category - No se encontraron resultados.';
+                            respuesta.detalle = new Array()
                             respuesta.detalle.push(respuestaParcial);
                             throw respuesta;
                         }
@@ -151,6 +152,7 @@ define(['N/record', 'N/search', '3K/utilities'], function (record, search, utili
                         respuestaParcial = new Object();
                         respuestaParcial.codigo = 'UCOV019';
                         respuestaParcial.mensaje = 'Error Consultando Main Category - ' + JSON.stringify(searchMC);
+                        respuesta.detalle = new Array()
                         respuesta.detalle.push(respuestaParcial);
                         throw respuesta;
 
@@ -171,6 +173,7 @@ define(['N/record', 'N/search', '3K/utilities'], function (record, search, utili
                 objRespuestaParcial = new Object();
                 objRespuestaParcial.codigo = 'UCOV003';
                 objRespuestaParcial.mensaje = e.message;
+                objRespuesta.detalle = new Array()
                 objRespuesta.detalle.push(objRespuestaParcial);
             }
 
