@@ -1,10 +1,12 @@
 /**
- *@NApiVersion 2.x
- *@NScriptType MapReduceScript
+ * @NApiVersion 2.x
+ * @NAmdConfig /SuiteBundles/Bundle 158453/configuration.json
+ * @NScriptType MapReduceScript
+ * @NModuleScope Public
  */
-define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', 'N/runtime'],
+define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', 'N/runtime', '3K/utilities', '3K/funcionalidadesURU'],
 
-    function (search, record, email, runtime, error, format, runtime) {
+    function (search, record, email, runtime, error, format, runtime, utilities, funcionalidadesURU) {
 
         function isEmpty(value) {
             if (value === '') {
@@ -150,6 +152,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 var jsonLines = getParams('custscript_jsonLines');
                 var jsonLinesObj = JSON.parse(jsonLines);
 
+                log.debug('jsonLines', JSON.stringify(jsonLines))
+
 
                 return jsonLinesObj;
             } catch (excepcion) {
@@ -166,6 +170,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             try {
 
                 var resultado = context.value;
+                var obj = new Object({});
 
                 if (!isEmpty(resultado)) {
 
@@ -174,17 +179,66 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     if (!isEmpty(searchResult)) {
 
                         var idOv = getParams('custscript_idOV');
+                        var soRecord = record.load({
+                            type: 'salesorder',
+                            id: idOv,
+                            isDynamic: true
+                        })
 
-                        var obj = new Object({});
+                        var numLinesOV = soRecord.getLineCount({
+                            sublistId: 'item'
+                        })
+
+                        for(var i = 0; i < numLinesOV; i++){
+
+                            var ulidFor = soRecord.getSublistValue({
+                                sublistId: 'item',
+                                fieldId: 'lineuniquekey',
+                                line: i
+                            });
+
+                            if(ulidFor == searchResult.ulid){
+
+                                var currencyOV = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'currency',
+                                    line: i
+                                })
+
+                                var subsidiariaOV = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'subsidiary',
+                                    line: i
+                                })
+
+                                
+                                obj.idOV = idOv;
+                                obj.currency = currencyOV;
+                                obj.subsidiary = subsidiariaOV;
+                                obj.ulid = searchResult.ulid;
+                                obj.estado = searchResult.estado;
+                                obj.filterEstados = searchResult.filterEstados;
+
+                                var clave = obj.ulid;
+
+                                break;
+
+                            }
+
+                        }
+
+                        /*var obj = new Object({});
 
                         obj.idOV = idOv;
                         obj.ulid = searchResult.ulid;
                         obj.estado = searchResult.estado;
                         obj.filterEstados = searchResult.filterEstados;
 
-                        var clave = obj.ulid;
+                        var clave = obj.ulid;*/
 
-                        context.write(clave, JSON.stringify(obj));
+                        log.debug('objMap', JSON.stringify(obj));
+
+                        //context.write(clave, JSON.stringify(obj));
 
                     } else {
                         log.error('Estados Reserva', 'MAP - Error Obteniendo Resultados de Lineas OV A Procesar');
@@ -211,86 +265,127 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
             if (!isEmpty(context.values) && context.values.length > 0) {
 
-                var idInternoOV = context.values[0].idOV;
+                //var idInternoOV = context.values[0].idOV;
                 //if (!isEmpty(idInternoOV)) {
 
-                    /*var soRecord = record.load({
+                /*var soRecord = record.load({
                         type: 'salesorder',
                         id: idInternoOV,
                         isDynamic: true
         
                     })*/
 
-                    for (var i = 0; i < context.values.length; i++) {
+                for (var i = 0; i < context.values.length; i++) {
 
-                        registro = JSON.parse(context.values[i]);
+                    registro = JSON.parse(context.values[i]);
 
-                        var idOv = registro.idOV;
-                        var ulid = registro.ulid;
-                        var estado = registro.estado;
-                        var filterEstados = registro.filterEstados;
-
-                    }
+                    var idOv = registro.idOV;
+                    var ulid = registro.ulid;
+                    var estado = registro.estado;
+                    var filterEstados = registro.filterEstados;
 
 
-                //}
 
 
-            }
+                    //}
 
-            /*TODO: llamar a SS arregloOC*/
+                    if (!utilities.isEmpty(filterEstados) && filterEstados.length > 0) {
+
+                        var arraySearchParams = [];
+                        var objParam = new Object({});
+                        objParam.name = 'custbody_3k_ulid_servicios';
+                        objParam.operator = 'IS'
+                        objParam.values = ulid;
+                        arraySearchParams.push(objParam);
+
+                        var arrayResultOC = utilities.searchSavedPro('customsearch_3k_oc_programa_fidelidad', arraySearchParams);
+                        var arregloOC = arrayResultOC.objRsponseFunction.array;
+
+                        for (var j = 0; j < filterEstados.length; j++) {
+
+                            var accion = filterEstados[j].custrecord_3k_accionable_accion;
+                            var transform = filterEstados[j].custrecord_3k_accionable_transform;
+                            var clienteGenerico = filterEstados[j].custrecord_3k_accionable_cliente;
+                            var fromrt = filterEstados[j].custrecord_3k_accionable_fromrt;
+                            var devolucion = filterEstados[j].custrecord_3k_accionable_devolucion;
+                            var unredeem = filterEstados[j].custrecord_3k_accionable_unredeem;
+                            var cuentaGral = filterEstados[j].custrecord_3k_accionable_cuentagen;
+                            var cuentaDebe = filterEstados[j].custrecord_3k_accionable_cuentadebe;
+                            var cuentaHaber = filterEstados[j].custrecord_3k_accionable_cuentahaber;
+                            var journal = filterEstados[j].custrecord_3k_accionable_journal;
+                            var aplicacionDeposito = filterEstados[j].custrecord_3k_accionable_aplicacion;
+                            var orden = filterEstados[j].custrecord_3k_accionable_orden;
+                            var cuentaPayment = filterEstados[j].custrecord_3k_accionable_paymentacct;
+                            var isvoid = filterEstados[j].custrecord_3k_accionable_void;
+
+                            var taxcode = filterEstados[j].custrecord_3k_accionable_taxcode;
+                            var mapReduce = filterEstados[j].custrecord_3k_accionable_map;
+
+                            /*PASO 1: CERRAR OC SI ES FIDELIDAD*/
+                            if (unredeem == true && fidelidad == true && j == 0) {
+
+                                var arregloOCFilter = arregloOC.filter(function (obj) {
+                                    return obj.custbody_3k_ulid_servicios == ulid
+                                });
+
+                                if (!utilities.isEmpty(arregloOCFilter) && arregloOCFilter.length > 0) {
+
+                                    var recOC = record.load({
+                                        type: 'purchaseorder',
+                                        id: arregloOCFilter[0].internalid,
+                                        isDynamic: true
+                                    });
+
+                                    var numlinesOC = recOC.getLineCount({
+                                        sublistId: 'item'
+                                    });
+
+                                    if (numlinesOC > 0) {
+
+                                        for (var p = 0; p < numlinesOC; p++) {
+
+                                            recOC.selectLine({
+                                                sublistId: 'item',
+                                                line: p
+                                            });
+
+                                            recOC.setCurrentSublistValue({
+                                                sublistId: 'item',
+                                                fieldId: 'isclosed',
+                                                value: true
+                                            });
+
+                                            recOC.commitLine({
+                                                sublistId: 'item'
+                                            });
 
 
-            /*PASO 1: CERRAR OC SI ES FIDELIDAD*/
-            if (unredeem == true && fidelidad == true && j == 0) {
+                                        }
 
-                var arregloOCFilter = arregloOC.filter(function (obj) {
-                    return obj.custbody_3k_ulid_servicios == ulid
-                });
+                                        recOC.save();
+                                    }
 
-                if (!utilities.isEmpty(arregloOCFilter) && arregloOCFilter.length > 0) {
+                                }
 
-                    var recOC = record.load({
-                        type: 'purchaseorder',
-                        id: arregloOCFilter[0].internalid,
-                        isDynamic: true
-                    });
 
-                    var numlinesOC = recOC.getLineCount({
-                        sublistId: 'item'
-                    });
 
-                    if (numlinesOC > 0) {
-
-                        for (var p = 0; p < numlinesOC; p++) {
-
-                            recOC.selectLine({
-                                sublistId: 'item',
-                                line: p
-                            });
-
-                            recOC.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'isclosed',
-                                value: true
-                            });
-
-                            recOC.commitLine({
-                                sublistId: 'item'
-                            });
-
+                            }
+                            /*FIN PASO 1*/
 
                         }
 
-                        recOC.save();
                     }
-
                 }
 
 
 
+
             }
-            /*FIN PASO 1*/
+
+
+
+
+
 
 
             /*PASO 2: CREAR INVOICE A CLIENTE GENERICO CON TRANSFORM DESDE OV*/
@@ -774,8 +869,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
         function summarize(summary) {
 
-            /*SAVED SEARCH DE DEPOSITOS ASOCIADOS*/
-            var arraySearchParams = [];
+            //SAVED SEARCH DE DEPOSITOS ASOCIADOS
+            /*var arraySearchParams = [];
             var objParam = new Object({});
             objParam.name = 'createdfrom';
             objParam.operator = 'ANYOF';
@@ -788,7 +883,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             log.debug('arregloDepositosOV', JSON.stringify(arregloDepositosOV));
 
 
-            /*APLICACION DE DEPOSITO CON ASIENTO*/
+            //APLICACION DE DEPOSITO CON ASIENTO
             if (aplicacionDeposito == true) {
 
                 if (fidelidad == false) {
@@ -819,12 +914,6 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                         fieldId: 'customer',
                         value: arregloDepositosOV[0].entity
                     })
-
-                    /*var dateDeposito = format.format({
-                        value: arregloDepositosOV[0].trandate,
-                        type: format.Type.DATE,
-                        timezone: format.Timezone.AMERCIA_BUENOS_AIRES
-                    });*/
 
                     var dateDeposito = format.parse({
                         value: arregloDepositosOV[0].trandate,
@@ -931,16 +1020,6 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                             log.debug('apply', apply)
                             log.debug('amount', amount)
 
-                            /*recordCreate.commitLine({
-                                sublistId: 'apply'
-                            });*/
-
-                            /*recordCreate.setSublistValue({
-                                sublistId: 'apply',
-                                fieldId: 'apply',
-                                value: true,
-                                line: lineJournal
-                            })*/
 
                             var lineDeposit = recordCreateDA.findSublistLineWithValue({
                                 sublistId: 'deposit',
@@ -981,8 +1060,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 }
 
 
-            }
-            /*FIN APLICACION DE DEPOSITO CON ASIENTO*/
+            }*/
+            //FIN APLICACION DE DEPOSITO CON ASIENTO
 
         }
 
