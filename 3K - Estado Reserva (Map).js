@@ -185,9 +185,41 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                             isDynamic: true
                         })
 
+                        var currencyOV = soRecord.getValue({
+                            sublistId: 'item',
+                            fieldId: 'currency'
+                        })
+
+                        var subsidiariaOV = soRecord.getValue({
+                            sublistId: 'item',
+                            fieldId: 'subsidiary'
+                        })
+
+                        var customer = soRecord.getValue({
+                            fieldId: 'entity'
+                        });
+    
+                        var trandate = soRecord.getValue({
+                            fieldId: 'trandate'
+                        });
+    
+                        var sitioWeb = soRecord.getValue({
+                            fieldId: 'custbody_cseg_3k_sitio_web_o'
+                        });
+    
+                        var sistema = soRecord.getValue({
+                            fieldId: 'custbody_cseg_3k_sistema'
+                        });
+    
+                        var fidelidad = soRecord.getValue({
+                            fieldId: 'custbody_3k_programa_fidelidad'
+                        });
+
                         var numLinesOV = soRecord.getLineCount({
                             sublistId: 'item'
                         })
+
+
 
                         for(var i = 0; i < numLinesOV; i++){
 
@@ -199,15 +231,11 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
                             if(ulidFor == searchResult.ulid){
 
-                                var currencyOV = soRecord.getSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'currency',
-                                    line: i
-                                })
+                                
 
-                                var subsidiariaOV = soRecord.getSublistValue({
+                                var grossamt = soRecord.getSublistValue({
                                     sublistId: 'item',
-                                    fieldId: 'subsidiary',
+                                    fieldId: 'grossamt',
                                     line: i
                                 })
 
@@ -215,8 +243,16 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                 obj.idOV = idOv;
                                 obj.currency = currencyOV;
                                 obj.subsidiary = subsidiariaOV;
+                                obj.customer = customer;
+                                obj.trandate = trandate;
+                                obj.sitioWeb = sitioWeb;
+                                obj.sistema = sistema;
+                                obj.fidelidad = fidelidad;
+                                obj.index = i;
+                                obj.grossamt = grossamt;
                                 obj.ulid = searchResult.ulid;
                                 obj.estado = searchResult.estado;
+                                
                                 obj.filterEstados = searchResult.filterEstados;
 
                                 var clave = obj.ulid;
@@ -280,8 +316,17 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     registro = JSON.parse(context.values[i]);
 
                     var idOv = registro.idOV;
+                    var currency = registro.currency;
+                    var subsidiary = registro.subsidiary;
+                    var grossamt = registro.grossamt;
                     var ulid = registro.ulid;
                     var estado = registro.estado;
+                    var index = registro.index;
+                    var customer = registro.customer;
+                    var sitioWeb = registro.sitioWeb;
+                    var sistema = registro.sistema;
+                    var fidelidad = registro.fidelidad;
+                    var trandate = registro.trandate;
                     var filterEstados = registro.filterEstados;
 
 
@@ -448,7 +493,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
             for (var l = 0; l < numLinesFact; l++) {
 
-                if (i == l) {
+                if (index == l) {
 
 
 
@@ -672,7 +717,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             }
             /*FIN PASO 2*/
 
-            /*PASO: 4: CREAR PAGO DE FACTURA CON J3 CREADO*/
+            /*PASO: 4: CREAR PAGO DE FACTURA CON JE CREADO*/
             if (unredeem == true && aplicacionDeposito == true) {
 
                 var arrayTranCreatedFilterInv = arrayTranCreated.filter(function (obj) {
@@ -1062,6 +1107,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
             }*/
             //FIN APLICACION DE DEPOSITO CON ASIENTO
+
+            handleErrorIfAny(summary);
 
         }
 
