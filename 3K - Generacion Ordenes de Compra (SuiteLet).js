@@ -800,20 +800,26 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
 
                                 var diasSplit = diasPedidoProv.split(",");
 
-                                for (var x = 0; diasSplit.length; x++) {
+                                for (var x = 0; diasSeleccionados.length; x++) {
 
-                                    for (var z = 0; z < diasSeleccionados; z++) {
+                                    /*for (var z = 0; z < diasSplit; z++) {
 
-                                        if (diasSeleccionados[z] == diasSplit[x]) {
+                                        if (diasSeleccionados[x] == diasSplit[z]) {
                                             return true;
                                         } else {
 
-                                            if ((diasSeleccionados.length - 1) == z) {
+                                            if ((diasSplit.length - 1) == z) {
                                                 return false;
                                             }
 
                                         }
 
+                                    }*/
+
+                                    if(diasSplit.indexOf(diasSeleccionados[x]) != -1){
+                                        return true
+                                    }else{
+                                        return false;
                                     }
 
                                 }
