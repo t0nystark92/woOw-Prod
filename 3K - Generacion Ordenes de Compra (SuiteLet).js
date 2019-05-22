@@ -585,7 +585,7 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                 var separadorMultiSelect = /\u0005/;
 
                 var requisicionesPendientes = search.load({
-                    id: 'customsearch_3k_req_compra_pendientes'
+                    id: 'customsearch_3k_req_compra_pendientes_ne'
                 });
 
                 if (!utilities.isEmpty(request.parameters.sitioweb)) {
@@ -728,7 +728,7 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
 
                 }*/
 
-                if (!utilities.isEmpty(request.parameters.diapedido)) {
+                /*if (!utilities.isEmpty(request.parameters.diapedido)) {
                     var diasSeleccionados = request.parameters.diapedido.split(separadorMultiSelect);
                     if (!utilities.isEmpty(diasSeleccionados) && diasSeleccionados.length > 0) {
                         var filtroDiaPedido = search.createFilter({
@@ -740,7 +740,7 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                         requisicionesPendientes.filters.push(filtroDiaPedido);
                     }
 
-                }
+                }*/
 
                 var resultSet = requisicionesPendientes.run();
 
@@ -772,6 +772,7 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                 } while (!utilities.isEmpty(resultado) && resultado.length > 0)
 
                 log.debug('Generacion Ordenes de Compras REST', 'FIN Consulta Busqueda Requisiciones Pendientes');
+                //log.debug('resultadi Saved Search', JSON.stringify(completeResultSet));
 
                 var j = 0;
 
@@ -783,6 +784,60 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                     var idInternosTotal = [];
 
                     var i = 0;
+
+                    var diasSeleccionados = request.parameters.diapedido.split(separadorMultiSelect);
+
+                    completeResultSet = completeResultSet.filter(function (obj) {
+
+                        var diasPedidoProv = obj.getValue({
+                            name: resultSet.columns[19]
+                        });
+
+
+                        if (!utilities.isEmpty(diasSeleccionados) && diasSeleccionados.length > 0) {
+
+                            if (!utilities.isEmpty(diasPedidoProv)) {
+
+                                var diasSplit = diasPedidoProv.split(",");
+
+                                for (var x = 0; diasSeleccionados.length; x++) {
+
+                                    /*for (var z = 0; z < diasSplit; z++) {
+
+                                        if (diasSeleccionados[x] == diasSplit[z]) {
+                                            return true;
+                                        } else {
+
+                                            if ((diasSplit.length - 1) == z) {
+                                                return false;
+                                            }
+
+                                        }
+
+                                    }*/
+
+                                    if(diasSplit.indexOf(diasSeleccionados[x]) != -1){
+                                        return true
+                                    }else{
+                                        return false;
+                                    }
+
+                                }
+
+                            } else {
+
+                                return true;
+
+                            }
+                        } else {
+                            return false;
+                        }
+
+
+                    })
+
+                    log.debug('Generacion Ordenes de Compras REST', 'FIN Consulta Busqueda Requisiciones Pendientes - Cantidad Registros Filtrados : ' + completeResultSet.length);
+
                     while (!utilities.isEmpty(completeResultSet) && completeResultSet.length > 0 && i < completeResultSet.length) {
 
                         var idProveedor = completeResultSet[i].getValue({
@@ -821,7 +876,11 @@ log.debug('Generacion Ordenes de Compras SUITELET', 'Tamano Array columna : ' + 
                             name: resultSet.columns[18]
                         });
 
-                        log.debug('Resultados SS', 'var ov: ' + ov)
+                        /*var diasPedidoProv = completeResultSet[i].getValue({
+                            name: resultSet.columns[19]
+                        });
+
+                        log.debug('diasPedidoProv', JSON.stringify(diasPedidoProv));*/
 
                         idUnico = completeResultSet[i].getValue({
                             name: resultSet.columns[8]
