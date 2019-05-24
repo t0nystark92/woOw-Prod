@@ -198,19 +198,29 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                         var customer = soRecord.getValue({
                             fieldId: 'entity'
                         });
-    
+
                         var trandate = soRecord.getValue({
                             fieldId: 'trandate'
                         });
-    
+
+                        var formatDateJE = format.format({
+                            value: trandate,
+                            type: format.Type.DATE
+                        });
+
+                        log.debug('trandate', JSON.stringify(trandate))
+                        log.debug('formatDateJE', JSON.stringify(formatDateJE))
+
+                        //var dateParsedJS = new Date(trandate)
+
                         var sitioWeb = soRecord.getValue({
                             fieldId: 'custbody_cseg_3k_sitio_web_o'
                         });
-    
+
                         var sistema = soRecord.getValue({
                             fieldId: 'custbody_cseg_3k_sistema'
                         });
-    
+
                         var fidelidad = soRecord.getValue({
                             fieldId: 'custbody_3k_programa_fidelidad'
                         });
@@ -221,7 +231,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
 
 
-                        for(var i = 0; i < numLinesOV; i++){
+                        for (var i = 0; i < numLinesOV; i++) {
 
                             var ulidFor = soRecord.getSublistValue({
                                 sublistId: 'item',
@@ -229,9 +239,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                 line: i
                             });
 
-                            if(ulidFor == searchResult.ulid){
+                            if (ulidFor == searchResult.ulid) {
 
-                                
+
 
                                 var grossamt = soRecord.getSublistValue({
                                     sublistId: 'item',
@@ -239,20 +249,48 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                     line: i
                                 })
 
-                                
+                                var ingresoLiq = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_importe_fact_liq',
+                                    line: i
+                                })
+
+                                var deudaLiq = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_deuda_pagar',
+                                    line: i
+                                })
+
+                                var clienteLiq = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_cliente_liquidacion',
+                                    line: i
+                                })
+
+                                var proveedorLiq = soRecord.getSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_proveedor_liquidacion',
+                                    line: i
+                                })
+
+
                                 obj.idOV = idOv;
                                 obj.currency = currencyOV;
                                 obj.subsidiary = subsidiariaOV;
                                 obj.customer = customer;
-                                obj.trandate = trandate;
+                                obj.trandate = formatDateJE;
                                 obj.sitioWeb = sitioWeb;
                                 obj.sistema = sistema;
                                 obj.fidelidad = fidelidad;
                                 obj.index = i;
+                                obj.ingresoLiq = ingresoLiq;
+                                obj.deudaLiq = deudaLiq;
+                                obj.clienteLiq = clienteLiq;
+                                obj.proveedorLiq = proveedorLiq;
                                 obj.grossamt = grossamt;
                                 obj.ulid = searchResult.ulid;
                                 obj.estado = searchResult.estado;
-                                
+
                                 obj.filterEstados = searchResult.filterEstados;
 
                                 var clave = obj.ulid;
@@ -274,7 +312,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
                         log.debug('objMap', JSON.stringify(obj));
 
-                        //context.write(clave, JSON.stringify(obj));
+                        context.write(clave, JSON.stringify(obj));
 
                     } else {
                         log.error('Estados Reserva', 'MAP - Error Obteniendo Resultados de Lineas OV A Procesar');
@@ -311,6 +349,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         
                     })*/
 
+                log.debug('context.values')
+
                 for (var i = 0; i < context.values.length; i++) {
 
                     registro = JSON.parse(context.values[i]);
@@ -327,10 +367,15 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     var sistema = registro.sistema;
                     var fidelidad = registro.fidelidad;
                     var trandate = registro.trandate;
+                    var ingresoLiq = registro.ingresoLiq;
+                    var deudaLiq = registro.deudaLiq;
+                    var clienteLiq = registro.clienteLiq;
+                    var proveedorLiq = registro.proveedorLiq;
+
                     var filterEstados = registro.filterEstados;
 
 
-
+                    var arrayTranCreated = new Array();
 
                     //}
 
@@ -417,497 +462,716 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                             }
                             /*FIN PASO 1*/
 
-                        }
 
-                    }
-                }
 
 
 
 
-            }
 
 
 
+                            if (transform == true && aplicacionDeposito == false) {
 
 
 
 
-            /*PASO 2: CREAR INVOICE A CLIENTE GENERICO CON TRANSFORM DESDE OV*/
+                                /*PASO 2: CREAR INVOICE A CLIENTE GENERICO CON TRANSFORM DESDE OV*/
 
-            var factComision = record.transform({
-                fromType: fromrt.toString(),
-                fromId: idOv,
-                toType: accion.toString(),
-                isDynamic: true
-            });
+                                var factComision = record.transform({
+                                    fromType: fromrt.toString(),
+                                    fromId: idOv,
+                                    toType: accion.toString(),
+                                    isDynamic: true
+                                });
 
 
 
 
-            log.audit("Funcionalidades URU", "Inicio beforeSubmit")
+                                log.audit("Funcionalidades URU", "Inicio beforeSubmit")
 
-            var beforeSubmit = funcionalidadesURU.beforeSubmit('create', factComision);
+                                var beforeSubmit = funcionalidadesURU.beforeSubmit('create', factComision);
 
-            log.audit("Funcionalidades URU", "Termino beforeSubmit")
+                                log.audit("Funcionalidades URU", "Termino beforeSubmit")
 
-            factComision.setValue({
-                fieldId: 'custbody_3k_ulid_servicios',
-                value: ulid
-            });
+                                factComision.setValue({
+                                    fieldId: 'custbody_3k_ulid_servicios',
+                                    value: ulid
+                                });
 
 
 
-            factComision.setValue({
-                fieldId: 'entity',
-                value: clienteGenerico
-            });
+                                factComision.setValue({
+                                    fieldId: 'entity',
+                                    value: clienteGenerico
+                                });
 
-            log.audit("Fact Comisión", "Termino seteo cliente factura")
+                                log.audit("Fact Comisión", "Termino seteo cliente factura")
 
-            log.audit("Fact Comisión", "Inicio comprobación monedas")
+                                log.audit("Fact Comisión", "Inicio comprobación monedas")
 
-            var currencyFactComsion = factComision.getValue({
-                fieldId: 'currency'
-            });
+                                var currencyFactComsion = factComision.getValue({
+                                    fieldId: 'currency'
+                                });
 
-            log.debug('Fact Comisión', 'Moneda de Fact Comision: ' + currencyFactComsion + ' - Moneda OV: ' + currency);
+                                log.debug('Fact Comisión', 'Moneda de Fact Comision: ' + currencyFactComsion + ' - Moneda OV: ' + currency);
 
-            if (currencyFactComsion != currency) {
+                                if (currencyFactComsion != currency) {
 
-                factComision.setValue({
-                    fieldId: 'currency',
-                    value: currency
-                })
+                                    factComision.setValue({
+                                        fieldId: 'currency',
+                                        value: currency
+                                    })
 
-            }
+                                }
 
 
-            log.debug('Fact Comisión', 'Moneda de Fact Comision After seteo: ' + currencyFactComsion);
+                                log.debug('Fact Comisión', 'Moneda de Fact Comision After seteo: ' + currencyFactComsion);
 
-            log.audit("Fact Comisión", "Fin comprobación monedas")
+                                log.audit("Fact Comisión", "Fin comprobación monedas")
 
-            var numLinesFact = factComision.getLineCount({
-                sublistId: 'item'
-            });
+                                var numLinesFact = factComision.getLineCount({
+                                    sublistId: 'item'
+                                });
 
-            for (var l = 0; l < numLinesFact; l++) {
+                                for (var l = 0; l < numLinesFact; l++) {
 
-                if (index == l) {
+                                    if (index == l) {
 
 
 
-                    factComision.selectLine({
-                        sublistId: 'item',
-                        line: l
-                    });
+                                        factComision.selectLine({
+                                            sublistId: 'item',
+                                            line: l
+                                        });
 
-                    log.audit("Armado Lines Fact Comision", "Termino Seleccion de linea")
+                                        log.audit("Armado Lines Fact Comision", "Termino Seleccion de linea")
 
 
-                    factComision.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'taxcode',
-                        value: taxcode
-                    });
+                                        factComision.setCurrentSublistValue({
+                                            sublistId: 'item',
+                                            fieldId: 'taxcode',
+                                            value: taxcode
+                                        });
 
-                    var taxrate = factComision.getCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'taxrate1'
-                    });
+                                        var taxrate = factComision.getCurrentSublistValue({
+                                            sublistId: 'item',
+                                            fieldId: 'taxrate1'
+                                        });
 
-                    var quantity = factComision.getCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'quantity'
-                    });
+                                        var quantity = factComision.getCurrentSublistValue({
+                                            sublistId: 'item',
+                                            fieldId: 'quantity'
+                                        });
 
-                    var amountWithTax = parseFloat(grossamt) - ((parseFloat(grossamt) / (1 + (parseFloat(taxrate) / 100))) * (parseFloat(taxrate) / 100))
-                    var rate = (amountWithTax / quantity)
-                    log.debug('taxrate', taxrate)
-                    log.debug('grossamt', grossamt)
-                    log.debug('amountWithTax', amountWithTax)
+                                        var amountWithTax = parseFloat(grossamt) - ((parseFloat(grossamt) / (1 + (parseFloat(taxrate) / 100))) * (parseFloat(taxrate) / 100))
+                                        var rate = (amountWithTax / quantity)
+                                        log.debug('taxrate', taxrate)
+                                        log.debug('grossamt', grossamt)
+                                        log.debug('amountWithTax', amountWithTax)
 
 
-                    factComision.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'rate',
-                        value: parseFloat(rate).toFixed(2)
-                    });
+                                        factComision.setCurrentSublistValue({
+                                            sublistId: 'item',
+                                            fieldId: 'rate',
+                                            value: parseFloat(rate).toFixed(2)
+                                        });
 
 
-                    factComision.setCurrentSublistValue({
-                        sublistId: 'item',
-                        fieldId: 'grossamt',
-                        value: parseFloat(grossamt).toFixed(2)
-                    });
+                                        factComision.setCurrentSublistValue({
+                                            sublistId: 'item',
+                                            fieldId: 'grossamt',
+                                            value: parseFloat(grossamt).toFixed(2)
+                                        });
 
-                    factComision.commitLine({
-                        sublistId: 'item'
-                    });
+                                        factComision.commitLine({
+                                            sublistId: 'item'
+                                        });
 
 
-                } else {
+                                    } else {
 
-                    factComision.removeLine({
-                        sublistId: 'item',
-                        line: l
-                    });
+                                        factComision.removeLine({
+                                            sublistId: 'item',
+                                            line: l
+                                        });
 
-                    numLinesFact--;
+                                        numLinesFact--;
 
-                }
+                                    }
 
-            }
+                                }
 
-            var total = factComision.getValue({
-                fieldId: 'total'
-            })
-
-            log.audit("Armado Lines Fact Comision", "Inicio save FactComision");
-
-            var idTran = factComision.save();
-
-            log.audit("Armado Lines Fact Comision", "Fin save FactComision");
-
-            /*var obj = new Object();
-            obj.idTran = idTran;
-            obj.accion = accion;
-            obj.order = orden;
-            arrayTranCreated.push(obj);*/
-
-            var afterSubmit = funcionalidadesURU.afterSubmitWithMonto(accion, idTran, subsidiary, total);
-
-            /*FIN PASO 1*/
-
-            /*PASO 2: CREAR JE PARA APLICAR A DEPOSITO Y FACTURA*/
-            if (journal == true) {
-
-                if (fidelidad == false) {
-
-                    if (unredeem == true) {
-
-                        var recordCreate = record.create({
-                            type: accion.toString(),
-                            isDynamic: true
-                        });
-
-                        recordCreate.setValue({
-                            fieldId: 'subsidiary',
-                            value: subsidiary
-                        });
-
-                        recordCreate.setValue({
-                            fieldId: 'currency',
-                            value: currency
-                        });
-
-                        /*var dateJE = format.format({
-                            value: trandate,
-                            type: format.Type.DATE,
-                            timezone: format.Timezone.AMERCIA_BUENOS_AIRES
-                        });*/
-
-                        var dateJE = format.parse({
-                            value: trandate,
-                            type: format.Type.DATE,
-                        });
-
-                        log.debug('dateJE', dateJE)
-
-                        recordCreate.setValue({
-                            fieldId: 'trandate',
-                            value: dateJE
-                        });
-
-                        recordCreate.setValue({
-                            fieldId: 'custbody_3k_ulid_servicios',
-                            value: ulid
-                        });
-
-                        if (!utilities.isEmpty(sitioWeb)) {
-
-                            recordCreate.setValue({
-                                fieldId: 'custbody_cseg_3k_sitio_web_o',
-                                value: sitioWeb
-                            });
-
-                        }
-
-                        if (!utilities.isEmpty(sistema)) {
-
-                            recordCreate.setValue({
-                                fieldId: 'custbody_cseg_3k_sistema',
-                                value: sistema
-                            });
-
-                        }
-
-                        recordCreate.selectNewLine({
-                            sublistId: 'line'
-                        });
-
-                        recordCreate.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'account',
-                            value: cuentaDebe
-                        });
-
-                        recordCreate.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'debit',
-                            value: parseFloat(grossamt).toFixed(2)
-                        });
-
-
-
-                        recordCreate.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'entity',
-                            value: customer
-                        });
-
-
-                        recordCreate.commitLine({
-                            sublistId: 'line'
-                        })
-
-                        recordCreate.selectNewLine({
-                            sublistId: 'line'
-                        });
-
-
-                        recordCreate.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'account',
-                            value: cuentaHaber
-                        });
-
-
-
-                        recordCreate.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'entity',
-                            value: clienteGenerico
-                        });
-
-
-
-                        recordCreate.setCurrentSublistValue({
-                            sublistId: 'line',
-                            fieldId: 'credit',
-                            value: parseFloat(grossamt).toFixed(2)
-                        });
-
-                        recordCreate.commitLine({
-                            sublistId: 'line'
-                        })
-
-                        var idTran = recordCreate.save();
-
-                        var obj = new Object();
-                        obj.idTran = idTran;
-                        obj.accion = accion;
-                        obj.order = orden;
-                        arrayTranCreated.push(obj);
-                    }
-
-                }
-
-
-            }
-            /*FIN PASO 2*/
-
-            /*PASO: 4: CREAR PAGO DE FACTURA CON JE CREADO*/
-            if (unredeem == true && aplicacionDeposito == true) {
-
-                var arrayTranCreatedFilterInv = arrayTranCreated.filter(function (obj) {
-                    return obj.accion == 'invoice'
-                });
-
-                var idFact = arrayTranCreatedFilterInv[0].idTran;
-
-                log.debug('ID Invoice', idFact)
-
-                var recTransform = record.transform({
-                    fromType: fromrt,
-                    fromId: idFact,
-                    toType: accion,
-                    isDynamic: true
-
-                });
-
-                var linesPayment = recTransform.getLineCount({
-                    sublistId: 'apply'
-                });
-
-
-
-
-                /*var linePago = recTransform.findSublistLineWithValue({
-                    sublistId: 'apply',
-                    fieldId: 'internalid',
-                    value: idFact
-
-                });*/
-
-                log.debug('linesPayment apply list', linesPayment)
-
-                for (var z = 0; z < linesPayment; z++) {
-
-                    var doc = recTransform.getSublistValue({
-                        sublistId: 'apply',
-                        fieldId: 'doc',
-                        line: z
-                    });
-
-                    log.debug('doc - idFacr', doc + '-' + idFact)
-
-                    if (doc == idFact) {
-
-                        log.debug('entro linea apply', 'entro linea apply')
-
-                        recTransform.selectLine({
-                            sublistId: 'apply',
-                            line: z
-
-                        });
-
-                        recTransform.setCurrentSublistValue({
-                            sublistId: 'apply',
-                            fieldId: 'apply',
-                            value: true
-                        });
-
-                        var apply = recTransform.getCurrentSublistValue({
-                            sublistId: 'apply',
-                            fieldId: 'apply'
-                        });
-
-                        var amount = recTransform.getCurrentSublistValue({
-                            sublistId: 'apply',
-                            fieldId: 'amount'
-                        });
-
-                        log.debug('apply', apply)
-                        log.debug('amount', amount)
-                    }
-
-                }
-
-                //Aplicación Journal
-
-                var linesJE = recTransform.getLineCount({
-                    sublistId: 'credit'
-                });
-
-                log.debug('linesJE', linesJE);
-
-
-                log.debug('arrayTranCreated', JSON.stringify(arrayTranCreated));
-
-                var arrayTranCreatedFilter = arrayTranCreated.filter(function (obj) {
-                    return obj.accion == 'journalentry'
-                });
-
-                log.debug('arrayTranCreatedFilter', JSON.stringify(arrayTranCreatedFilter));
-
-                if (arrayTranCreatedFilter.length > 0) {
-
-                    var idJE = arrayTranCreatedFilter[0].idTran;
-                    /*var linePago = recTransform.findSublistLineWithValue({
-                        sublistId: 'credit',
-                        fieldId: 'internalid',
-                        value: idJE
-
-                    });*/
-
-                    for (var u = 0; u < linesJE; u++) {
-
-                        var doc = recTransform.getSublistValue({
-                            sublistId: 'credit',
-                            fieldId: 'doc',
-                            line: u
-                        });
-
-                        log.debug('doc - idJE', doc + '-' + idJE)
-
-                        if (doc == idJE) {
-
-                            log.debug('entro linea credit', 'entro linea credit')
-
-                            recTransform.selectLine({
-                                sublistId: 'credit',
-                                line: u
-
-                            });
-
-                            recTransform.setCurrentSublistValue({
-                                sublistId: 'credit',
-                                fieldId: 'apply',
-                                value: true
-                            });
-
-                            var apply = recTransform.getCurrentSublistValue({
-                                sublistId: 'credit',
-                                fieldId: 'apply'
-                            });
-
-                            var amount = recTransform.getCurrentSublistValue({
-                                sublistId: 'credit',
-                                fieldId: 'amount'
-                            });
-
-                            log.debug('apply', apply)
-                            log.debug('amount', amount)
-
-
-                            var idTran2 = recTransform.save();
-
-                            var obj = new Object();
-                            obj.idTran = idTran2;
-                            obj.accion = accion;
-                            obj.order = orden;
-                            arrayTranCreated.push(obj);
-                        }
-
-                    }
-
-                }
-            }
-            /*FIN PASO 4*/
-
-
-
-            /*PASO 5: VOID LIQUIDACION A CONFIRMAR*/
-            if (isvoid == true && unredeem == true) {
-
-                if (fidelidad == false) {
-
-                    if (arregloDepositosOV.length > 0) {
-
-                        for (var t = 0; t < arregloDepositosOV.length; t++) {
-
-                            if (!utilities.isEmpty(arregloDepositosOV[t].custbody_3k_link_reg_liq_conf)) {
-
-                                transaction.void({
-                                    id: arregloDepositosOV[t].custbody_3k_link_reg_liq_conf,
-                                    type: accion.toString()
+                                var total = factComision.getValue({
+                                    fieldId: 'total'
                                 })
+
+                                log.audit("Armado Lines Fact Comision", "Inicio save FactComision");
+
+                                var idTran = factComision.save();
+
+                                log.audit("Armado Lines Fact Comision", "Fin save FactComision");
+
+                                var obj = new Object();
+                                obj.idTran = idTran;
+                                obj.accion = accion;
+                                obj.order = orden;
+                                arrayTranCreated.push(obj);
+
+                                var afterSubmit = funcionalidadesURU.afterSubmitWithMonto(accion, idTran, subsidiary, total);
+                            }
+
+                            /*FIN PASO 2*/
+
+                            /*PASO 3: CREAR JE PARA APLICAR A DEPOSITO Y FACTURA*/
+                            if (journal == true) {
+
+                                if (fidelidad == false) {
+
+                                    if (unredeem == true) {
+
+                                        var recordCreate = record.create({
+                                            type: accion.toString(),
+                                            isDynamic: true
+                                        });
+
+                                        recordCreate.setValue({
+                                            fieldId: 'subsidiary',
+                                            value: subsidiary
+                                        });
+
+                                        recordCreate.setValue({
+                                            fieldId: 'currency',
+                                            value: currency
+                                        });
+
+
+
+                                        /*var formatDateJE = format.format({
+                                            value: trandate,
+                                            type: format.Type.DATE
+                                        });*/
+
+                                        var dateJE = format.parse({
+                                            value: trandate,
+                                            type: format.Type.DATE
+                                        });
+
+                                        log.debug('dateJE', dateJE + ' typeof: ' + typeof dateJE)
+                                        //log.debug('formatDateJE', formatDateJE + ' typeof: '+ typeof formatDateJE)
+                                        log.debug('trandate', trandate + ' typeof: ' + typeof trandate)
+
+                                        recordCreate.setValue({
+                                            fieldId: 'trandate',
+                                            value: dateJE
+                                        });
+
+                                        recordCreate.setValue({
+                                            fieldId: 'custbody_3k_ulid_servicios',
+                                            value: ulid
+                                        });
+
+                                        if (!utilities.isEmpty(sitioWeb)) {
+
+                                            recordCreate.setValue({
+                                                fieldId: 'custbody_cseg_3k_sitio_web_o',
+                                                value: sitioWeb
+                                            });
+
+                                        }
+
+                                        if (!utilities.isEmpty(sistema)) {
+
+                                            recordCreate.setValue({
+                                                fieldId: 'custbody_cseg_3k_sistema',
+                                                value: sistema
+                                            });
+
+                                        }
+
+                                        recordCreate.selectNewLine({
+                                            sublistId: 'line'
+                                        });
+
+                                        recordCreate.setCurrentSublistValue({
+                                            sublistId: 'line',
+                                            fieldId: 'account',
+                                            value: cuentaDebe
+                                        });
+
+                                        recordCreate.setCurrentSublistValue({
+                                            sublistId: 'line',
+                                            fieldId: 'debit',
+                                            value: parseFloat(grossamt).toFixed(2)
+                                        });
+
+
+
+                                        recordCreate.setCurrentSublistValue({
+                                            sublistId: 'line',
+                                            fieldId: 'entity',
+                                            value: customer
+                                        });
+
+
+                                        recordCreate.commitLine({
+                                            sublistId: 'line'
+                                        })
+
+                                        recordCreate.selectNewLine({
+                                            sublistId: 'line'
+                                        });
+
+
+                                        recordCreate.setCurrentSublistValue({
+                                            sublistId: 'line',
+                                            fieldId: 'account',
+                                            value: cuentaHaber
+                                        });
+
+
+
+                                        recordCreate.setCurrentSublistValue({
+                                            sublistId: 'line',
+                                            fieldId: 'entity',
+                                            value: clienteGenerico
+                                        });
+
+
+
+                                        recordCreate.setCurrentSublistValue({
+                                            sublistId: 'line',
+                                            fieldId: 'credit',
+                                            value: parseFloat(grossamt).toFixed(2)
+                                        });
+
+                                        recordCreate.commitLine({
+                                            sublistId: 'line'
+                                        })
+
+                                        var idTran = recordCreate.save();
+
+                                        var obj = new Object();
+                                        obj.idTran = idTran;
+                                        obj.accion = accion;
+                                        obj.order = orden;
+                                        arrayTranCreated.push(obj);
+                                    }
+
+                                }
+
+
+                            }
+                            /*FIN PASO 3*/
+
+                            /*PASO: 4: CREAR PAGO DE FACTURA CON JE CREADO*/
+                            if (unredeem == true && aplicacionDeposito == true) {
+
+                                var arrayTranCreatedFilterInv = arrayTranCreated.filter(function (obj) {
+                                    return obj.accion == 'invoice'
+                                });
+
+                                var idFact = arrayTranCreatedFilterInv[0].idTran;
+
+                                log.debug('ID Invoice', idFact)
+
+                                var recTransform = record.transform({
+                                    fromType: fromrt,
+                                    fromId: idFact,
+                                    toType: accion,
+                                    isDynamic: true
+
+                                });
+
+                                var linesPayment = recTransform.getLineCount({
+                                    sublistId: 'apply'
+                                });
+
+
+
+
+                                /*var linePago = recTransform.findSublistLineWithValue({
+                                    sublistId: 'apply',
+                                    fieldId: 'internalid',
+                                    value: idFact
+
+                                });*/
+
+                                log.debug('linesPayment apply list', linesPayment)
+
+                                for (var z = 0; z < linesPayment; z++) {
+
+                                    var doc = recTransform.getSublistValue({
+                                        sublistId: 'apply',
+                                        fieldId: 'doc',
+                                        line: z
+                                    });
+
+                                    log.debug('doc - idFacr', doc + '-' + idFact)
+
+                                    if (doc == idFact) {
+
+                                        log.debug('entro linea apply', 'entro linea apply')
+
+                                        recTransform.selectLine({
+                                            sublistId: 'apply',
+                                            line: z
+
+                                        });
+
+                                        recTransform.setCurrentSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'apply',
+                                            value: true
+                                        });
+
+                                        var apply = recTransform.getCurrentSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'apply'
+                                        });
+
+                                        var amount = recTransform.getCurrentSublistValue({
+                                            sublistId: 'apply',
+                                            fieldId: 'amount'
+                                        });
+
+                                        log.debug('apply', apply)
+                                        log.debug('amount', amount)
+                                    }
+
+                                }
+
+                                //Aplicación Journal
+
+                                var linesJE = recTransform.getLineCount({
+                                    sublistId: 'credit'
+                                });
+
+                                log.debug('linesJE', linesJE);
+
+
+                                log.debug('arrayTranCreated', JSON.stringify(arrayTranCreated));
+
+                                var arrayTranCreatedFilter = arrayTranCreated.filter(function (obj) {
+                                    return obj.accion == 'journalentry'
+                                });
+
+                                log.debug('arrayTranCreatedFilter', JSON.stringify(arrayTranCreatedFilter));
+
+                                if (arrayTranCreatedFilter.length > 0) {
+
+                                    var idJE = arrayTranCreatedFilter[0].idTran;
+                                    /*var linePago = recTransform.findSublistLineWithValue({
+                                        sublistId: 'credit',
+                                        fieldId: 'internalid',
+                                        value: idJE
+
+                                    });*/
+
+                                    for (var u = 0; u < linesJE; u++) {
+
+                                        var doc = recTransform.getSublistValue({
+                                            sublistId: 'credit',
+                                            fieldId: 'doc',
+                                            line: u
+                                        });
+
+                                        log.debug('doc - idJE', doc + '-' + idJE)
+
+                                        if (doc == idJE) {
+
+                                            log.debug('entro linea credit', 'entro linea credit')
+
+                                            recTransform.selectLine({
+                                                sublistId: 'credit',
+                                                line: u
+
+                                            });
+
+                                            recTransform.setCurrentSublistValue({
+                                                sublistId: 'credit',
+                                                fieldId: 'apply',
+                                                value: true
+                                            });
+
+                                            var apply = recTransform.getCurrentSublistValue({
+                                                sublistId: 'credit',
+                                                fieldId: 'apply'
+                                            });
+
+                                            var amount = recTransform.getCurrentSublistValue({
+                                                sublistId: 'credit',
+                                                fieldId: 'amount'
+                                            });
+
+                                            log.debug('apply', apply)
+                                            log.debug('amount', amount)
+
+
+                                            var idTran2 = recTransform.save();
+
+                                            var obj = new Object();
+                                            obj.idTran = idTran2;
+                                            obj.accion = accion;
+                                            obj.order = orden;
+                                            arrayTranCreated.push(obj);
+                                        }
+
+                                    }
+
+                                }
+                            }
+                            /*FIN PASO 4*/
+
+
+
+                            /*PASO 5: VOID LIQUIDACION A CONFIRMAR*/
+                            if (isvoid == true && unredeem == true) {
+
+                                if (fidelidad == false) {
+
+                                    var arraySearchParams = [];
+                                    var objParam = new Object({});
+                                    objParam.name = 'createdfrom';
+                                    objParam.operator = 'ANYOF';
+                                    objParam.values = idOv;
+                                    arraySearchParams.push(objParam);
+
+                                    var arrayResultDep = utilities.searchSavedPro('customsearch_3k_depositos_ov', arraySearchParams);
+                                    var arregloDepositosOV = arrayResultDep.objRsponseFunction.array;
+
+                                    log.debug('arregloDepositosOV', JSON.stringify(arregloDepositosOV));
+
+                                    if (arregloDepositosOV.length > 0) {
+
+                                        for (var t = 0; t < arregloDepositosOV.length; t++) {
+
+                                            log.debug('arregloDepositosOV', JSON.stringify(arregloDepositosOV[t]))
+
+                                            if (!utilities.isEmpty(arregloDepositosOV[t].custbody_3k_link_reg_liq_conf)) {
+
+                                                var idLiqConfirmar = arregloDepositosOV[t].custbody_3k_link_reg_liq_conf;
+                                                var fechaDeposito = arregloDepositosOV[t].trandate;
+                                                var monedaDeposito = arregloDepositosOV[t].currency;
+                                                var exchangeRateDeposito = arregloDepositosOV[t].exchangerate;
+                                                var voidJournals = arregloDepositosOV[t].custbody_3k_reversal_journal;
+
+                                                var importeTotalJE = (parseFloat(ingresoLiq) + parseFloat(deudaLiq))
+
+                                                var journalReversal = record.create({
+                                                    type: accion.toString(),
+                                                    isDynamic: true
+                                                })
+
+                                                //INICIO SETEO DE CAMPOS CABECERA DEL JE
+
+                                                journalReversal.setValue({
+                                                    fieldId: 'subsidiary',
+                                                    value: subsidiary
+                                                })
+
+                                                journalReversal.setValue({
+                                                    fieldId: 'currency',
+                                                    value: monedaDeposito
+                                                })
+
+                                                journalReversal.setValue({
+                                                    fieldId: 'exchangerate',
+                                                    value: exchangeRateDeposito
+                                                })
+
+                                                var dateDep = format.parse({
+                                                    value: fechaDeposito,
+                                                    type: format.Type.DATE,
+                                                });
+
+                                                log.debug('dateDep', dateDep)
+
+                                                journalReversal.setValue({
+                                                    fieldId: 'trandate',
+                                                    value: dateDep
+                                                });
+
+                                                journalReversal.setValue({
+                                                    fieldId: 'custbody_3k_ulid_servicios',
+                                                    value: ulid
+                                                });
+
+                                                if (!utilities.isEmpty(sitioWeb)) {
+
+                                                    journalReversal.setValue({
+                                                        fieldId: 'custbody_cseg_3k_sitio_web_o',
+                                                        value: sitioWeb
+                                                    });
+
+                                                }
+
+                                                if (!utilities.isEmpty(sistema)) {
+
+                                                    journalReversal.setValue({
+                                                        fieldId: 'custbody_cseg_3k_sistema',
+                                                        value: sistema
+                                                    });
+
+                                                }
+
+                                                journalReversal.setValue({
+                                                    fieldId: 'custbody_3k_liquidacion_confirmar_void',
+                                                    value: idLiqConfirmar
+                                                });
+
+                                                //INCIO CREACION DE LINEAS DE JE
+
+                                                //LINEA DE DEPOSITO DE CLIENTE
+                                                journalReversal.selectNewLine({
+                                                    sublistId: 'line'
+                                                });
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'account',
+                                                    value: cuentaGral
+                                                });
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'credit',
+                                                    value: parseFloat(importeTotalJE).toFixed(2)
+                                                });
+
+
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'entity',
+                                                    value: customer
+                                                });
+
+
+                                                journalReversal.commitLine({
+                                                    sublistId: 'line'
+                                                })
+
+                                                //LINEA INGRESO A CONFIRMAR
+
+                                                journalReversal.selectNewLine({
+                                                    sublistId: 'line'
+                                                });
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'account',
+                                                    value: cuentaDebe
+                                                });
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'debit',
+                                                    value: parseFloat(ingresoLiq).toFixed(2)
+                                                });
+
+
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'entity',
+                                                    value: clienteLiq
+                                                });
+
+
+                                                journalReversal.commitLine({
+                                                    sublistId: 'line'
+                                                })
+
+                                                //LINEA DEUDA A CONFIRMAR
+
+                                                journalReversal.selectNewLine({
+                                                    sublistId: 'line'
+                                                });
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'account',
+                                                    value: cuentaHaber
+                                                });
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'debit',
+                                                    value: parseFloat(deudaLiq).toFixed(2)
+                                                });
+
+
+
+                                                journalReversal.setCurrentSublistValue({
+                                                    sublistId: 'line',
+                                                    fieldId: 'entity',
+                                                    value: proveedorLiq
+                                                });
+
+
+                                                journalReversal.commitLine({
+                                                    sublistId: 'line'
+                                                })
+
+                                                var idJEReversal = journalReversal.save();
+
+                                                var reversalJEArray = []
+
+                                                if (!utilities.isEmpty(voidJournals)) {
+
+                                                    var splitVoid = voidJournals.split(",");
+                                                    splitVoid.push(idJEReversal)
+                                                    reversalJEArray = splitVoid
+                                                }else{
+                                                    reversalJEArray.push(idJEReversal)
+                                                }
+
+                                                log.debug('reversalJEArray', JSON.stringify(reversalJEArray))
+
+                                                record.submitFields({
+                                                    type: 'customtransaction_3k_liquidacion_conf',
+                                                    id: idLiqConfirmar,
+                                                    values: {
+                                                        custbody_3k_reversal_journal: reversalJEArray
+                                                    },
+                                                    options: {
+                                                        enableSourcing: true,
+                                                        ignoreMandatoryFields: false
+                                                    }
+                                                })
+
+
+                                                /*transaction.void({
+                                                    id: arregloDepositosOV[t].custbody_3k_link_reg_liq_conf,
+                                                    type: accion.toString()
+                                                })*/
+
+                                            }
+
+                                        }
+
+                                    }
+                                }
 
                             }
 
+                            /*FIN PASO 5*/
+
+
+                            /************************* FIN NOT REDEEMED *************************************/
+                            /*******************************************************************************/
+
                         }
 
                     }
                 }
 
+
+
+
             }
 
-            /*FIN PASO 5*/
 
-
-            /************************* FIN NOT REDEEMED *************************************/
-            /*******************************************************************************/
 
 
         }
