@@ -1374,6 +1374,119 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
             handleErrorIfAny(summary);
 
+            try{
+
+                var arrayMarcarFacturadas = new Array();
+
+                summary.output.iterator().each(function(key, value) {
+                    var obj = JSON.parse(value);
+                    var ulid = key;
+                    var idOV = obj.idOV
+                    var marcarFacturada = obj.marcarFacturada
+
+                    if(marcarFacturada == true){
+
+                        arrayMarcarFacturadas.push(obj);
+
+                    }
+
+
+
+                })
+
+                var soRecord = record.load({
+                    type: 'salesorder',
+                    id: idOV,
+                    isDynamic: true
+                })
+
+                
+                if(marcarFacturada == true){
+
+                    var line = soRecord.findSublistLineWithValue({
+                        sublistId: 'item',
+                        fieldId: 'lineuniquekey',
+                        value: ulid
+                    })
+
+                    soRecord.selectLine({
+                        sublistId: 'item',
+                        line: line
+                    });
+
+                    soRecord.setCurrentSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'isclosed',
+                        value: true
+                    })
+
+                    soRecord.commitLine({
+                        sublistId: 'item'
+                    })
+
+
+                }
+
+                var numLines = soRecord.getLineCount({
+                    sublistId: 'item'
+                })
+
+                var generarAsiento = false;
+
+                for(var i = 0; i < numLines; i++){
+
+                    /*var ulidLine = soRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'lineuniquekey'
+                    })*/
+
+                    var esFidelidadLineFinal = soRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_3k_programa_fidelidad',
+                        line: i
+                    });
+
+                    var esRedondeoLineFinal = soRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_3k_es_redondeo',
+                        line: i
+                    });
+
+                    var esDescuentoLineFinal = soRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_3k_item_discount_line',
+                        line: i
+                    });
+
+                    var esClosedFinal = soRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'isclosed',
+                        line: i
+                    });
+
+                    var facturadoFinal = soRecord.getSublistValue({
+                        sublistId: 'item',
+                        fieldId: 'custcol_3k_servicio_facturado',
+                        line: i
+                    });
+
+                    if (esFidelidadLineFinal == false && esRedondeoLineFinal == false && esDescuentoLineFinal == false && esClosedFinal == false && facturadoFinal == false) {
+
+                        ejecutarMap == false;
+                        break;
+
+
+                    }
+
+                }
+    
+                
+
+            }catch (e){
+                log.error('Exception Summarize', e.message);
+            }
+            
+
         }
 
         return {
