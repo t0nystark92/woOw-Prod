@@ -1122,7 +1122,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                                     var splitVoid = voidJournals.split(",");
                                                     splitVoid.push(idJEReversal)
                                                     reversalJEArray = splitVoid
-                                                }else{
+                                                } else {
                                                     reversalJEArray.push(idJEReversal)
                                                 }
 
@@ -1374,21 +1374,24 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
             handleErrorIfAny(summary);
 
-            try{
+            try {
 
                 var arrayMarcarFacturadas = new Array();
+                var arrayULID = new Array();
 
-                summary.output.iterator().each(function(key, value) {
+                summary.output.iterator().each(function (key, value) {
                     var obj = JSON.parse(value);
                     var ulid = key;
                     var idOV = obj.idOV
                     var marcarFacturada = obj.marcarFacturada
 
-                    if(marcarFacturada == true){
+                    if (marcarFacturada == true) {
 
                         arrayMarcarFacturadas.push(obj);
 
                     }
+
+                    arrayULID.push(key);
 
 
 
@@ -1400,8 +1403,28 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     isDynamic: true
                 })
 
-                
-                if(marcarFacturada == true){
+                var currencyOV = soRecord.getValue({
+                    fieldId: 'currency'
+                })
+
+                var subsidiaryOV = soRecord.getValue({
+                    fieldId: 'subsidiary'
+                })
+
+                var sitioWebOV = soRecord.getValue({
+                    fieldId: 'custbody_cseg_3k_sitio_web_o'
+                })
+
+                var sistemaOV = soRecord.getValue({
+                    fieldId: 'custbody_cseg_3k_sistema'
+                })
+
+                var pagoCierre = soRecord.getValue({
+                    fieldId: 'custbody_3k_je_serv_aplica_deposito'
+                })
+
+
+                for (var i = 0; i < arrayMarcarFacturadas.length; i++) {
 
                     var line = soRecord.findSublistLineWithValue({
                         sublistId: 'item',
@@ -1416,7 +1439,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
                     soRecord.setCurrentSublistValue({
                         sublistId: 'item',
-                        fieldId: 'isclosed',
+                        fieldId: 'custcol_3k_servicio_facturado',
                         value: true
                     })
 
@@ -1431,9 +1454,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     sublistId: 'item'
                 })
 
-                var generarAsiento = false;
+                var generarAsiento = true;
 
-                for(var i = 0; i < numLines; i++){
+                for (var i = 0; i < numLines; i++) {
 
                     /*var ulidLine = soRecord.getSublistValue({
                         sublistId: 'item',
@@ -1470,22 +1493,69 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                         line: i
                     });
 
-                    if (esFidelidadLineFinal == false && esRedondeoLineFinal == false && esDescuentoLineFinal == false && esClosedFinal == false && facturadoFinal == false) {
+                    if (esFidelidadLineFinal == false && esRedondeoLineFinal == false && esDescuentoLineFinal == false && esClosedFinal == false && facturadoFinal == false && !utilities.isEmpty(pagoCierre)) {
 
-                        ejecutarMap == false;
+                        generarAsiento == false;
                         break;
 
 
                     }
 
                 }
-    
-                
 
-            }catch (e){
+                if (generarAsiento == true) {
+
+                    var objPagoFinal = record.create({
+                        type: 'customerpayment',
+                        isDynamic: true
+                    });
+
+                    objPagoFinal.setValue({
+                        fieldId: 'subsidiary',
+                        value: subsidiaryOV
+                    })
+
+                    objPagoFinal.setValue({
+                        fieldId: 'currency',
+                        value: currencyOV
+                    })
+
+                    if (!utilities.isEmpty(sitioWebOV)) {
+
+                        objPagoFinal.setValue({
+                            fieldId: 'custbody_cseg_3k_sitio_web_o',
+                            value: sitioWebOV
+                        })
+                    }
+
+                    if (!utilities.isEmpty(sistemaOV)) {
+
+                        objPagoFinal.setValue({
+                            fieldId: 'custbody_cseg_3k_sistema',
+                            value: sistemaOV
+                        })
+                    }
+
+
+                    for(var j = 0; j < arrayULID.length; j++){
+
+                        
+
+                    }
+
+
+
+
+
+
+                }
+
+
+
+            } catch (e) {
                 log.error('Exception Summarize', e.message);
             }
-            
+
 
         }
 
