@@ -313,6 +313,18 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                   }
                   log.audit('Todos los datos completados', 'Guardando Factura para el remito con ID Interno: ' + idRemito);
                   
+                  log.debug('Validacion eTicket', 'Inicio aplicar validacion eTicket');
+                  var tipodocRut = factRecord.getValue({
+                    fieldId: 'custbody_l598_es_rut'
+                  });
+                  if (utilities.isEmpty(tipodocRut) || (!utilities.isEmpty(tipodocRut) && tipodocRut == false)) {
+                    factRecord.setValue({
+                      fieldId: 'custbody_l598_trans_eticket',
+                      value: true
+                    });
+                  }
+                  log.debug('Validacion eTicket', 'Fin aplicar validacion eTicket');
+
                   log.debug('beforeSubmit - FC', 'beforeSubmit - FC - INICIO');
                   var befSubmitRsp = funcionalidadesURU.beforeSubmit('create', factRecord);
                   if (befSubmitRsp.error == false) {
