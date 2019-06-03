@@ -337,17 +337,11 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
             log.audit('Estados Reserva', 'INICIO REDUCE - KEY (ULID) : ' + context.key);
 
+            var respuesta = new Object();
+            respuesta.ulid = context.key;
+            respuesta.marcarFacturada = false;
+
             if (!isEmpty(context.values) && context.values.length > 0) {
-
-                //var idInternoOV = context.values[0].idOV;
-                //if (!isEmpty(idInternoOV)) {
-
-                /*var soRecord = record.load({
-                        type: 'salesorder',
-                        id: idInternoOV,
-                        isDynamic: true
-        
-                    })*/
 
                 log.debug('context.values')
 
@@ -380,6 +374,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     //}
 
                     if (!utilities.isEmpty(filterEstados) && filterEstados.length > 0) {
+
+                        registro.marcarFacturada = true;
 
                         var arraySearchParams = [];
                         var objParam = new Object({});
@@ -1160,7 +1156,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 }
 
 
-
+                context.write(context.key, respuesta);
 
             }
 
@@ -1244,7 +1240,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                         fieldId: 'custbody_3k_je_serv_aplica_deposito'
                     })
 
-                    if (!utilities.isEmpty(pagoCierre)) {
+                    if (utilities.isEmpty(pagoCierre)) {
 
 
                         for (var i = 0; i < arrayMarcarFacturadas.length; i++) {
@@ -1283,7 +1279,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
                             var ulidLine = soRecord.getSublistValue({
                                 sublistId: 'item',
-                                fieldId: 'lineuniquekey'
+                                fieldId: 'lineuniquekey',
+                                line: i
                             })
 
                             arrayULID.push(ulidLine);
@@ -1334,9 +1331,19 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                             var arraySearchParams = [];
                             var objParam = new Object({});
                             objParam.name = 'custbody_3k_ulid_servicios';
-                            objParam.operator = 'ANY';
+                            if (arrayULID.length > 1) {
+                                objParam.operator = 'ANY'
+                            } else {
+                                objParam.operator = 'IS'
+                            }
                             objParam.values = arrayULID;
                             arraySearchParams.push(objParam);
+
+                            var objParam2 = new Object({});
+                            objParam2.name = 'account';                         
+                            objParam2.operator = 'IS';
+                            objParam2.values = cuentaGral;
+                            arraySearchParams.push(objParam2);
 
                             var arrayResultDep = utilities.searchSavedPro('customsearch_3k_je_servicios_pendientes', arraySearchParams);
                             var arregloJEFinal = arrayResultDep.objRsponseFunction.array;
@@ -1402,16 +1409,22 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                 log.debug('linesPayment', linesPayment);
 
 
-                                for (var j = 0; j < linesPayment.length; j++) {
+                                for (var j = 0; j < linesPayment; j++) {
 
                                     var doc = objPagoFinal.getSublistValue({
                                         sublistId: 'apply',
-                                        fieldId: 'doc'
+                                        fieldId: 'doc',
+                                        line: j
                                     })
 
-                                    var filterJE = arregloJEFinal.filter(function (obj) {
+                                    log.debug('doc', doc)
+
+                                    var filterJE = arregloJEFinal.filter(function(obj) {
+                                        //log.debug('filter comparacion', 'internalid: ' + obj.internalid + ' - doc: '+ doc)
                                         return obj.internalid == doc
                                     })
+
+                                    log.debug('filterJE', JSON.stringify(filterJE))
 
                                     if (!utilities.isEmpty(filterJE) && filterJE.length > 0) {
 
@@ -1453,15 +1466,15 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
 
 
-                                var idTran = objPagoFinal.save({
+                                var idTran = objPagoFinal.save.promise({
                                     enableSourcing: true,
                                     ignoreMandatoryFields: false
                                 });
 
-                                soRecord.setValue({
+                                /*soRecord.setValue({
                                     fieldId: 'custbody_3k_je_serv_aplica_deposito',
                                     value: idTran
-                                })
+                                })*/
 
                                 soRecord.save();
                             }
