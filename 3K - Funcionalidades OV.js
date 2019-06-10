@@ -11464,6 +11464,73 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
 
         }
 
+        function crearNota (idOV, notaTitulo, notaTipo, notaMensaje){
+
+            var objRespuesta = new Object();
+            objRespuesta.error = false;
+            objRespuesta.mensaje = '';
+
+            try{
+
+                if(!utilities.isEmpty(idOV) && !utilities.isEmpty(notaTitulo) && !utilities.isEmpty(notaTipo) && !utilities.isEmpty(notaMensaje)){
+
+                    var idUserNote = record.create({
+                        type: 'note',
+                        isDynamic: true
+                    });
+
+                    idUserNote.setValue({
+                        fieldId: 'transaction',
+                        value: idOV
+                    });
+
+                    idUserNote.setValue({
+                        fieldId: 'title',
+                        value: notaTitulo
+                    });
+
+                    idUserNote.setValue({
+                        fieldId: 'notetype',
+                        value: notaTipo
+                    });
+
+                    idUserNote.setValue({
+                        fieldId: 'note',
+                        value: notaMensaje
+                    });
+
+                    try {
+                        idUserNoteSave = idUserNote.save();
+                        if (utilities.isEmpty(idUserNoteSave)) {
+                            objRespuesta.error = true;
+                            respuestaParcial = new Object();
+                            respuestaParcial.codigo = 'SROV034';
+                            respuestaParcial.mensaje = 'Error Grabando Nota de Usuario - Error : No se recibio ID de Respuesta de Creación de la Nota';
+                            objRespuesta.mensaje.push(respuestaParcial);
+                        }else{
+                            objRespuesta.error = false;
+                            objRespuesta.mensaje = 'Nota Creada Exitosamente';
+                        }
+                    
+                    } catch (excepcionUserNote) {
+                        objRespuesta.error = true;
+                        respuestaParcial = new Object();
+                        respuestaParcial.codigo = 'SROV035';
+                        respuestaParcial.mensaje = 'Excepcion Grabando Nota de Usuario - Excepcion : ' + excepcionUserNote.message.toString();
+                        objRespuesta.mensaje.push(respuestaParcial);
+                    }
+
+                    return objRespuesta;
+
+                }
+
+            }catch(e){
+                objRespuesta.error = true;
+                objRespuesta.mensaje = e.message;
+                return objRespuesta;
+            }
+
+        }
 
         return {
             beforeSubmitOV: beforeSubmitOV,
@@ -11485,6 +11552,7 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
             generarAjusteRedondeo: generarAjusteRedondeo,
             obtenerInformacionProveedores: obtenerInformacionProveedores,
             generarFacturaTravel: generarFacturaTravel,
-            cerrarTransaccion: cerrarTransaccion
+            cerrarTransaccion: cerrarTransaccion,
+            crearNota: crearNota
         };
     });
