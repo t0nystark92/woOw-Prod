@@ -375,7 +375,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
                     if (!utilities.isEmpty(filterEstados) && filterEstados.length > 0) {
 
-                        registro.marcarFacturada = true;
+                        respuesta.marcarFacturada = true;
 
                         var arraySearchParams = [];
                         var objParam = new Object({});
@@ -1167,7 +1167,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
         function summarize(summary) {
 
-            handleErrorIfAny(summary);
+            log.audit('SUMMARIZE', 'INICIO')
 
             var idOV = getParams('custscript_idOV');
             var cuentaGral = getParams('custscript_cuenta_asiento_final');
@@ -1194,7 +1194,10 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     var arrayULID = new Array();
 
                     summary.output.iterator().each(function (key, value) {
+
+                        log.debug('summary each value', JSON.stringify(value))
                         var obj = JSON.parse(value);
+                        log.debug('summary each obj', JSON.stringify(obj))
                         var ulid = key;
                         var marcarFacturada = obj.marcarFacturada
 
@@ -1209,6 +1212,8 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
 
                     })
+
+                    log.debug('arrayMarcarFacturadas', JSON.stringify(arrayMarcarFacturadas));
 
                     var soRecord = record.load({
                         type: 'salesorder',
@@ -1240,31 +1245,42 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                         fieldId: 'custbody_3k_je_serv_aplica_deposito'
                     })
 
-                    if (utilities.isEmpty(pagoCierre)) {
+                    if (pagoCierre == false) {
 
 
                         for (var i = 0; i < arrayMarcarFacturadas.length; i++) {
 
-                            var line = soRecord.findSublistLineWithValue({
+                            var ulidLineFact = soRecord.getSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'lineuniquekey',
-                                value: arrayMarcarFacturadas[i].ulid
+                                line: i
                             })
 
-                            soRecord.selectLine({
-                                sublistId: 'item',
-                                line: line
-                            });
+                            log.debug('ulidLineFact - ulid', ulidLineFact + ' - ' + arrayMarcarFacturadas[i].ulid)
 
-                            soRecord.setCurrentSublistValue({
-                                sublistId: 'item',
-                                fieldId: 'custcol_3k_servicio_facturado',
-                                value: true
-                            })
+                            if (ulidLineFact == arrayMarcarFacturadas[i].ulid) {
 
-                            soRecord.commitLine({
-                                sublistId: 'item'
-                            })
+                                /*var line = soRecord.findSublistLineWithValue({
+                                    sublistId: 'item',
+                                    fieldId: 'lineuniquekey',
+                                    value: arrayMarcarFacturadas[i].ulid
+                                })*/
+
+                                soRecord.selectLine({
+                                    sublistId: 'item',
+                                    line: i
+                                });
+
+                                soRecord.setCurrentSublistValue({
+                                    sublistId: 'item',
+                                    fieldId: 'custcol_3k_servicio_facturado',
+                                    value: true
+                                })
+
+                                soRecord.commitLine({
+                                    sublistId: 'item'
+                                })
+                            }
 
 
                         }
@@ -1340,7 +1356,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                             arraySearchParams.push(objParam);
 
                             var objParam2 = new Object({});
-                            objParam2.name = 'account';                         
+                            objParam2.name = 'account';
                             objParam2.operator = 'IS';
                             objParam2.values = cuentaGral;
                             arraySearchParams.push(objParam2);
@@ -1419,7 +1435,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
                                     log.debug('doc', doc)
 
-                                    var filterJE = arregloJEFinal.filter(function(obj) {
+                                    var filterJE = arregloJEFinal.filter(function (obj) {
                                         //log.debug('filter comparacion', 'internalid: ' + obj.internalid + ' - doc: '+ doc)
                                         return obj.internalid == doc
                                     })
@@ -1466,15 +1482,15 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
 
 
-                                var idTran = objPagoFinal.save.promise({
+                                var idTran = objPagoFinal.save({
                                     enableSourcing: true,
                                     ignoreMandatoryFields: false
                                 });
 
-                                /*soRecord.setValue({
+                                soRecord.setValue({
                                     fieldId: 'custbody_3k_je_serv_aplica_deposito',
-                                    value: idTran
-                                })*/
+                                    value: true
+                                })
 
                                 soRecord.save();
                             }
@@ -1488,7 +1504,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                     }
                 }
 
+                handleErrorIfAny(summary);
 
+                log.audit('SUMMARIZE', 'FIN')
 
             } catch (e) {
                 log.error('Exception Summarize', e.message);
