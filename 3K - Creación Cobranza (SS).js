@@ -11,14 +11,14 @@
     }
 });*/
 
-define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funcionalidadesOV'],
+define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funcionalidadesOV', 'N/runtime'],
     /**
      * @param {error} error
      * @param {record} record
      * @param {search} search
      */
 
-    function (error, record, search, format, utilities, funcionalidades) {
+    function (error, record, search, format, utilities, funcionalidades, runtime) {
 
         /**
          * Function definition to be triggered before record is loaded.
@@ -37,6 +37,9 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
             var respuesta = new Object();
             respuesta.error = false;
             respuesta.detalle = new Array();
+
+            var currScript = runtime.getCurrentScript();
+            var tipoNota = currScript.getParameter('custscript_3k_tipo_nota_cob');
 
             if (scriptContext.type == 'create') {
 
@@ -342,8 +345,8 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
 
                             respuesta = respuestaCrearDepositos;
 
-                            //Si la OV es de Servicio y No corresponde a Programa de Fidelidad, genera asiento de Deuda a Pagar e Ingreso a Confirmar
-                            if (objOV.esServicio == true && objOV.esFidelidad == false && !utilities.isEmpty(arrayAsientoLiqConfirmar)) {
+                            //Si la OV es de Servicio, No corresponde a Programa de Fidelidad y No es Travel, genera asiento de Deuda a Pagar e Ingreso a Confirmar
+                            if (objOV.esServicio == true && objOV.esFidelidad == false && objOV.esTravel == false && !utilities.isEmpty(arrayAsientoLiqConfirmar)) {
                                 //var asientoDeudaIngreso = crearAsientoDeudaIngreso(impTotalDeudaPagar, impTotalImporteFacturar, objOV.tipoCambioOV, objOV.monedaOV, objOV.subsidiaria, objOV.sistema, objOV.sitioWeb, objOV.idCliente);
                                 var asientoDeudaIngreso = crearAsientoDeudaIngreso(arrayAsientoLiqConfirmar, objOV.tipoCambioOV, objOV.monedaOV, objOV.subsidiaria, objOV.sistema, objOV.sitioWeb, objOV.idCliente, contadorDescuento, totalDescuento);
                                 log.debug('Creación Cobranza (SS) - afterSubmit', 'asientoDeudaIngreso : ' + asientoDeudaIngreso);
@@ -372,7 +375,11 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                     respuestaParcial.codigo = 'UCOB001';
                     respuestaParcial.mensaje += excepcion;
                     respuesta.detalle.push(respuestaParcial);
-                    log.error('Creación Cobranza (SS) - afterSubmit', 'UCOB001 - Excepcion : ' + excepcion);
+                    log.error('Creación Cobranza (SS) - afterSubmit', 'UCOB001 - Excepcion : ' + excepcion + ' - OV: ' + idOV);
+
+                    //Se crea User Note con el error
+                    var crearNotaError = funcionalidades.crearNota(idOV, 'Error en Cobranza - Excepcion', tipoNota, respuestaParcial);
+                    log.debug('Creación OV (SS) - afterSubmit', 'crearNotaError: ' + JSON.stringify(crearNotaError));
                 }
 
                 log.audit('Creación Cobranza (SS)', 'FIN - afterSubmit');
