@@ -32,7 +32,10 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
       respuesta.idRemito = '';
       respuesta.error = false;
       respuesta.detalle = new Array();
-
+      var idOrdenVenta = scriptContext.newRecord.getValue({
+        fieldId: 'createdfrom'
+      });
+      if (!isEmpty(idOrdenVenta)){
       try {
         log.audit('Inicio Grabar Remito', 'AfterSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
         var idFactura = scriptContext.newRecord.getValue({
@@ -40,9 +43,6 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
         });
         var shipStatus = scriptContext.newRecord.getValue({
           fieldId: 'shipstatus'
-        });
-        var idOrdenVenta = scriptContext.newRecord.getValue({
-          fieldId: 'createdfrom'
         });
         var searchTravelServicio = search.lookupFields({
           type: record.Type.SALES_ORDER,
@@ -408,7 +408,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
       }
 
       log.audit('Fin Grabar Remito', 'AfterSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
-
+      }
     }
 
     return {

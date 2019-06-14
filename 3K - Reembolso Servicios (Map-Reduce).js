@@ -1,7 +1,7 @@
 /**
  *@NApiVersion 2.x
  *@NScriptType MapReduceScript
- *@NAmdConfig ./configuration.json
+ *@NAmdConfig /SuiteBundles/Bundle 158453/configuration.json
  *@NModuleScope Public
  */
 
@@ -101,9 +101,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         var st = JSON.stringify(currScript);
         //informacion.ulidsProcesar = currScript.getParameter('custscript_reembolso_serv_ulids');
         informacion.tipoCambio = currScript.getParameter('custscript_reembolso_serv_tc');
-        informacion.devolucionCredito = currScript.getParameter('custscript_reembolso_serv_dev_cred');
+        //informacion.devolucionCredito = currScript.getParameter('custscript_reembolso_serv_dev_cred');
         informacion.departamento = currScript.getParameter('custscript_reembolso_serv_dep');
-        informacion.sitio = currScript.getParameter('custscript_reembolso_serv_sitio');
+        informacion.sistema = currScript.getParameter('custscript_reembolso_serv_sistema');
         informacion.sitioWeb = currScript.getParameter('custscript_reembolso_serv_sitio_web');
         informacion.account = currScript.getParameter('custscript_reembolso_serv_cuenta');
         return informacion;
@@ -252,9 +252,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             obj.clienteDep = searchResult.clienteDep;
             obj.cuentaDep = searchResult.cuentaDep;
             obj.tipoCambio = params.tipoCambio;
-            obj.devolucionCredito = params.devolucionCredito;
+            //obj.devolucionCredito = params.devolucionCredito;
             obj.departamento = params.departamento;
-            obj.sitio = params.sitio;
+            obj.sistema = params.sistema;
             obj.sitioweb = params.sitioWeb;
             obj.account = params.account;
 
@@ -295,10 +295,10 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           value: registro.sitioWeb
         });
 
-        asiento.setValue({
-          fieldId: 'custbody_3k_devolucion_creditos',
-          value: (registro.devolucionCredito == 'T' || registro.devolucionCredito == true)? true:false
-        });
+        //asiento.setValue({
+          //fieldId: 'custbody_3k_devolucion_creditos',
+          //value: (registro.devolucionCredito == 'T' || registro.devolucionCredito == true)? true:false
+        //});
 
         //asiento.setValue({
           //fieldId: 'custbody_3k_cuenta_creditos',
@@ -322,6 +322,13 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           });
         }
         
+        if (!utilities.isEmpty(registro.sistema)) {
+          asiento.setValue({
+            fieldId: 'custbody_cseg_3k_sistema',
+            value: registro.sistema
+          });
+        }
+
         //Lineas de Asiento
         for(var i = 0; i < 3; i++){
           if (i==0){
@@ -340,7 +347,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
             var nombre = registro.clienteDep;
             var debito = 0;
             var credito = parseFloat(registro.ingresoConfirmar) + parseFloat(registro.deudaPagar);
-            var cuenta = registro.cuentaDep;
+            var cuenta = registro.account;//registro.cuentaDep;
           }
           asiento.selectNewLine({sublistId: 'line'});
           asiento.setCurrentSublistValue({sublistId: 'line', fieldId:'account', value:cuenta});
@@ -348,7 +355,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           asiento.setCurrentSublistValue({sublistId: 'line', fieldId:'debit', value:debito});
           asiento.setCurrentSublistValue({sublistId: 'line', fieldId:'credit', value:credito});
           asiento.setCurrentSublistValue({sublistId: 'line', fieldId:'department', value:registro.departamento});
-          asiento.setCurrentSublistValue({sublistId: 'line', fieldId:'class', value:registro.sitio});
+          asiento.setCurrentSublistValue({sublistId: 'line', fieldId:'class', value:registro.sistema});
           asiento.commitLine({sublistId: 'line'});
         }
 

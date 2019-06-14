@@ -1,7 +1,7 @@
 /**
  *@NApiVersion 2.x
  *@NScriptType Suitelet
- *@NAmdConfig ./configuration.json
+ *@NAmdConfig /SuiteBundles/Bundle 158453/configuration.json
  *@NModuleScope Public
  */
 define(['N/search', 'N/record', 'N/ui/serverWidget', 'N/format', 'N/task', '3K/utilities'],
@@ -105,15 +105,15 @@ define(['N/search', 'N/record', 'N/ui/serverWidget', 'N/format', 'N/task', '3K/u
             tipoCambio.defaultValue = context.request.parameters.tipoCambio;
           }
 
-          var devolucionCredito = form.addField({
-            id: 'devolucioncredito',
-            label: 'Devolución Crédito',
-            type: serverWidget.FieldType.CHECKBOX,
-            container: 'infodepositos'
-          });
-          if(!utilities.isEmpty(context.request)&&!utilities.isEmpty(context.request.parameters)&&!utilities.isEmpty(context.request.parameters.devolucionCredito)){
-            devolucionCredito.defaultValue = context.request.parameters.devolucionCredito;
-          }
+          //var devolucionCredito = form.addField({
+            //id: 'devolucioncredito',
+            //label: 'Devolución Crédito',
+            //type: serverWidget.FieldType.CHECKBOX,
+            //container: 'infodepositos'
+          //});
+          //if(!utilities.isEmpty(context.request)&&!utilities.isEmpty(context.request.parameters)&&!utilities.isEmpty(context.request.parameters.devolucionCredito)){
+            //devolucionCredito.defaultValue = context.request.parameters.devolucionCredito;
+          //}
 
           var departamento = form.addField({
             id: 'departamento',
@@ -126,15 +126,15 @@ define(['N/search', 'N/record', 'N/ui/serverWidget', 'N/format', 'N/task', '3K/u
             departamento.defaultValue = context.request.parameters.departamento;
           }
 
-          var sitio = form.addField({
-            id: 'sitio',
-            label: 'Sitio',
+          var sistema = form.addField({
+            id: 'sistema',
+            label: 'Sistema',
             type: serverWidget.FieldType.SELECT,
-            source: 'class',
+            source: 'customrecord_cseg_3k_sistema',
             container: 'infodepositos'
           });
-          if(!utilities.isEmpty(context.request)&&!utilities.isEmpty(context.request.parameters)&&!utilities.isEmpty(context.request.parameters.sitio)){
-            sitio.defaultValue = context.request.parameters.sitio;
+          if(!utilities.isEmpty(context.request)&&!utilities.isEmpty(context.request.parameters)&&!utilities.isEmpty(context.request.parameters.sistema)){
+            sistema.defaultValue = context.request.parameters.sistema;
           }
 
           var sitioweb = form.addField({
@@ -499,9 +499,9 @@ define(['N/search', 'N/record', 'N/ui/serverWidget', 'N/format', 'N/task', '3K/u
             parametros = {};
             parametros.custscript_reembolso_serv_ulids = ulidsProcesar.toString();
             parametros.custscript_reembolso_serv_tc = request.parameters.tipoCambio;
-            parametros.custscript_reembolso_serv_dev_cred = request.parameters.devolucionCredito;
+            //parametros.custscript_reembolso_serv_dev_cred = request.parameters.devolucionCredito;
             parametros.custscript_reembolso_serv_dep = request.parameters.departamento;
-            parametros.custscript_reembolso_serv_sitio = request.parameters.sitio;
+            parametros.custscript_reembolso_serv_sistema = request.parameters.sistema;
             parametros.custscript_reembolso_serv_sitio_web = request.parameters.sitioweb;
             parametros.custscript_reembolso_serv_cuenta = request.parameters.account;
 
