@@ -1245,6 +1245,10 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                         fieldId: 'custbody_3k_je_serv_aplica_deposito'
                     })
 
+                    var numLines = soRecord.getLineCount({
+                        sublistId: 'item'
+                    })
+
                     if (pagoCierre == false) {
 
 
@@ -1285,9 +1289,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
                         }
 
-                        var numLines = soRecord.getLineCount({
-                            sublistId: 'item'
-                        })
+
 
                         var generarAsiento = true;
 
@@ -1307,11 +1309,15 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                 line: i
                             });
 
+                            log.debug('esFidelidadLineFinal', 'esFidelidadLineFinal: ' + esFidelidadLineFinal)
+
                             var esRedondeoLineFinal = soRecord.getSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'custcol_3k_es_redondeo',
                                 line: i
                             });
+
+                            log.debug('esRedondeoLineFinal', 'esRedondeoLineFinal: ' + esRedondeoLineFinal)
 
                             var esDescuentoLineFinal = soRecord.getSublistValue({
                                 sublistId: 'item',
@@ -1319,11 +1325,15 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                 line: i
                             });
 
+                            log.debug('esDescuentoLineFinal', 'esDescuentoLineFinal: ' + esDescuentoLineFinal)
+
                             var esClosedFinal = soRecord.getSublistValue({
                                 sublistId: 'item',
                                 fieldId: 'isclosed',
                                 line: i
                             });
+
+                            log.debug('esClosedFinal', 'esClosedFinal: ' + esClosedFinal)
 
                             var facturadoFinal = soRecord.getSublistValue({
                                 sublistId: 'item',
@@ -1331,9 +1341,13 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                 line: i
                             });
 
-                            if (esFidelidadLineFinal == false && esRedondeoLineFinal == false && esDescuentoLineFinal == false && esClosedFinal == false && facturadoFinal == false && !utilities.isEmpty(pagoCierre)) {
+                            log.debug('facturadoFinal', 'facturadoFinal: ' + facturadoFinal)
 
-                                generarAsiento == false;
+                            log.debug('comprobacion asiento', 'esFidelidadLineFinal: ' + esFidelidadLineFinal + ' esRedondeoLineFinal: ' + esRedondeoLineFinal + ' esDescuentoLineFinal: ' + esDescuentoLineFinal + ' esClosedFinal: ' + esClosedFinal + ' facturadoFinal: ' + facturadoFinal)
+
+                            if (esFidelidadLineFinal == false && esRedondeoLineFinal == false && esDescuentoLineFinal == false && esClosedFinal == false && facturadoFinal == false) {
+
+                                generarAsiento = false;
                                 break;
 
 
@@ -1344,7 +1358,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                         if (generarAsiento == true) {
 
                             //SAVED SEARCH DE JE ASOCIADOS
-                            var arraySearchParams = [];
+                            /*var arraySearchParams = [];
                             var objParam = new Object({});
                             objParam.name = 'custbody_3k_ulid_servicios';
                             if (arrayULID.length > 1) {
@@ -1362,7 +1376,101 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                             arraySearchParams.push(objParam2);
 
                             var arrayResultDep = utilities.searchSavedPro('customsearch_3k_je_servicios_pendientes', arraySearchParams);
-                            var arregloJEFinal = arrayResultDep.objRsponseFunction.array;
+                            var arregloJEFinal = arrayResultDep.objRsponseFunction.array;*/
+
+                            var savedSearch = search.load({
+                                id: 'customsearch_3k_je_servicios_pendientes'
+                            });
+
+                            /*var filtroID = search.createFilter({
+                                name: 'custbody_3k_ulid_servicios',
+                                operator: search.Operator.IS,
+                                values: arrayULID
+                            });
+
+                            savedSearch.filters.push(filtroID);*/
+
+                            var arrayExpresionsFinal = savedSearch.filterExpression;
+
+                            for (var jj = 0; jj < arrayULID.length; jj++) {
+
+                                if (jj == 0) {
+                                    arrayExpresionsFinal.push("AND");
+                                }
+
+                                var arraypushExpression = new Array();
+
+                                arraypushExpression[0] = new Array()
+
+                                arraypushExpression[0][0] = "custbody_3k_ulid_servicios"
+                                arraypushExpression[0][1] = "is"
+                                arraypushExpression[0][2] = arrayULID[jj];
+
+                                if (arrayULID.length - 1 > jj) {
+                                    arraypushExpression[1] = "OR"
+                                }
+
+                                arrayExpresionsFinal = arrayExpresionsFinal.concat(arraypushExpression);
+                            }
+                            savedSearch.filterExpression = arrayExpresionsFinal;
+
+                            log.debug('filters', JSON.stringify(savedSearch.filterExpression));
+
+                            var resultSearch = savedSearch.run();
+                            var resultSet = [];
+                            var resultIndex = 0;
+                            var resultStep = 1000; // Number of records returned in one step (maximum is 1000)
+                            var resultado; // temporary variable used to store the result set
+
+                            do {
+                                // fetch one result set
+                                resultado = resultSearch.getRange({
+                                    start: resultIndex,
+                                    end: resultIndex + resultStep
+                                });
+                                if (!isEmpty(resultado) && resultado.length > 0) {
+                                    if (resultIndex == 0) resultSet = resultado;
+                                    else resultSet = resultSet.concat(resultado);
+                                }
+                                // increase pointer
+                                resultIndex = resultIndex + resultStep;
+                                // once no records are returned we already got all of them
+                            } while (!isEmpty(resultado) && resultado.length > 0)
+
+                            var arregloJEFinal = new Array();
+
+                            for (var i = 0; i < resultSet.length; i++) {
+                                var obj = new Object({});
+                                obj.indice = i;
+                                for (var j = 0; j < resultSearch.columns.length; j++) {
+                                    var nombreColumna = resultSearch.columns[j].name;
+                                    //log.debug('armarArreglosSS','nombreColumna inicial: '+ nombreColumna);
+                                    if (nombreColumna.indexOf("formula") !== -1 || !isEmpty(resultSearch.columns[j].join)) {
+                                        nombreColumna = resultSearch.columns[j].label;
+
+
+                                    }
+
+                                    if (Array.isArray(resultSet[i].getValue({
+                                            name: resultSearch.columns[j]
+                                        }))) {
+
+                                        var a = resultSet[i].getValue({
+                                            name: resultSearch.columns[j]
+                                        });
+                                        //log.debug('armarArreglosSS', 'a: ' + JSON.stringify(a));
+                                        obj[nombreColumna] = a[0].value;
+                                    } else {
+                                        //log.debug('armarArreglosSS', 'resultSet[i].getValue({ name: nombreColumna }): ' + JSON.stringify(resultSet[i].getValue({ name: nombreColumna })));
+                                        obj[nombreColumna] = resultSet[i].getValue({
+                                            name: resultSearch.columns[j]
+                                        });
+                                    }
+
+                                }
+                                //log.debug('armarArreglosSS', 'obj: ' + JSON.stringify(obj));
+                                arregloJEFinal.push(obj);
+                            }
 
                             log.debug('arregloJEFinal', JSON.stringify(arregloJEFinal));
 
@@ -1492,7 +1600,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                                     value: true
                                 })
 
-                                soRecord.save();
+
                             }
 
 
@@ -1501,6 +1609,10 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
 
                         }
+
+                        soRecord.save({
+                            disabletriggers: true
+                        });
                     }
                 }
 
