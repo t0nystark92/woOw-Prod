@@ -144,6 +144,18 @@
                             line: i
                         }); 
 
+                        objItem.rubro = objRecord.getSublistValue({
+                          sublistId: 'item',
+                          fieldId: 'custcol_3k_rubro',
+                          line: i
+                        });
+ 
+                        objItem.mainCategory = objRecord.getSublistValue({
+                          sublistId: 'item',
+                          fieldId: 'custcol_cseg_3k_main_cat',
+                          line: i
+                        });
+
                         objItem.priceLevel = objRecord.getSublistValue({
                             sublistId: 'item',
                             fieldId: 'price',
@@ -191,7 +203,19 @@
                                 sublistId: 'item',
                                 fieldId: 'taxcode',
                                 value: objItem.taxCode
-                            });            
+                            });  
+                            
+                            objRecord.setCurrentSublistValue({
+                              sublistId: 'item',
+                              fieldId: 'custcol_3k_rubro',
+                              value: objItem.rubro
+                            });
+
+                            objRecord.setCurrentSublistValue({
+                              sublistId: 'item',
+                              fieldId: 'custcol_cseg_3k_main_cat',
+                              value: objItem.mainCategory
+                            });
 
                             objRecord.setCurrentSublistValue({
                                 sublistId: 'item',
