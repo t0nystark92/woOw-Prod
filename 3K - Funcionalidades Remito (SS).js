@@ -35,7 +35,7 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
       var idOrdenVenta = scriptContext.newRecord.getValue({
         fieldId: 'createdfrom'
       });
-      if (!isEmpty(idOrdenVenta)){
+      if (!utilities.isEmpty(idOrdenVenta)){
       try {
         log.audit('Inicio Grabar Remito', 'AfterSubmit - Tipo : Servidor - Evento : ' + scriptContext.type);
         var idFactura = scriptContext.newRecord.getValue({
@@ -44,14 +44,26 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
         var shipStatus = scriptContext.newRecord.getValue({
           fieldId: 'shipstatus'
         });
-        var searchTravelServicio = search.lookupFields({
+        var recordOV = record.load({
           type: record.Type.SALES_ORDER,
-          id: idOrdenVenta,
-          columns: [
-            'custbody_3k_ov_servicio', 'custbody_3k_ov_travel'
-          ]
+          id: idOrdenVenta
         });
-        var esProducto = !(searchTravelServicio.custbody_3k_ov_servicio || searchTravelServicio.custbody_3k_ov_travel) || false;
+        var searchInfoOV = {
+          custbody_3k_ov_servicio: recordOV.getValue('custbody_3k_ov_servicio'),
+          custbody_3k_ov_travel: recordOV.getValue('custbody_3k_ov_travel'),
+          shippingtax1rate: recordOV.getValue('shippingtax1rate'),
+          handlingtax1rate: recordOV.getValue('handlingtax1rate'),
+          shippingcost: recordOV.getValue('shippingcost'),
+          handlingcost: recordOV.getValue('handlingcost') 
+        };//search.lookupFields({
+          //type: record.Type.SALES_ORDER,
+          //id: idOrdenVenta,
+          //columns: [
+            //'custbody_3k_ov_servicio', 'custbody_3k_ov_travel', 'shippingtax1rate', 'handlingtax1rate'
+          //]
+        //});
+        
+        var esProducto = !(searchInfoOV.custbody_3k_ov_servicio || searchInfoOV.custbody_3k_ov_travel) || false;
         //if ((scriptContext.type == 'pack' || scriptContext.type == 'edit') && (shipStatus.toLowerCase() == 'b' || shipStatus.toLowerCase() == 'c') && utilities.isEmpty(idFactura) && esProducto) {
         if ((scriptContext.type == 'ship' || (scriptContext.type == 'edit' && shipStatus.toLowerCase() == 'c')) && utilities.isEmpty(idFactura) && esProducto) {
           var idRemito = scriptContext.newRecord.id;
@@ -206,7 +218,29 @@ define(['N/error', 'N/record', 'N/search', 'N/format', '3K/utilities', '3K/funci
                         fieldId: 'trandate',
                         value: fechaRemitoDate
                       });
+                      log.debug('Shipping Cost Antes de Setear Rates', factRecord.getValue('shippingcost'));
+                      //Setear Handlig y Shipping Tax Rate
+                      log.debug('Setear Tax Rates...', 'Shipping:' + searchInfoOV.shippingtax1rate);
+                      factRecord.setValue({
+                        fieldId: 'shippingtax1rate',
+                        value: searchInfoOV.shippingtax1rate
+                      });
+                      log.debug('Setear Tax Rates...', 'Handling:'+ searchInfoOV.handlingtax1rate);
+                      factRecord.setValue({
+                        fieldId: 'handlingtax1rate',
+                        value: searchInfoOV.handlingtax1rate
+                      });
 
+                      factRecord.setValue({
+                        fieldId: 'shippingcost',
+                        value: searchInfoOV.shippingcost
+                      });
+                      factRecord.setValue({
+                        fieldId: 'handlingcost',
+                        value: searchInfoOV.handlingcost
+                      });
+
+                      log.debug('Shipping Cost Despues de Setear Rates', factRecord.getValue('shippingcost'));
                       //DEJAR UNICAMENTE LAS LÍNEAS QUE HAYAN SIDO PACKEADAS EN EL REMITO
                       log.debug('Dejando líneas del remito', 'Dejando solo las lineas packed');
                       var lineasFactura = factRecord.getLineCount({
