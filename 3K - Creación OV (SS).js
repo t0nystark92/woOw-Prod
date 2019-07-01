@@ -6,18 +6,20 @@
  */
 /*require.config({
     paths: {
-        '3K/utilities': './3K - Utilities'
+        '3K/utilities': './3K - Utilities',
+        '3K/funcionalidadesOV': './3K - Funcionalidades OV'
+
     }
 });*/
 
-define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/format'],
+define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/format', '3K/funcionalidadesOV'],
     /**
      * @param {error} error
      * @param {record} record
      * @param {search} search
      */
 
-    function (error, record, search, runtime, utilities, format) {
+    function (error, record, search, runtime, utilities, format, funcionalidades) {
 
         /**
          * Function definition to be triggered before record is loaded.
@@ -714,6 +716,9 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                     var recId = scriptContext.newRecord.id;
                     var recType = scriptContext.newRecord.type;
+                    var currScript = runtime.getCurrentScript();
+                
+                    var tipoNota = currScript.getParameter('custscript_3k_tipo_nota');
 
                     var objRecord = record.load({
                         type: recType,
@@ -1300,12 +1305,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                 if (error == true) {
                     // SI HUBO ALGUN ERROR, GENERAR LA OV CON ESTADO "APROBACION PENDIENTE"
+
                     var idOVActualizada = record.submitFields({
                         type: record.Type.SALES_ORDER,
                         id: idOV,
                         values: {
-                            orderstatus: 'A',
-                            custbody_3k_netsuite_ov: logNS + ' ' + mensajeError
+                            orderstatus: 'A'
                         },
                         options: {
                             enableSourcing: false,
@@ -1313,21 +1318,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                         }
                     });
 
-                    log.debug('Creación OV (SS) - afterSubmit', 'respuesta: ' + JSON.stringify(respuesta));
-                    log.error('Creación OV (SS) - afterSubmit', 'OV Creada en Estado APROBACION PENDIENTE');
-                } else {
-
-                    var idOVActualizada = record.submitFields({
-                        type: record.Type.SALES_ORDER,
-                        id: idOV,
-                        values: {
-                            custbody_3k_netsuite_ov: logNS
-                        },
-                        options: {
-                            enableSourcing: false,
-                            ignoreMandatoryFields: true
-                        }
-                    });
+                    log.debug('Creación OV (SS) - afterSubmit', 'respuesta: ' + JSON.stringify(respuesta) + ' - OV: ' + idOV);
+                    log.error('Creación OV (SS) - afterSubmit', 'OV ' + idOV + ' Creada en Estado APROBACION PENDIENTE');
+                    
+                    //Se crea User Note con el error
+                    var crearNotaError = funcionalidades.crearNota(idOV, 'OV en Aprobacion Pendiente', tipoNota, mensajeError);
+                    log.debug('Creación OV (SS) - afterSubmit', 'crearNotaError: ' + JSON.stringify(crearNotaError));
 
                 }
 
