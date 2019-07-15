@@ -145,24 +145,24 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', '3K/utili
 
                             var filterS = new Array()
 
-                                for (var jj = 0; jj < arrayULID.length; jj++) {
+                            for (var jj = 0; jj < arrayULID.length; jj++) {
 
-                                    var arraypushExpression = new Array();
+                                var arraypushExpression = new Array();
 
-                                    arraypushExpression[0] = new Array()
+                                arraypushExpression[0] = new Array()
 
-                                    arraypushExpression[0][0] = "custbody_3k_ulid_servicios"
-                                    arraypushExpression[0][1] = "is"
-                                    arraypushExpression[0][2] = arrayULID[jj];
+                                arraypushExpression[0][0] = "custbody_3k_ulid_servicios"
+                                arraypushExpression[0][1] = "is"
+                                arraypushExpression[0][2] = arrayULID[jj];
 
-                                    if (arrayULID.length - 1 > jj) {
-                                        arraypushExpression[1] = "OR"
-                                    }
-
-                                    filterS = filterS.concat(arraypushExpression);
+                                if (arrayULID.length - 1 > jj) {
+                                    arraypushExpression[1] = "OR"
                                 }
-                            var filterOV = ["createdfrom","ANYOF",soRecord.id];
-                            var filterUnificado = ["AND",[filterS,"OR",filterOV]]
+
+                                filterS = filterS.concat(arraypushExpression);
+                            }
+                            var filterOV = ["createdfrom", "ANYOF", soRecord.id];
+                            var filterUnificado = ["AND", [filterS, "OR", filterOV]]
                             arrayExpresionsFinal = arrayExpresionsFinal.concat(filterUnificado);
                             log.debug('filtersTranAsociadas', JSON.stringify(arrayExpresionsFinal));
                             savedSearch.filterExpression = arrayExpresionsFinal.concat(filterUnificado);
@@ -357,30 +357,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', '3K/utili
                             var validarFinal = false;
                             var notReedem = false;
 
-                            var arrayLinesOrdered = new Array();
-                            var orderLine = 0;
 
-                            for (var ii = 0; ii < numLines; ii++) {
-
-                                var isOpen = soRecord.getSublistValue({
-                                    sublistId: 'item',
-                                    fieldId: 'isopen',
-                                    line: ii
-                                });
-
-                                log.debug('line isopen', 'isopen: ' + isOpen + ' typeof: ' + typeof (isOpen))
-
-                                if (isOpen == true || isOpen == 'T') {
-
-                                    var objLine = new Object();
-                                    objLine.idx = ii;
-                                    objLine.order = orderLine;
-                                    arrayLinesOrdered.push(objLine);
-
-                                    orderLine++;
-                                }
-
-                            }
 
                             log.debug('arrayLinesOrdered', JSON.stringify(arrayLinesOrdered))
 
@@ -432,6 +409,31 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', '3K/utili
                                 log.debug('estadoServicioOld', estadoServicioOld);
 
                                 if (estadoServicio != estadoServicioOld) {
+
+                                    var arrayLinesOrdered = new Array();
+                                    var orderLine = 0;
+
+                                    for (var ii = 0; ii < numLines; ii++) {
+
+                                        var isOpen = soRecord.getSublistValue({
+                                            sublistId: 'item',
+                                            fieldId: 'isopen',
+                                            line: ii
+                                        });
+
+                                        log.debug('line isopen', 'isopen: ' + isOpen + ' typeof: ' + typeof (isOpen))
+
+                                        if (isOpen == true || isOpen == 'T') {
+
+                                            var objLine = new Object();
+                                            objLine.idx = ii;
+                                            objLine.order = orderLine;
+                                            arrayLinesOrdered.push(objLine);
+
+                                            orderLine++;
+                                        }
+
+                                    }
 
 
 
