@@ -205,8 +205,8 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', '3K/utili
                                     }
 
                                     if (Array.isArray(resultSet[xy].getValue({
-                                            name: resultSearch.columns[yy]
-                                        }))) {
+                                        name: resultSearch.columns[yy]
+                                    }))) {
 
                                         var a = resultSet[xy].getValue({
                                             name: resultSearch.columns[yy]
@@ -321,8 +321,8 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', '3K/utili
                                     }
 
                                     if (Array.isArray(resultSet[xy].getValue({
-                                            name: resultSearch.columns[yy]
-                                        }))) {
+                                        name: resultSearch.columns[yy]
+                                    }))) {
 
                                         var a = resultSet[xy].getValue({
                                             name: resultSearch.columns[yy]
@@ -425,12 +425,34 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', '3K/utili
 
                                         if (isOpen == true || isOpen == 'T') {
 
-                                            var objLine = new Object();
-                                            objLine.idx = ii;
-                                            objLine.order = orderLine;
-                                            arrayLinesOrdered.push(objLine);
+                                            if (arrayLineasMarcarFacturadas.length > 0) {
 
-                                            orderLine++;
+                                                var f = arrayLineasMarcarFacturadas.filter(function (o) {
+                                                    return o == ii
+                                                })
+
+                                                if (utilities.isEmpty(f) || f.length == 0) {
+
+                                                    var objLine = new Object();
+                                                    objLine.idx = ii;
+                                                    objLine.order = orderLine;
+                                                    arrayLinesOrdered.push(objLine);
+
+                                                    orderLine++;
+                                                }
+
+                                            } else {
+
+                                                var objLine = new Object();
+                                                objLine.idx = ii;
+                                                objLine.order = orderLine;
+                                                arrayLinesOrdered.push(objLine);
+
+                                                orderLine++;
+
+                                            }
+
+
                                         }
 
                                     }
