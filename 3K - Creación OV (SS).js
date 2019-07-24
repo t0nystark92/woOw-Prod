@@ -966,13 +966,13 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                             fieldId: 'custbody_3k_imp_total_woow'
                         });
 
-                        log.debug('Creación OV (SS) - afterSubmit', 'importeTotalWoow antes del Costo Envio: ' + JSON.stringify(importeTotalWoow) + ', impuestoCostoEnvio: ' + JSON.stringify(impuestoCostoEnvio));
-
-                        if (!utilities.isEmpty(impuestoCostoEnvio) && impuestoCostoEnvio> 0.00) {
-                            importeTotalWoow = parseFloat(importeTotalWoow + impuestoCostoEnvio, 10);
-                            importeTotalWoow = parseFloat(importeTotalWoow, 10).toFixed(2);
-                            log.debug('Creación OV (SS) - afterSubmit', 'importeTotalWoow + impuestoCostoEnvio: ' + JSON.stringify(importeTotalWoow));
-                        }
+                        //log.debug('Creación OV (SS) - afterSubmit', 'importeTotalWoow antes del Costo Envio: ' + JSON.stringify(importeTotalWoow) + ', impuestoCostoEnvio: ' + JSON.stringify(impuestoCostoEnvio));
+//
+                        //if (!utilities.isEmpty(impuestoCostoEnvio) && impuestoCostoEnvio> 0.00) {
+                            //importeTotalWoow = parseFloat(importeTotalWoow + impuestoCostoEnvio, 10);
+                            //importeTotalWoow = parseFloat(importeTotalWoow, 10).toFixed(2);
+                            //log.debug('Creación OV (SS) - afterSubmit', 'importeTotalWoow + impuestoCostoEnvio: ' + JSON.stringify(importeTotalWoow));
+                        //}
 
                         // INICIO GENERAR AJUSTE POR REDONDEO
 
@@ -1483,13 +1483,33 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                         log.debug('generarAjusteRedondeo', 'importeTotalOVNS: ' + importeTotalOVNS + ', importeTotalOVWOOW: ' + importeTotalOVWOOW + ', cantidadLineasOV: ' + cantidadLineasOV);
 
+                        var totalEnvioNS = objRecord.getValue({
+                          fieldId: 'custbody_3k_total_envio'
+                        });
+
+                        var totalEnvioMagento = objRecord.getValue({
+                          fieldId: 'custbody_woow_shippingcost_magento'
+                        });
+
+                      log.debug('totalesEnvio', 'totalEnvioMagento: ' + totalEnvioMagento + ' totalEnvioNS: ' + totalEnvioNS);
+
                         if (utilities.isEmpty(importeTotalOVWOOW) || isNaN(parseFloat(importeTotalOVWOOW))) {
                             importeTotalOVWOOW = 0.00;
                         }
+                        if (utilities.isEmpty(totalEnvioMagento) || isNaN(parseFloat(totalEnvioMagento))) {
+                          totalEnvioMagento = 0.00;
+                        }
+                        if (utilities.isEmpty(totalEnvioNS) || isNaN(parseFloat(totalEnvioNS))) {
+                          totalEnvioNS = 0.00;
+                        }
 
                         if (!utilities.isEmpty(importeTotalOVNS) && !isNaN(parseFloat(importeTotalOVNS)) && !utilities.isEmpty(importeTotalOVWOOW) && !isNaN(parseFloat(importeTotalOVWOOW))) {
-
-                            var diferenciaImporte = (parseFloat(importeTotalOVWOOW)) - parseFloat(importeTotalOVNS);
+                            
+                            importeTotalOVWOOW = (parseFloat(importeTotalOVWOOW) + parseFloat(totalEnvioMagento));
+                            //importeTotalOVNS = (parseFloat(importeTotalOVNS) - parseFloat(totalEnvioNS));
+                            //var diferenciaEnvio = (parseFloat(totalEnvioMagento) - parseFloat(totalEnvioNS)).toFixed(2);
+                            var diferenciaImporte = parseFloat(importeTotalOVWOOW) - parseFloat(importeTotalOVNS);// + parseFloat(diferenciaEnvio);
+                            //log.debug('generarAjusteRedondeo', 'diferenciaEnvio: ' + diferenciaEnvio);
                             log.debug('generarAjusteRedondeo', 'diferenciaImporte: ' + diferenciaImporte);
                             var eliminoLineaRedondeo = false;
                             if (parseFloat(diferenciaImporte) != 0.00) {
