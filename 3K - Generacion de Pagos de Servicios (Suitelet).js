@@ -389,16 +389,16 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             }
           }
 
-          var bancoProv = form.addField({
-            id: 'bancoprov',
+          var bancoEmisorPago = form.addField({
+            id: 'bancoemisorpago',
             label: 'Banco Pago A Proveedor',
             type: serverWidget.FieldType.SELECT,
             source: 'customrecord_3k_bancos',
             container: 'infopago'
           });
 
-          if (!utilities.isEmpty(context.request.parameters.bancoprov)) {
-            bancoProv.defaultValue = context.request.parameters.bancoprov;
+          if (!utilities.isEmpty(context.request.parameters.bancoemisorpago)) {
+            bancoEmisorPago.defaultValue = context.request.parameters.bancoemisorpago;
           }
 
           log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - FIN');
