@@ -21,6 +21,12 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
     function (error, record, search, runtime, utilities, format, funcionalidades) {
 
+        Array.prototype.diff = function( arr ) {
+            return this.filter( function( val ) {
+              return (arr.internalid != val.internalid || utilities.isEmpty(arr.internalid));
+            });
+        };
+
         /**
          * Function definition to be triggered before record is loaded.
          *
@@ -422,6 +428,40 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
                     }
 
                     var stockComponentes = objResultSet.objRsponseFunction.array;
+
+                    if ((utilities.isEmpty(stockComponentes) && stockComponentes.length == 0) || stockComponentes.length < arrayComponentes.length){
+
+                        var diffArray = arrayComponentes.diff(stockComponentes);
+
+                        log.debug('diffArray',JSON.stringify(diffArray))
+
+                        if(!utilities.isEmpty(diffArray) && diffArray.length > 0){
+
+                            var indiceComponent = stockComponentes.length
+
+                            for(var xx = 0; xx < diffArray.length; xx++){
+
+                                var objComponent = new Object();
+                                objComponent.indice = indiceComponent;
+                                objComponent.internalid = diffArray[xx].internalid;
+                                objComponent.inventorylocation = ubicacion;
+                                objComponent.locationquantityonhand = 0;
+                                objComponent.locationquantityavailable = 0;
+                                objComponent.locationquantitycommitted = 0;
+                                objComponent.locationquantitybackordered = 0;
+                                
+                                stockComponentes.push(objComponent);
+                                
+                                indiceComponent++;
+                            }
+
+                            log.debug('stockComponentes',JSON.stringify(stockComponentes))
+
+                        }
+                        
+
+
+                    }
 
                     log.debug('Creación OV (SS) - beforeSubmit', 'stockComponentes: ' + JSON.stringify(stockComponentes));
 
