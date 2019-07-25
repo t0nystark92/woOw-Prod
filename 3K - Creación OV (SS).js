@@ -443,7 +443,7 @@ define(['N/error', 'N/record', 'N/search', 'N/runtime', '3K/utilities', 'N/forma
 
                                 var objComponent = new Object();
                                 objComponent.indice = indiceComponent;
-                                objComponent.internalid = diffArray[xx].internalid;
+                                objComponent.internalid = diffArray[xx];
                                 objComponent.inventorylocation = ubicacion;
                                 objComponent.locationquantityonhand = 0;
                                 objComponent.locationquantityavailable = 0;
