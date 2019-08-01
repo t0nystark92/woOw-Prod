@@ -4,8 +4,8 @@
  * @NScriptType UserEventScript
  * @NModuleScope Public
  */
-define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', '3K/utilities', '3K/funcionalidadesOV', '3K/funcionalidadesURU'],
-    function (record, search, format, transaction, task, utilities, funcionalidades, funcionalidadesURU) {
+define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtime', '3K/utilities', '3K/funcionalidadesOV', '3K/funcionalidadesURU'],
+    function (record, search, format, transaction, task, runtime, utilities, funcionalidades, funcionalidadesURU) {
 
 
         function afterSubmit(context) {
@@ -1360,20 +1360,28 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', '3K/utili
                 log.error("Error afertSubmit Catch", error.message);
                 log.error("Error Object afertSubmit Catch", JSON.stringify(error));
 
-                log.debug('arrayTranCreated', JSON.stringify(arrayTranCreated))
+                //log.debug('arrayTranCreated', JSON.stringify(arrayTranCreated))
 
-                if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0) {
+                var currScript = runtime.getCurrentScript();
+                var tipoNota = currScript.getParameter('custscript_3k_tipo_nota');
+
+                var crearNotaError = funcionalidades.crearNota(context.newRecord.id, 'Error en Estado Reservas OV (SS) - Excepcion', tipoNota, error.message);
+                log.debug('Estado Reserva OV (SS)', 'crearNotaError: ' + JSON.stringify(crearNotaError));
+
+                
+
+                /*if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0) {
 
                     for (var y = 0; y < arrayTranCreated.length; y++) {
 
-                        /*record.delete({
+                        record.delete({
                             type: arrayTranCreated[y].accion,
                             id: arrayTranCreated[y].idTran
-                        });*/
+                        });
 
                     }
 
-                }
+                }*/
             } finally {
 
                 if (!utilities.isEmpty(arrayTranCreated) && arrayTranCreated.length > 0 && errorCath == false) {
