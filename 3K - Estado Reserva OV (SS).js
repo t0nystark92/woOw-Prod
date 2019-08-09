@@ -952,6 +952,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                                                                 })
 
                                                                 recordCreate.setValue({
+                                                                    fieldId: 'currency',
+                                                                    value: currency
+                                                                })
+
+                                                                recordCreate.setValue({
                                                                     fieldId: 'custbody_3k_ulid_servicios',
                                                                     value: ulid
                                                                 });
