@@ -34,6 +34,10 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                         fieldId: 'currency'
                     });
 
+                    var description = soRecord.getValue({
+                        fieldId: 'description'
+                    });
+
                     var customer = soRecord.getValue({
                         fieldId: 'entity'
                     });
@@ -685,6 +689,16 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
 
                                                                     if (unredeem == false) {
 
+                                                                        if(!utilities.isEmpty(description)){
+
+                                                                            factComision.setCurrentSublistValue({
+                                                                                sublistId: 'item',
+                                                                                fieldId: 'description',
+                                                                                value: description
+                                                                            });
+                                                                        }
+
+
                                                                         factComision.setCurrentSublistValue({
                                                                             sublistId: 'item',
                                                                             fieldId: 'rate',
@@ -988,6 +1002,17 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                                                                     fieldId: 'item',
                                                                     value: item
                                                                 });
+
+                                                                if(!utilities.isEmpty(description)){
+
+                                                                    recordCreate.setCurrentSublistValue({
+                                                                        sublistId: 'item',
+                                                                        fieldId: 'description',
+                                                                        value: description
+                                                                    });
+                                                                    
+                                                                }
+
 
                                                                 recordCreate.setCurrentSublistValue({
                                                                     sublistId: 'item',
