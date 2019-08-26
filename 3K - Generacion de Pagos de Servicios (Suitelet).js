@@ -111,26 +111,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
         if (!utilities.isEmpty(context.request) && !utilities.isEmpty(context.request.parameters.sitioweb)) {
           empresa.defaultValue = context.request.parameters.empresa;
         }
-
-        var fechaInicio = form.addField({
-          id: 'fechainicio',
-          label: 'Fecha Desde',
-          type: serverWidget.FieldType.DATE,
-          container: 'filtros'
-        }).updateDisplayType({
-          displayType: serverWidget.FieldDisplayType.HIDDEN
-        });
-        //fechaInicio.isMandatory = true;
-
-        var fechaFin = form.addField({
-          id: 'fechafin',
-          label: 'Fecha Hasta',
-          type: serverWidget.FieldType.DATE,
-          container: 'filtros'
-        });
-        fechaFin.isMandatory = true;
-
-        // Por defecto la Fecha Actual
+        //Fecha Actual
         var fechaServidor = new Date();
 
         var fechaLocal = format.format({
@@ -145,6 +126,32 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           timezone: format.Timezone.AMERICA_MONTEVIDEO // Montevideo - Uruguay
         });
 
+        var fechaInicio = form.addField({
+          id: 'fechainicio',
+          label: 'Fecha Desde',
+          type: serverWidget.FieldType.DATE,
+          container: 'filtros'
+        })
+        fechaInicio.isMandatory = true;
+        // Por defecto la Fecha Actual
+        if (!utilities.isEmpty(context.request.parameters.fechainicio)) {
+          fechaInicio.defaultValue = context.request.parameters.fechainicio;
+        } else {
+          if (!utilities.isEmpty(fechaLocal)) {
+            //fechaInicio.defaultValue = fechaLocal;
+            fechaInicio.defaultValue = fechaLocal;
+          }
+        }
+        
+        var fechaFin = form.addField({
+          id: 'fechafin',
+          label: 'Fecha Hasta',
+          type: serverWidget.FieldType.DATE,
+          container: 'filtros'
+        });
+        fechaFin.isMandatory = true;
+
+        // Por defecto la Fecha Actual
         if (!utilities.isEmpty(context.request.parameters.fechafin)) {
           fechaFin.defaultValue = context.request.parameters.fechafin;
         } else {
@@ -153,6 +160,14 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             fechaFin.defaultValue = fechaLocal;
           }
         }
+
+        var moneda = form.addField({
+          id: 'moneda',
+          label: 'Moneda',
+          type: serverWidget.FieldType.LIST,
+          source: 'currency',
+          container: 'filtros'
+        });
 
         /*var enviarEmailProveedor = form.addField({
             id: 'enviaremail',
@@ -347,59 +362,50 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           ////////////////////////////////////////////////////////////////
 
           // INICIO CARGAR DATOS BANCARIOS PROVEEDORES
-          log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - INICIO');
-          var informacionBancariaProveedores = new Array();
-
-          var datosBancariosProveedores = search.load({
-            id: 'customsearch_3k_datos_banc_prov_com'
-          });
-          log.debug('datosBancariosProveedores', datosBancariosProveedores);
-          var resultSet = datosBancariosProveedores.run();
-
-          var completeResultSetDatosBancarios = null;
-
-          var resultIndex = 0;
-          var resultStep = 1000; // Number of records returned in one step (maximum is 1000)
-          var resultado; // temporary variable used to store the result set
-          do {
-            // fetch one result set
-            resultado = resultSet.getRange({
-              start: resultIndex,
-              end: resultIndex + resultStep
-            });
-
-            if (!utilities.isEmpty(resultado) && resultado.length > 0) {
-              if (resultIndex == 0)
-                completeResultSetDatosBancarios = resultado;
-              else
-                completeResultSetDatosBancarios = completeResultSetDatosBancarios.concat(resultado);
-            }
-
-            // increase pointer
-            resultIndex = resultIndex + resultStep;
-
-            // once no records are returned we already got all of them
-          } while (!utilities.isEmpty(resultado) && resultado.length > 0)
-
-          if (!utilities.isEmpty(completeResultSetDatosBancarios) && completeResultSetDatosBancarios.length > 0) {
-
-            for (var i = 0; !utilities.isEmpty(completeResultSetDatosBancarios) && completeResultSetDatosBancarios.length > 0 && i < completeResultSetDatosBancarios.length; i++) {
-              var infoBancaria = new Object();
-              infoBancaria.idProveedor = completeResultSetDatosBancarios[i].getValue({
-                name: resultSet.columns[2]
-              });
-              infoBancaria.idMoneda = completeResultSetDatosBancarios[i].getValue({
-                name: resultSet.columns[3]
-              });
-              infoBancaria.idBanco = completeResultSetDatosBancarios[i].getValue({
-                name: resultSet.columns[4]
-              });
-
-              if (!utilities.isEmpty(infoBancaria.idProveedor) && !utilities.isEmpty(infoBancaria.idMoneda) && !utilities.isEmpty(infoBancaria.idBanco)) {
-                informacionBancariaProveedores.push(infoBancaria);
-              }
-            }
-          }
+          //log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - INICIO');
+          //var informacionBancariaProveedores = new Array();
+          //var datosBancariosProveedores = search.load({
+            //id: 'customsearch_3k_datos_banc_prov_com'
+          //});
+          //log.debug('datosBancariosProveedores', datosBancariosProveedores);
+          //var resultSet = datosBancariosProveedores.run();
+          //var completeResultSetDatosBancarios = null;
+          //var resultIndex = 0;
+          //var resultStep = 1000; // Number of records returned in one step (maximum is 1000)
+          //var resultado; // temporary variable used to store the result set
+          //do {
+            //// fetch one result set
+            //resultado = resultSet.getRange({
+              //start: resultIndex,
+              //end: resultIndex + resultStep
+            //});
+            //if (!utilities.isEmpty(resultado) && resultado.length > 0) {
+              //if (resultIndex == 0)
+                //completeResultSetDatosBancarios = resultado;
+              //else
+                //completeResultSetDatosBancarios = completeResultSetDatosBancarios.concat(resultado);
+            //}
+            //// increase pointer
+            //resultIndex = resultIndex + resultStep;
+            //// once no records are returned we already got all of them
+          //} while (!utilities.isEmpty(resultado) && resultado.length > 0)
+          //if (!utilities.isEmpty(completeResultSetDatosBancarios) && completeResultSetDatosBancarios.length > 0) {
+            //for (var i = 0; !utilities.isEmpty(completeResultSetDatosBancarios) && completeResultSetDatosBancarios.length > 0 && i < completeResultSetDatosBancarios.length; i++) {
+              //var infoBancaria = new Object();
+              //infoBancaria.idProveedor = completeResultSetDatosBancarios[i].getValue({
+                //name: resultSet.columns[2]
+              //});
+              //infoBancaria.idMoneda = completeResultSetDatosBancarios[i].getValue({
+                //name: resultSet.columns[3]
+              //});
+              //infoBancaria.idBanco = completeResultSetDatosBancarios[i].getValue({
+                //name: resultSet.columns[4]
+              //});
+              //if (!utilities.isEmpty(infoBancaria.idProveedor) && !utilities.isEmpty(infoBancaria.idMoneda) && !utilities.isEmpty(infoBancaria.idBanco)) {
+                //informacionBancariaProveedores.push(infoBancaria);
+              //}
+            //}
+          //}
 
           //Completar Lista de Bancos Emisores Pago Prov - INICIO
           var bancoEmisorPago = form.addField({
@@ -428,69 +434,6 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           }
 
           log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - FIN');
-          //var bancoEmisorPago = form.addField({
-          //id: 'bancoemisorpago',
-          //label: 'Banco Emisor Pago',
-          //type: serverWidget.FieldType.SELECT,
-          //source: 'customrecord_3k_bancos',
-          //container: 'infopago'
-          //});
-          //
-          //if (!utilities.isEmpty(context.request.parameters.bancoemisorpago)) {
-          //bancoEmisorPago.defaultValue = context.request.parameters.bancoemisorpago;
-          //}
-          //bancoEmisorPago.isMandatory = true;
-          // FIN CARGAR DATOS BANCARIOS PROVEEDORES
-
-
-          //INICIO - CARGAR LISTADO DE BANCOS EMISORES DE PAGO****************************
-          //var dataBancoEmisor = search.load({
-          //id: 'customsearch_3k_banco_emisor_pago_prov'
-          //});
-          //log.audit('dataBancoEmisor', dataBancoEmisor);
-          //var resultSet = dataBancoEmisor.run();
-          //var completeResultSet = null;
-          //var resultIndex = 0;
-          //var resultStep = 1000; // Number of records returned in one step (maximum is 1000)
-          //var resultado; // temporary variable used to store the result set
-          //do {
-          //resultado = resultSet.getRange({
-          //start: resultIndex,
-          //end: resultIndex + resultStep
-          //});
-          //
-          //if (!utilities.isEmpty(resultado) && resultado.length > 0) {
-          //if (resultIndex == 0)
-          //completeResultSet = resultado;
-          //else
-          //completeResultSet = completeResultSet.concat(resultado);
-          //}
-          //
-          //// increase pointer
-          //resultIndex = resultIndex + resultStep;
-          //// once no records are returned we already got all of them
-          //} while (!utilities.isEmpty(resultado) && resultado.length > 0)
-          //
-          //if (!utilities.isEmpty(completeResultSet)) {
-          //var i = 0;
-          //while (!utilities.isEmpty(completeResultSet) && completeResultSet.length > 0 && i < completeResultSet.length) {
-          //var idBanco = completeResultSet[i].getValue({
-          //name: resultSet.columns[0]
-          //});
-          //
-          //var nameBanco = completeResultSet[i].getValue({
-          //name: resultSet.columns[1]
-          //});
-          //
-          //bancoEmisorPago.addSelectOption({
-          //value: idBanco,
-          //text: nameBanco
-          //});
-          //i++;
-          //}
-          //}
-          //FIN - CARGAR LISTADO DE BANCOS EMISORES DE PAGO****************************
-
         }
         //////////////////////////////////////////////////////////////////
 
@@ -634,7 +577,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
               context.response.writePage(form);
               break;
             case 'Buscar Comisiones Pendientes de Pago':
-              var resultado = cargarPendientes(sublistas, context.request, informacionBancariaProveedores);
+              var resultado = cargarPendientes(sublistas, context.request);
               if (!utilities.isEmpty(resultado) && resultado.error == true) {
                 var mensaje = resultado.mensaje;
                 log.error('Generacion Pagos Servicios', 'Error Consulta Comisiones Pendientes - Error : ' + mensaje);
@@ -650,7 +593,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
       }
     }
 
-    function cargarPendientes(sublistas, request, informacionBancariaProveedores) {
+    function cargarPendientes(sublistas, request) {
       log.audit('Generacion Pagos Servicios', 'INICIO Consulta Comisiones Pendientes');
       var respuesta = new Object();
       respuesta.error = false;
@@ -740,6 +683,17 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           });
 
           ssParams.push(filtroFechaFin);
+
+        }
+
+        if (!utilities.isEmpty(request.parameters.moneda)) {
+          var filtroMoneda = search.createFilter({
+            name: 'trandate',
+            operator: 'ONORBEFORE',
+            values: request.parameters.moneda
+          });
+
+          ssParams.push(filtroMoneda);
 
         }
         log.debug('ssParams', ssParams);
