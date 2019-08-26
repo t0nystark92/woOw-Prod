@@ -11403,14 +11403,28 @@ define(['N/error', 'N/search', 'N/record', 'N/format', 'N/task', 'N/http', 'N/ru
                             sublistId: sublist,
                             line: i
                         });
-
-                        rec.setCurrentSublistValue({
+                        //var quantityBilled = rec.getCurrentSublistValue({
+                          //sublistId: sublist,
+                          //fieldId: 'quantitybilled'
+                        //});
+                        //if ((!utilities.isEmpty(quantityBilled) && quantityBilled == 0) || tranType != 'salesorder') {
+                        var isOpen = rec.getCurrentSublistValue({
+                          sublistId: sublist,
+                          fieldId: 'isopen'
+                        });
+                        log.debug('isOpen',isOpen);
+                        if ((typeof isOpen == 'string' && isOpen == 'T') || (typeof isOpen == 'boolean' && isOpen == true)) {
+                          rec.setCurrentSublistValue({
+                              sublistId: sublist,
+                              fieldId: 'isclosed',
+                              value: true
+                          });
+                          log.debug('isClosed', rec.getCurrentSublistValue({
                             sublistId: sublist,
-                            fieldId: 'isclosed',
-                            value: true
-                        })
-
-                        rec.commitLine({sublistId: sublist});
+                            fieldId: 'isclosed'
+                          }));
+                          rec.commitLine({sublistId: sublist});
+                        }
 
 
                     }
