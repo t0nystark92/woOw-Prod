@@ -684,11 +684,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                                                                         sublistId: 'item',
                                                                         line: l
                                                                     });
-
                                                                     log.audit("Armado Lines Fact Comision", "Termino Seleccion de linea")
 
                                                                     if (unredeem == false) {
 
+                                                                        var description = buscarDescripcionSO(factComision, soRecord);
                                                                         if(!utilities.isEmpty(description)){
 
                                                                             factComision.setCurrentSublistValue({
@@ -1002,7 +1002,7 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                                                                     fieldId: 'item',
                                                                     value: item
                                                                 });
-
+                                                                var description = buscarDescripcionSO(recordCreate, soRecord);
                                                                 if(!utilities.isEmpty(description)){
 
                                                                     recordCreate.setCurrentSublistValue({
@@ -1478,6 +1478,34 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
             }
             log.audit('createAndSubmitMapReduceJob', 'FIN Invocacion Script MAP/REDUCE');
             return respuesta;
+        }
+
+        function buscarDescripcionSO(fact,soRecord){
+          var description = '';
+          try{
+            var art = fact.getCurrentSublistValue({
+              sublistId: 'item',
+              fieldId: 'item'
+            });
+            log.debug('art',art);
+            var artLine = soRecord.findSublistLineWithValue({
+              sublistId: 'item',
+              fieldId: 'item',
+              value: art
+            });
+            soRecord.selectLine({
+              sublistId: 'item',
+              line: artLine
+            });
+            description = soRecord.getCurrentSublistValue({
+              sublistId: 'item',
+              fieldId: 'description'
+            });
+          }catch(e){
+            log.error('Error buscando descripción del artículo', e);
+            return '';
+          }
+          return description;
         }
 
         return {
