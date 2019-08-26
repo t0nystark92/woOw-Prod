@@ -128,7 +128,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         informacion.fechaChequeDiferido = currScript.getParameter('custscript_generar_pagos_fecha_dif');
         informacion.imprimirCheque = currScript.getParameter('custscript_generar_pagos_imprimir');
         informacion.bancoEmisorPago = currScript.getParameter('custscript_generar_pagos_banco_emisor');
-
+        informacion.fixLiq = currScript.getParameter('custscript_generar_pagos_fix_liq');
         return informacion;
       } catch (excepcion) {
         log.error('Pago Comisiones Servicios', 'INPUT DATA - Excepcion Obteniendo Parametros - Excepcion : ' + excepcion.message.toString());
@@ -172,37 +172,37 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         //log.debug('Pago Comisiones Servicios','BancoEmisorPago: '+bancoEmisorPago);
 
         // INICIO - Consultar Cuentas de Pago
-        //var arrayInfoCuentas = [];
-        //var searchInfoCuentas = searchSavedPro('customsearch_3k_config_ctas_cupones');
-//
-        //if (!isEmpty(searchInfoCuentas) && !searchInfoCuentas.error) {
-          //if (!isEmpty(searchInfoCuentas.objRsponseFunction.result) && searchInfoCuentas.objRsponseFunction.result.length > 0) {
-            //var resultSet = searchInfoCuentas.objRsponseFunction.result;
-            //var resultSearch = searchInfoCuentas.objRsponseFunction.search;
-            //for (var q = 0; q < resultSet.length; q++) {
-              //var infoCuenta = new Object({});
-              //infoCuenta.moneda = resultSet[q].getValue({
-                //name: resultSearch.columns[1]
-              //});
-              //infoCuenta.cuentaPago = resultSet[q].getValue({
-                //name: resultSearch.columns[6]
-              //});
-              //infoCuenta.cuentaCobro = resultSet[q].getValue({
-                //name: resultSearch.columns[7]
-              //});
-              //arrayInfoCuentas.push(infoCuenta);
-            //}
-          //} else {
-            //log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
-            //log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
-            //return null;
-          //}
-        //} else {
-          //log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
-          //log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
-          //return null;
-        //}
-        //log.debug('Pago Comisiones Servicios', 'INPUT DATA - Cuentas de comisiones: ' + arrayInfoCuentas);
+        var arrayInfoCuentas = [];
+        var searchInfoCuentas = searchSavedPro('customsearch_3k_config_ctas_cupones');
+
+        if (!isEmpty(searchInfoCuentas) && !searchInfoCuentas.error) {
+          if (!isEmpty(searchInfoCuentas.objRsponseFunction.result) && searchInfoCuentas.objRsponseFunction.result.length > 0) {
+            var resultSet = searchInfoCuentas.objRsponseFunction.result;
+            var resultSearch = searchInfoCuentas.objRsponseFunction.search;
+            for (var q = 0; q < resultSet.length; q++) {
+              var infoCuenta = new Object({});
+              infoCuenta.moneda = resultSet[q].getValue({
+                name: resultSearch.columns[1]
+              });
+              infoCuenta.cuentaPago = resultSet[q].getValue({
+                name: resultSearch.columns[6]
+              });
+              infoCuenta.cuentaCobro = resultSet[q].getValue({
+                name: resultSearch.columns[7]
+              });
+              arrayInfoCuentas.push(infoCuenta);
+            }
+          } else {
+            log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
+            log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
+            return null;
+          }
+        } else {
+          log.error('Pago Comisiones Servicios', 'INPUT DATA - Error Cuentas de Pago de Comisiones');
+          log.audit('Pago Comisiones Servicios', 'FIN GET INPUT DATA');
+          return null;
+        }
+        log.debug('Pago Comisiones Servicios', 'INPUT DATA - Cuentas de comisiones: ' + arrayInfoCuentas);
         // FIN - Consultar Cuentas de Pago
 
         // INICIO - Consultar Datos Bancarios Proveedores Comisionistas
@@ -705,8 +705,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
         log.error('Generacion Pago Liquidacion', 'SUMMARIZE - ' + mensajeError);
       }
 
+      var scriptParams = getParams();
       //INICIO Generar Mail de Liquidacion
-      if (error == false) {
+      if (error == false && ((typeof scriptParams.fixLiq == 'string' && scriptParams.fixLiq == 'F') || (typeof scriptParams.fixLiq == 'boolean' && scriptParams.fixLiq == false))) {
         try {
           var filtroID = search.createFilter({
             name: 'internalid',
@@ -734,7 +735,7 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
 
               //OJO: SI NO SE SELECCIONA NINGUNA FACTURA CLIENTE DE LA MISMA EMPRESA-MONEDA PARA LA LIQUIDACIÓN
               //HABRÁ DATOS FALTANTES EN EL .XLS
-              var filaTotales ={
+              var filaTotales = {
                 importeOrden: 0.00,
                 importePagar: 0.00,
                 devolucionesPagar: 0.00,
@@ -763,10 +764,14 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                   contenidoXLS += '      </Row>';
                   contenidoXLS += '      <Row>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">Orden</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">Nro Orden Magento</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">Descripcion</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">Fecha</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">Moneda</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">FC/NC</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">CAE de FC</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">CAE de NC</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">CAE de FC Relacionada (Solo NC)</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">Importe a Pagar</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">Devoluciones Aplicadas (A pagar)</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">Neto Comision</Data></Cell>';
@@ -776,53 +781,57 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                 var esFCoNC = (ssXLS[o].getValue(ssDetTrans.columns[6]) > 0) ? 'FC' : 'NC';
                 contenidoXLS += '      <Row>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[0]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[14]) + '</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[3]) + '</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[4]) + '</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[5]) + '</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + esFCoNC + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[11]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[12]) + '</Data></Cell>';
+                contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[13]) + '</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[7]) + '</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[9]) + '</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[8]) + '</Data></Cell>';
                 contenidoXLS += '          <Cell><Data ss:Type="String">' + ssXLS[o].getValue(ssDetTrans.columns[10]) + '</Data></Cell>';
                 contenidoXLS += '      </Row>';
                 //filaTotales.importeOrden += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[6]),10);
-                filaTotales.importePagar += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[7]),10);
-                filaTotales.devolucionesPagar += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[9]),10);
-                filaTotales.netoComision += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[8]),10);
-                filaTotales.devolucionesNetoComision += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[10]),10);
-                if (!isEmpty(ssXLS[o + 1]) && ssXLS[o + 1].getValue(ssDetTrans.columns[5]) != ssXLS[o].getValue(ssDetTrans.columns[5])){
+                filaTotales.importePagar += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[7]), 10);
+                filaTotales.devolucionesPagar += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[9]), 10);
+                filaTotales.netoComision += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[8]), 10);
+                filaTotales.devolucionesNetoComision += parseFloat(ssXLS[o].getValue(ssDetTrans.columns[10]), 10);
+                if (!isEmpty(ssXLS[o + 1]) && ssXLS[o + 1].getValue(ssDetTrans.columns[5]) != ssXLS[o].getValue(ssDetTrans.columns[5])) {
                   //Fila Totales X Moneda
                   contenidoXLS += '      <Row>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + 'Total Ordenes en ' + ssXLS[o].getValue(ssDetTrans.columns[5]) + ':</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
-                  contenidoXLS += '          <Cell><Data ss:Type="String">' + ''/*filaTotales.importeOrden*/ + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' /*filaTotales.importeOrden*/ + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.importePagar + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesPagar + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.netoComision + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesNetoComision + '</Data></Cell>';
                   contenidoXLS += '      </Row>';
-                //Fila Totales X Moneda
+                  //Fila Totales X Moneda
                   filaTotales.importeOrden = 0.00;
                   filaTotales.importePagar = 0.00;
                   filaTotales.devolucionesPagar = 0.00;
                   filaTotales.netoComision = 0.00;
                   filaTotales.devolucionesNetoComision = 0.00;
-                } else if (isEmpty(ssXLS[o + 1])){
+                } else if (isEmpty(ssXLS[o + 1])) {
                   //Fila Totales X Moneda
                   contenidoXLS += '      <Row>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + 'Total Ordenes en ' + ssXLS[o].getValue(ssDetTrans.columns[5]) + ':</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
-                  contenidoXLS += '          <Cell><Data ss:Type="String">' + ''/*filaTotales.importeOrden*/ + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' /*filaTotales.importeOrden*/ + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.importePagar + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesPagar + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.netoComision + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesNetoComision + '</Data></Cell>';
                   contenidoXLS += '      </Row>';
-                //Fila Totales X Moneda
+                  //Fila Totales X Moneda
                 }
               }
               contenidoXLS += '   </Table>';
@@ -1134,9 +1143,9 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
     }
 
     function generarPagoCliente(records) {
-      var ssConfigLiq = search.load('customsearch_3k_config_liquidaciones');
+      var ssConfigLiq = search.load('customsearch_3k_config_pago_liq');
       var ssCfg = correrSearch(ssConfigLiq);
-      var cuentaCustPmt = ssCfg.result[0].getValue(ssCfg.columns[16]);
+      var cuentaCustPmt = ssCfg.result[0].getValue(ssCfg.columns[6]);
       if (!isEmpty(records) && records.length > 0) {
         var idPago = null;
         var error = false;
@@ -1438,6 +1447,12 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           });
 
           registroPago.setValue({
+            fieldId: 'currency',
+            value: idMoneda,
+            ignoreFieldChange: false
+          });
+
+          registroPago.setValue({
             fieldId: 'apacct',
             value: idCuenta
           });
@@ -1445,12 +1460,6 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
           registroPago.setValue({
             fieldId: 'account',
             value: cuentaOrigen
-          });
-
-          registroPago.setValue({
-            fieldId: 'currency',
-            value: idMoneda,
-            ignoreFieldChange: false
           });
 
           registroPago.setValue({

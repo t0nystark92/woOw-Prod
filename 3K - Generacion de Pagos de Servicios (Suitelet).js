@@ -314,11 +314,23 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             }
           }
 
+          //Indica que el procesamiento se hará para arreglar errores de liquidaciones anteriores
+          //por lo que no se enviará mail al proveedor al terminar 
+          var fixLiq = form.addField({
+            id: 'fixliq',
+            label: 'Fix de Liquidaciones',
+            type: serverWidget.FieldType.CHECKBOX,
+            container: 'infopago'
+          });
+
+          if (!utilities.isEmpty(context.request.parameters.fixliq)) {
+            fixLiq.defaultValue = context.request.parameters.fixliq;
+          }
           //var numeroLiquidacion = form.addField({ NO ES NECESARIO: SE USABA EN EL PROCESO ANTERIOR
-          //    id: 'numliq',
-          //    label: 'Numero de Referencia',
-          //    type: serverWidget.FieldType.TEXT,
-          //    container: 'infopago'
+              //id: 'numliq',
+              //label: 'Numero de Referencia',
+              //type: serverWidget.FieldType.TEXT,
+              //container: 'infopago'
           //});
 
           //if (!utilities.isEmpty(context.request.parameters.numliq)) {
@@ -389,14 +401,28 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             }
           }
 
+          //Completar Lista de Bancos Emisores Pago Prov - INICIO
           var bancoEmisorPago = form.addField({
             id: 'bancoemisorpago',
             label: 'Banco Pago A Proveedor',
             type: serverWidget.FieldType.SELECT,
-            source: 'customrecord_3k_bancos',
+            source: null,//'customrecord_3k_bancos',
             container: 'infopago'
           });
-
+          bancoEmisorPago.isMandatory = true;
+          var ssBanEmisPgo = search.load('customsearch_3k_banco_emisor_pago_prov');
+          var ssBancoEmisorPago = correrSearch(ssBanEmisPgo);
+          bancoEmisorPago.addSelectOption({
+            value: '',
+            text: ''
+          });
+          for (var z = 0; z < ssBancoEmisorPago.result.length; z++){
+            bancoEmisorPago.addSelectOption({
+              value: ssBancoEmisorPago.result[z].getValue(ssBancoEmisorPago.columns[0]),
+              text: ssBancoEmisorPago.result[z].getValue(ssBancoEmisorPago.columns[1])
+            });
+          }
+          //Completar Lista de Bancos Emisores Pago Prov - FIN
           if (!utilities.isEmpty(context.request.parameters.bancoemisorpago)) {
             bancoEmisorPago.defaultValue = context.request.parameters.bancoemisorpago;
           }
@@ -1017,6 +1043,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           parametros.custscript_generar_pagos_fecha_dif = request.parameters.fechadif;
           parametros.custscript_generar_pagos_imprimir = request.parameters.impcheque;
           parametros.custscript_generar_pagos_banco_emisor = request.parameters.bancoemisorpago;
+          parametros.custscript_generar_pagos_fix_liq = request.parameters.fixliq;
 
           log.debug('Generacion Pagos Servicios', 'Generacion Pagos - ID Comisiones A Procesar : ' + parametros.custscript_generar_pago_id_doc);
 
