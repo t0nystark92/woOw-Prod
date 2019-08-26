@@ -806,6 +806,10 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' /*filaTotales.importeOrden*/ + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.importePagar + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + filaTotales.devolucionesPagar + '</Data></Cell>';
@@ -822,6 +826,10 @@ define(['N/search', 'N/record', 'N/email', 'N/runtime', 'N/error', 'N/format', '
                   //Fila Totales X Moneda
                   contenidoXLS += '      <Row>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + 'Total Ordenes en ' + ssXLS[o].getValue(ssDetTrans.columns[5]) + ':</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
+                  contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
                   contenidoXLS += '          <Cell><Data ss:Type="String">' + '' + '</Data></Cell>';
