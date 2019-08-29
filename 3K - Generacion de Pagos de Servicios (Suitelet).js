@@ -132,17 +132,17 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           type: serverWidget.FieldType.DATE,
           container: 'filtros'
         })
-        fechaInicio.isMandatory = true;
+        //fechaInicio.isMandatory = true;
         // Por defecto la Fecha Actual
         if (!utilities.isEmpty(context.request.parameters.fechainicio)) {
           fechaInicio.defaultValue = context.request.parameters.fechainicio;
-        } else {
-          if (!utilities.isEmpty(fechaLocal)) {
-            //fechaInicio.defaultValue = fechaLocal;
-            fechaInicio.defaultValue = fechaLocal;
-          }
-        }
-        
+        } //else {
+        //if (!utilities.isEmpty(fechaLocal)) {
+        //fechaInicio.defaultValue = fechaLocal;
+        //fechaInicio.defaultValue = fechaLocal;
+        //}
+        //}
+
         var fechaFin = form.addField({
           id: 'fechafin',
           label: 'Fecha Hasta',
@@ -164,10 +164,13 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
         var moneda = form.addField({
           id: 'moneda',
           label: 'Moneda',
-          type: serverWidget.FieldType.LIST,
+          type: serverWidget.FieldType.SELECT,
           source: 'currency',
           container: 'filtros'
         });
+        if (!utilities.isEmpty(context.request.parameters.moneda)) {
+          moneda.defaultValue = context.request.parameters.moneda;
+        }
 
         /*var enviarEmailProveedor = form.addField({
             id: 'enviaremail',
@@ -176,6 +179,32 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             container: 'filtros'
         });
         enviarEmailProveedor.defaultValue = 'T';*/
+        //INICIO - Cargar datos de Bancos Prov
+        var ssBanEmisPgo = search.load('customsearch_3k_bancos_prov');
+        var ssBancoEmisorPago = correrSearch(ssBanEmisPgo);
+        //FIN - Cargar datos de Bancos Prov
+        //Completar Lista de Bancos Prov - INICIO
+        var banco = form.addField({
+          id: 'banco',
+          label: 'Banco',
+          type: serverWidget.FieldType.SELECT,
+          source: null,//'customrecord_3k_bancos',
+          container: 'filtros'
+        });
+        banco.addSelectOption({
+          value: '',
+          text: ''
+        });
+        for (var z = 0; z < ssBancoEmisorPago.result.length; z++) {
+          banco.addSelectOption({
+            value: ssBancoEmisorPago.result[z].getValue(ssBancoEmisorPago.columns[0]),
+            text: ssBancoEmisorPago.result[z].getValue(ssBancoEmisorPago.columns[1])
+          });
+        }
+        //Completar Lista de Bancos Prov - FIN
+        if (!utilities.isEmpty(context.request.parameters.banco)) {
+          banco.defaultValue = context.request.parameters.banco;
+        }
 
         // FIN FILTROS
 
@@ -342,10 +371,10 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             fixLiq.defaultValue = context.request.parameters.fixliq;
           }
           //var numeroLiquidacion = form.addField({ NO ES NECESARIO: SE USABA EN EL PROCESO ANTERIOR
-              //id: 'numliq',
-              //label: 'Numero de Referencia',
-              //type: serverWidget.FieldType.TEXT,
-              //container: 'infopago'
+          //id: 'numliq',
+          //label: 'Numero de Referencia',
+          //type: serverWidget.FieldType.TEXT,
+          //container: 'infopago'
           //});
 
           //if (!utilities.isEmpty(context.request.parameters.numliq)) {
@@ -365,7 +394,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           //log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - INICIO');
           //var informacionBancariaProveedores = new Array();
           //var datosBancariosProveedores = search.load({
-            //id: 'customsearch_3k_datos_banc_prov_com'
+          //id: 'customsearch_3k_datos_banc_prov_com'
           //});
           //log.debug('datosBancariosProveedores', datosBancariosProveedores);
           //var resultSet = datosBancariosProveedores.run();
@@ -374,55 +403,58 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           //var resultStep = 1000; // Number of records returned in one step (maximum is 1000)
           //var resultado; // temporary variable used to store the result set
           //do {
-            //// fetch one result set
-            //resultado = resultSet.getRange({
-              //start: resultIndex,
-              //end: resultIndex + resultStep
-            //});
-            //if (!utilities.isEmpty(resultado) && resultado.length > 0) {
-              //if (resultIndex == 0)
-                //completeResultSetDatosBancarios = resultado;
-              //else
-                //completeResultSetDatosBancarios = completeResultSetDatosBancarios.concat(resultado);
-            //}
-            //// increase pointer
-            //resultIndex = resultIndex + resultStep;
-            //// once no records are returned we already got all of them
+          //// fetch one result set
+          //resultado = resultSet.getRange({
+          //start: resultIndex,
+          //end: resultIndex + resultStep
+          //});
+          //if (!utilities.isEmpty(resultado) && resultado.length > 0) {
+          //if (resultIndex == 0)
+          //completeResultSetDatosBancarios = resultado;
+          //else
+          //completeResultSetDatosBancarios = completeResultSetDatosBancarios.concat(resultado);
+          //}
+          //// increase pointer
+          //resultIndex = resultIndex + resultStep;
+          //// once no records are returned we already got all of them
           //} while (!utilities.isEmpty(resultado) && resultado.length > 0)
           //if (!utilities.isEmpty(completeResultSetDatosBancarios) && completeResultSetDatosBancarios.length > 0) {
-            //for (var i = 0; !utilities.isEmpty(completeResultSetDatosBancarios) && completeResultSetDatosBancarios.length > 0 && i < completeResultSetDatosBancarios.length; i++) {
-              //var infoBancaria = new Object();
-              //infoBancaria.idProveedor = completeResultSetDatosBancarios[i].getValue({
-                //name: resultSet.columns[2]
-              //});
-              //infoBancaria.idMoneda = completeResultSetDatosBancarios[i].getValue({
-                //name: resultSet.columns[3]
-              //});
-              //infoBancaria.idBanco = completeResultSetDatosBancarios[i].getValue({
-                //name: resultSet.columns[4]
-              //});
-              //if (!utilities.isEmpty(infoBancaria.idProveedor) && !utilities.isEmpty(infoBancaria.idMoneda) && !utilities.isEmpty(infoBancaria.idBanco)) {
-                //informacionBancariaProveedores.push(infoBancaria);
-              //}
-            //}
+          //for (var i = 0; !utilities.isEmpty(completeResultSetDatosBancarios) && completeResultSetDatosBancarios.length > 0 && i < completeResultSetDatosBancarios.length; i++) {
+          //var infoBancaria = new Object();
+          //infoBancaria.idProveedor = completeResultSetDatosBancarios[i].getValue({
+          //name: resultSet.columns[2]
+          //});
+          //infoBancaria.idMoneda = completeResultSetDatosBancarios[i].getValue({
+          //name: resultSet.columns[3]
+          //});
+          //infoBancaria.idBanco = completeResultSetDatosBancarios[i].getValue({
+          //name: resultSet.columns[4]
+          //});
+          //if (!utilities.isEmpty(infoBancaria.idProveedor) && !utilities.isEmpty(infoBancaria.idMoneda) && !utilities.isEmpty(infoBancaria.idBanco)) {
+          //informacionBancariaProveedores.push(infoBancaria);
           //}
+          //}
+          //}
+
+          //INICIO - Cargar datos de Bancos Emisores de Pago
+            var ssBanEmisPgo = search.load('customsearch_3k_banco_emisor_pago_prov');
+            var ssBancoEmisorPago = correrSearch(ssBanEmisPgo);
+          //FIN - Cargar datos de Bancos Emisores de Pago
 
           //Completar Lista de Bancos Emisores Pago Prov - INICIO
           var bancoEmisorPago = form.addField({
             id: 'bancoemisorpago',
             label: 'Banco Pago A Proveedor',
             type: serverWidget.FieldType.SELECT,
-            source: null,//'customrecord_3k_bancos',
+            source: null, //'customrecord_3k_bancos',
             container: 'infopago'
           });
           bancoEmisorPago.isMandatory = true;
-          var ssBanEmisPgo = search.load('customsearch_3k_banco_emisor_pago_prov');
-          var ssBancoEmisorPago = correrSearch(ssBanEmisPgo);
           bancoEmisorPago.addSelectOption({
             value: '',
             text: ''
           });
-          for (var z = 0; z < ssBancoEmisorPago.result.length; z++){
+          for (var z = 0; z < ssBancoEmisorPago.result.length; z++) {
             bancoEmisorPago.addSelectOption({
               value: ssBancoEmisorPago.result[z].getValue(ssBancoEmisorPago.columns[0]),
               text: ssBancoEmisorPago.result[z].getValue(ssBancoEmisorPago.columns[1])
@@ -432,8 +464,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
           if (!utilities.isEmpty(context.request.parameters.bancoemisorpago)) {
             bancoEmisorPago.defaultValue = context.request.parameters.bancoemisorpago;
           }
-
-          log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - FIN');
+          //log.debug('GENERACION DE PAGOS DE SERVICIOS', ' CARGAR DATOS BANCARIOS PROVEEDORES - FIN');
         }
         //////////////////////////////////////////////////////////////////
 
@@ -688,14 +719,36 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
 
         if (!utilities.isEmpty(request.parameters.moneda)) {
           var filtroMoneda = search.createFilter({
-            name: 'trandate',
-            operator: 'ONORBEFORE',
-            values: request.parameters.moneda
+            name: 'currency',
+            operator: 'ANYOF',
+            values: [request.parameters.moneda]
           });
 
           ssParams.push(filtroMoneda);
-
         }
+
+        if (!utilities.isEmpty(request.parameters.banco)) {
+          var ssObjProvPorBanco = search.load('customsearch_3k_proveedor_cliente_com');
+          var filtroBanco = search.createFilter({
+            name: 'custrecord_3k_datos_banc_prov_banco',
+            join: 'custrecord_3k_datos_banc_prov_prov',
+            operator: 'ANYOF',
+            values: [request.parameters.banco]
+          });
+          ssObjProvPorBanco.filters.push(filtroBanco);
+          if (!utilities.isEmpty(request.parameters.moneda)) {
+            var filtroMonedaBanco = search.createFilter({
+              name: 'custrecord_3k_datos_banc_prov_mon',
+              join: 'custrecord_3k_datos_banc_prov_prov',
+              operator: 'ANYOF',
+              values: [request.parameters.moneda]
+            });
+            ssObjProvPorBanco.filters.push(filtroMonedaBanco);;
+          }
+          var ssProvBanco = correrSearch(ssObjProvPorBanco);
+          //log.debug('Obtener listado de proveedores con el banco: ' + request.parameters.banco, ssProvBanco);
+        }
+
         log.debug('ssParams', ssParams);
 
         comisionesPendientesCobrarSearch.filters = comisionesPendientesCobrarSearch.filters.concat(ssParams);
@@ -705,8 +758,31 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
         log.debug('Generacion Pagos Servicios', 'INICIO Consulta Busqueda Comisiones Pendientes');
 
         var ssComCobrar = correrSearch(comisionesPendientesCobrarSearch);
-
         var ssComPagar = correrSearch(comisionesPendientesPagarSearch);
+        log.debug('ssComCobrar.result', ssComCobrar.result);
+        log.debug('ssComPagar.result', ssComPagar.result);
+        //Filtro los resultados por Prov/Cli correspondiente al banco seleccionado
+        if (!utilities.isEmpty(request.parameters.banco) && ssProvBanco.result != null && ssComCobrar.result != null && ssComPagar.result != null) {
+
+          log.audit('Generacion Pagos Servicios', 'Filtrar comisiones por Banco de Proveedor - INICIO');
+          var auxComCobrar = [];
+          var auxComPagar = [];
+          for (var ii = 0; ii < ssProvBanco.result.length; ii++) {
+            auxComCobrar = auxComCobrar.concat(ssComCobrar.result.filter(function (comCob) {
+              return comCob.getValue(ssComCobrar.columns[3]) == ssProvBanco.result[ii].id;
+            }));
+            (auxComCobrar != null && auxComCobrar.length > 0) ? log.debug('auxComCobrar', auxComCobrar): 0;
+            auxComPagar = auxComPagar.concat(ssComPagar.result.filter(function (comCob) {
+              return comCob.getValue(ssComPagar.columns[3]) == ssProvBanco.result[ii].id;
+            }));
+          }
+          ssComCobrar.result = auxComCobrar;
+          ssComPagar.result = auxComPagar;
+          log.debug('ssComCobrar.result', ssComCobrar.result);
+          log.debug('ssComPagar.result', ssComPagar.result);
+          log.audit('Generacion Pagos Servicios', 'Filtrar comisiones por Banco de Proveedor - FIN');
+        }
+
         log.debug('Generacion Pagos Servicios', 'FIN Consulta Busqueda Comisiones Pendientes');
         var lineasVenta = (ssComCobrar.result == null) ? 0 : ssComCobrar.result.length;
         var lineasCompra = (ssComPagar.result == null) ? 0 : ssComPagar.result.length;
@@ -719,7 +795,8 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
             vendbill: 0,
             vendcred: 0
           };
-          for (var i = 0, j = 0; (lineasCompra + lineasVenta) > 0 && i < (lineasCompra + lineasVenta); i++) {
+          for (var i = 0, j = 0;
+            (lineasCompra + lineasVenta) > 0 && i < (lineasCompra + lineasVenta); i++) {
             if (i >= lineasVenta) {
               if (i == lineasVenta) {
                 j = 0;
@@ -855,7 +932,7 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
         }
 
       } catch (excepcion) {
-        log.error('Excepcion Consultando Comisiones Pendientes',excepcion);
+        log.error('Excepcion Consultando Comisiones Pendientes', excepcion);
         respuesta.error = true;
         respuesta.mensaje = "Excepcion Consultando Comisiones Pendientes - Excepcion : " + excepcion.message;
         log.error('Generacion Pagos Servicios', 'Consulta Busqueda Comisiones Pendientes - Excepcion Consultando Comisiones - Excepcion : ' + excepcion.message);
@@ -958,14 +1035,14 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
                         }
                       }
                     } //else {
-                      ////Error Obteniendo Columnas de Sublista
-                      //respuesta.error = true;
-                      //respuesta.mensaje = "No se pudo Obtener las columnas de la sublista de Comisiones a procesar: " + nombreSublista[n];
+                    ////Error Obteniendo Columnas de Sublista
+                    //respuesta.error = true;
+                    //respuesta.mensaje = "No se pudo Obtener las columnas de la sublista de Comisiones a procesar: " + nombreSublista[n];
                     //}
                   } //else {
-                    ////Error Obteniendo Contenido de Sublista
-                    //respuesta.error = true;
-                    //respuesta.mensaje = "No se pudo Obtener el contenido de la sublista de Comisiones a procesar: " + nombreSublista[n];
+                  ////Error Obteniendo Contenido de Sublista
+                  //respuesta.error = true;
+                  //respuesta.mensaje = "No se pudo Obtener el contenido de la sublista de Comisiones a procesar: " + nombreSublista[n];
                   //}
 
                 }
@@ -1028,33 +1105,37 @@ define(['N/ui/serverWidget', 'N/https', 'N/record', 'N/error', 'N/search', 'N/fo
       log.audit('Generacion Pagos Servicios', 'FIN Consulta Comisiones A Procesar');
       return respuesta;
     }
-    function obtenerClientesRelacionados(empresasSeleccionadas){
+
+    function obtenerClientesRelacionados(empresasSeleccionadas) {
       var clientesRelacionados = [];
       var ss = search.create({
         type: 'customer',
         filters: [
           search.createFilter({
             name: 'custentity_3k_prov_asociado',
-            operator:'ANYOF',
+            operator: 'ANYOF',
             values: empresasSeleccionadas
           })
         ],
         columns: [
-          search.createColumn({name: 'internalid'})
+          search.createColumn({
+            name: 'internalid'
+          })
         ]
       });
       var ssClientes = correrSearch(ss);
-      for(var z = 0; z < ssClientes.result.length; z++){
-        var coincidencias = clientesRelacionados.filter(function(ids){
+      for (var z = 0; z < ssClientes.result.length; z++) {
+        var coincidencias = clientesRelacionados.filter(function (ids) {
           return ids == ssClientes.result[z].getValue('internalid');
         });
-        if (coincidencias.length == 0){
+        if (coincidencias.length == 0) {
           clientesRelacionados.push(ssClientes.result[z].getValue('internalid'));
         }
       }
       return clientesRelacionados;
-      
+
     }
+
     function createAndSubmitMapReduceJob(idScript, parametros) {
       log.audit('Generacion Pagos Servicios REST', 'INICIO Invocacion Script MAP/REDUCE');
       var respuesta = new Object();
