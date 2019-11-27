@@ -4,8 +4,8 @@
  * @NScriptType UserEventScript
  * @NModuleScope Public
  */
-define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtime', '3K/utilities', '3K/funcionalidadesOV', '3K/funcionalidadesURU'],
-    function (record, search, format, transaction, task, runtime, utilities, funcionalidades, funcionalidadesURU) {
+define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtime', '3K/utilities', '3K/funcionalidadesOV', '3K/funcionalidadesURU', './MARS/MARS_Script_Error_Creation'],
+    function (record, search, format, transaction, task, runtime, utilities, funcionalidades, funcionalidadesURU, scrError) {
 
 
         function afterSubmit(context) {
@@ -625,11 +625,11 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                                                                 isDynamic: true
                                                             });
 
-                                                            log.audit("Funcionalidades URU", "Inicio beforeSubmit")
+                                                            /*log.audit("Funcionalidades URU", "Inicio beforeSubmit")
 
                                                             var beforeSubmit = funcionalidadesURU.beforeSubmit('create', factComision);
 
-                                                            log.audit("Funcionalidades URU", "Termino beforeSubmit")
+                                                            log.audit("Funcionalidades URU", "Termino beforeSubmit")*/
 
                                                             factComision.setValue({
                                                                 fieldId: 'custbody_3k_ulid_servicios',
@@ -746,6 +746,12 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                                                                 }
 
                                                             }
+
+                                                            log.audit("Funcionalidades URU", "Inicio beforeSubmit")
+
+                                                            var beforeSubmit = funcionalidadesURU.beforeSubmit('create', factComision);
+
+                                                            log.audit("Funcionalidades URU", "Termino beforeSubmit")
 
                                                             var total = factComision.getValue({
                                                                 fieldId: 'total'
@@ -1390,6 +1396,16 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                 log.error("Error afertSubmit Catch", error.message);
                 log.error("Error Object afertSubmit Catch", JSON.stringify(error));
 
+                var order = context.oldRecord;
+                try {
+                    if (error.message.length > 0) {
+                        var errorId = scrError.createErrorRegEstadoReserva(order,error.message);
+                        log.error('createErrorReg', 'Se creó Script Error: ' + errorId);
+                    }
+                } catch (E) {
+                    log.error('createErrorReg', 'Error creando Script Error: ' + E);
+                };
+
                 //log.debug('arrayTranCreated', JSON.stringify(arrayTranCreated))
 
                 var currScript = runtime.getCurrentScript();
@@ -1433,6 +1449,13 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
                         var resultCae = funcionalidades.generarCAE(arrayCAE, subsidiary);
 
                         if (resultCae.error == true) {
+
+                            var order = context.oldRecord;
+                            try {
+                                scrError.createErrorRegEstadoReserva(order,'Error generando CAE');
+                            } catch (E) {
+                                log.error('createErrorReg', 'Error creando Script Error: ' + E);
+                            };
 
                             record.submitFields({
                                 type: record.Type.SALES_ORDER,
@@ -1484,23 +1507,24 @@ define(['N/record', 'N/search', 'N/format', 'N/transaction', 'N/task', 'N/runtim
           var description = '';
           try{
             var art = fact.getCurrentSublistValue({
-              sublistId: 'item',
-              fieldId: 'item'
-            });
-            log.debug('art',art);
-            var artLine = soRecord.findSublistLineWithValue({
-              sublistId: 'item',
-              fieldId: 'item',
-              value: art
-            });
-            soRecord.selectLine({
-              sublistId: 'item',
-              line: artLine
-            });
-            description = soRecord.getCurrentSublistValue({
-              sublistId: 'item',
-              fieldId: 'description'
-            });
+                sublistId: 'item',
+                fieldId: 'item'
+              });
+              log.debug('art', art);
+              var artLine = soRecord.findSublistLineWithValue({
+                sublistId: 'item',
+                fieldId: 'item',
+                value: art
+              });
+              //soRecord.selectLine({
+              //sublistId: 'item',
+              //line: artLine
+              //});
+              description = soRecord.getSublistValue({
+                sublistId: 'item',
+                fieldId: 'description',
+                line: artLine
+              });
           }catch(e){
             log.error('Error buscando descripción del artículo', e);
             return '';
